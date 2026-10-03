@@ -27,6 +27,8 @@ export type Product = {
   colours: ColourGroup[];
   description: string;
   images: string[];
+  /** A one-of-one piece that has sold. It stays visible so it can be made again to order. */
+  sold?: boolean;
 };
 
 const img = (slug: string, n = 1) => Array.from({ length: n }, (_, i) => `/images/products/${slug}-${i + 1}.jpg`);
