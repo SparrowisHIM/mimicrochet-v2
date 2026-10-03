@@ -1,26 +1,59 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+  Mimi Crochet v2 foundations (Figma "Foundations" page).
+  Colours are Tailwind palette values used directly in markup:
+  canvas orange-50, soft orange-100, ink stone-900, text stone-600,
+  muted stone-500, line stone-200, ready emerald-800 / emerald-100,
+  made to order amber-800 / amber-100, late red-700.
+*/
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-young-serif), ui-serif, Georgia, serif;
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-photo: 18px;
+  --radius-card: 22px;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-orange-50 font-sans text-stone-900;
+  }
+
+  ::selection {
+    @apply bg-amber-200 text-stone-900;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-stone-900);
+    outline-offset: 3px;
+    border-radius: 6px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@utility container-page {
+  width: 100%;
+  margin-inline: auto;
+  max-width: 1440px;
+  padding-inline: 20px;
+
+  @media (width >= 64rem) {
+    padding-inline: 64px;
+  }
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
