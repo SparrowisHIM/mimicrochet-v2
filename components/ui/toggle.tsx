@@ -8,15 +8,17 @@ export function Toggle({
   onChange,
   label,
   id,
+  hideLabel = false,
 }: {
   checked: boolean;
   onChange: (next: boolean) => void;
   label: string;
   id?: string;
+  hideLabel?: boolean;
 }) {
   return (
     <label htmlFor={id} className="inline-flex cursor-pointer items-center gap-3 select-none">
-      <span className="text-[15px] font-medium whitespace-nowrap text-stone-900">{label}</span>
+      <span className={hideLabel ? "sr-only" : "text-[15px] font-medium whitespace-nowrap text-stone-900"}>{label}</span>
       <button
         id={id}
         type="button"

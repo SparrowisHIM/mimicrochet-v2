@@ -12,7 +12,7 @@ export function TrackForm({ compact = false }: { compact?: boolean }) {
   const [value, setValue] = useState("");
   const [error, setError] = useState(false);
 
-  const mine = orders.slice(0, 3);
+  const mine = orders.filter((o) => !o.sample).slice(0, 3);
 
   return (
     <div className={compact ? "mt-2 flex w-full flex-col gap-3" : "mt-8 flex w-full max-w-[460px] flex-col gap-4 lg:mx-auto"}>

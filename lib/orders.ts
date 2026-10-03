@@ -97,9 +97,15 @@ export function useOrders(): Order[] {
   return useSyncExternalStore(subscribe, read, () => empty);
 }
 
+/** Device copies win over the built-in example, so edits made on Mimi's page show on the tracking link. */
 export function findOrder(orders: Order[], codeOrId: string) {
   const q = codeOrId.trim().toLowerCase();
-  return [demoOrder, ...orders].find((o) => o.code === q || o.id.toLowerCase() === q);
+  return [...orders, demoOrder].find((o) => o.code === q || o.id.toLowerCase() === q);
+}
+
+/** Change an order (a real one or an example) and keep it on this device. */
+export function patchOrder(o: Order, patch: Partial<Order>) {
+  saveOrder({ ...o, ...patch });
 }
 
 export function saveOrder(o: Order) {
