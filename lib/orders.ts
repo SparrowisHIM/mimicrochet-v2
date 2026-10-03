@@ -8,6 +8,10 @@ import { useSyncExternalStore } from "react";
 export type OrderUpdate = { stage: number; note: string; at: string; photo?: string };
 
 export type Order = {
+  /** custom: made for you (5 stages). shop: ready pieces paid at checkout (4 stages). */
+  kind?: "custom" | "shop";
+  items?: { slug: string; name: string; image: string; price: number; size?: string }[];
+  email?: string;
   id: string; // MIMI-2406
   code: string; // private tracking code, e.g. k7x2p9
   createdAt: string;

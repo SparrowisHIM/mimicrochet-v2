@@ -87,7 +87,7 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
         <motion.div {...rise(0.1)} className="flex flex-col gap-3">
           <h1 className="font-serif text-[36px] leading-[1.05] tracking-[-0.01em] lg:text-[52px]">Sent! Mimi’s on it.</h1>
           <p className="text-[16px] leading-[1.5] text-stone-600 lg:text-[18px]">
-            Your order number is {order.id}. Mimi usually replies on WhatsApp the same day.
+            Your order number is <span className="whitespace-nowrap">{order.id}</span>. Mimi usually replies on WhatsApp the same day.
           </p>
         </motion.div>
 

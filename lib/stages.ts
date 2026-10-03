@@ -12,3 +12,6 @@ export type StageKey = (typeof stages)[number]["key"];
 export function stageIndex(key: StageKey) {
   return stages.findIndex((s) => s.key === key);
 }
+
+// Ready pieces bought at checkout move through four steps instead.
+export const shopStages = ["Paid", "Packing", "On its way", "Delivered"] as const;

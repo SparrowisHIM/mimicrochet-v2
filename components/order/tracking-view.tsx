@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { WhatsAppIcon } from "@/components/icons";
+import { ShopOrderCard } from "@/components/cart/shop-order-card";
 import { StageIcon } from "@/components/order/stage-icons";
 import { Button, buttonClass } from "@/components/ui/button";
 import { findOrder, updateOrder, useOrders, type Order } from "@/lib/orders";
@@ -148,6 +149,26 @@ export function TrackingView({ code }: { code: string }) {
           <Link href="/t/k7x2p9" className={buttonClass("secondary")}>
             See an example order
           </Link>
+        </div>
+      </div>
+    );
+
+  if (order.kind === "shop")
+    return (
+      <div className="container-page flex justify-center pt-8 pb-24 lg:pt-14">
+        <div className="flex w-full max-w-[560px] flex-col gap-5">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <span className="rounded-full border border-stone-200 bg-white px-3.5 py-1.5 text-[13px] font-medium">Order {order.id}</span>
+            <h1 className="font-serif text-[36px] leading-[1.05] lg:text-[52px]">{["Paid. Mimi is packing it.", "Packing your order", "It’s on its way", "It’s home. Wear it loud."][order.stage]}</h1>
+            <p className="max-w-[460px] text-[16px] text-stone-600">Mimi passes your number to a rider. You pay the rider for delivery when it arrives.</p>
+          </div>
+          <ShopOrderCard order={order} />
+          <a href={whatsappLink(`Hi Mimi! It’s about my order ${order.id}.`)} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-[22px] bg-white p-4 hover:bg-orange-100/60">
+            <span className="grid size-10 place-items-center rounded-full bg-orange-100 font-serif text-[17px] text-amber-800">M</span>
+            <span className="flex flex-1 flex-col"><span className="text-[15px] font-semibold">Mimi</span><span className="text-[13px] text-stone-500">Usually replies the same day</span></span>
+            <WhatsAppIcon size={20} />
+          </a>
+          <p className="text-center text-[13px] text-stone-400">Only people with this link can see this page.</p>
         </div>
       </div>
     );
