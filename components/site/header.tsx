@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { BagIcon, CloseIcon, HeartIcon, MenuIcon, SearchIcon } from "@/components/icons";
+import { bagUi } from "@/lib/bag";
 import { bagStore, savedStore } from "@/lib/local-store";
 import { navLinks, site } from "@/lib/site";
 
@@ -82,10 +83,10 @@ export function Header() {
             <HeartIcon />
             <CountBadge count={saved.length} />
           </Link>
-          <Link href="/bag" className={iconButton} aria-label={`Your bag, ${bag.length} pieces`}>
+          <button type="button" onClick={() => bagUi.open()} className={iconButton} aria-label={`Your bag, ${bag.length} pieces`}>
             <BagIcon />
             <CountBadge count={bag.length} />
-          </Link>
+          </button>
           <button
             type="button"
             className={`${iconButton} lg:hidden`}

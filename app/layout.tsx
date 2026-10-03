@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree, Young_Serif } from "next/font/google";
+import { BagDrawer } from "@/components/cart/bag-drawer";
 import { Announcement } from "@/components/site/announcement";
 import { Footer } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </main>
         <Footer />
+        <BagDrawer />
       </body>
     </html>
   );
