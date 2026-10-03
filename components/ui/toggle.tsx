@@ -16,7 +16,7 @@ export function Toggle({
 }) {
   return (
     <label htmlFor={id} className="inline-flex cursor-pointer items-center gap-3 select-none">
-      <span className="text-[15px] font-medium text-stone-900">{label}</span>
+      <span className="text-[15px] font-medium whitespace-nowrap text-stone-900">{label}</span>
       <button
         id={id}
         type="button"
