@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { HeartIcon } from "@/components/icons";
 import { savedStore } from "@/lib/local-store";
 
-export function SaveButton({ slug, name, size = "md", className = "" }: { slug: string; name: string; size?: "md" | "lg"; className?: string }) {
+export function SaveButton({ slug, name, size = "md", className = "relative" }: { slug: string; name: string; size?: "md" | "lg"; className?: string }) {
   const saved = savedStore.useList().includes(slug);
   const box = size === "lg" ? "size-11" : "size-9";
 
@@ -15,7 +15,7 @@ export function SaveButton({ slug, name, size = "md", className = "" }: { slug: 
       aria-label={saved ? `Remove ${name} from saved` : `Save ${name}`}
       onClick={() => savedStore.toggle(slug)}
       whileTap={{ scale: 0.86 }}
-      className={`relative grid ${box} place-items-center rounded-full bg-white/94 shadow-[0_2px_8px_rgb(28_25_23/0.12)] backdrop-blur-sm transition-colors hover:bg-white ${className}`}
+      className={`grid ${box} place-items-center rounded-full bg-white/94 shadow-[0_2px_8px_rgb(28_25_23/0.12)] backdrop-blur-sm transition-colors hover:bg-white ${className}`}
     >
       <motion.span
         key={saved ? "on" : "off"}
