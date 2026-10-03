@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { findOrder, useOrders } from "@/lib/orders";
 
-export function TrackForm() {
+export function TrackForm({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
   const orders = useOrders();
   const [value, setValue] = useState("");
@@ -15,7 +15,7 @@ export function TrackForm() {
   const mine = orders.slice(0, 3);
 
   return (
-    <div className="mt-8 flex w-full max-w-[460px] flex-col gap-4 lg:mx-auto">
+    <div className={compact ? "mt-2 flex w-full flex-col gap-3" : "mt-8 flex w-full max-w-[460px] flex-col gap-4 lg:mx-auto"}>
       <form
         className="flex gap-2"
         onSubmit={(e) => {
@@ -35,11 +35,11 @@ export function TrackForm() {
               setError(false);
             }}
             placeholder="e.g. MIMI-2406"
-            className="h-[54px] w-full rounded-full border border-stone-300 bg-white px-5 text-[16px] outline-none focus:border-stone-900"
+            className={`${compact ? "h-12" : "h-[54px]"} w-full rounded-full border border-stone-300 bg-white px-5 text-[16px] outline-none focus:border-stone-900`}
             aria-invalid={error}
           />
         </label>
-        <Button type="submit">Track</Button>
+        <Button type="submit" size={compact ? "sm" : "md"} className={compact ? "h-12 px-5" : ""}>Track</Button>
       </form>
       {error && (
         <p className="text-left text-[14px] text-red-700" role="alert">

@@ -1,13 +1,14 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 
-type Variant = "primary" | "secondary" | "light";
+type Variant = "primary" | "secondary" | "light" | "outlineLight";
 type Size = "md" | "sm";
 
 const variants: Record<Variant, string> = {
   primary: "bg-stone-900 text-orange-50 hover:bg-stone-800 border-[1.5px] border-stone-900",
   secondary: "border-[1.5px] border-stone-900 text-stone-900 hover:bg-stone-900 hover:text-orange-50",
   light: "bg-white text-stone-900 border-[1.5px] border-white hover:bg-orange-100 hover:border-orange-100",
+  outlineLight: "border-[1.5px] border-orange-50 text-orange-50 hover:bg-orange-50 hover:text-stone-900",
 };
 
 const sizes: Record<Size, string> = {

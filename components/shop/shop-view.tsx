@@ -138,9 +138,11 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
 
       <div className="no-scrollbar flex gap-2 overflow-x-auto px-5 lg:container-page lg:items-center lg:justify-between lg:overflow-visible">
         <div className="flex gap-2">{categoryChips}</div>
-        <Button variant="secondary" size="sm" className="hidden h-11 px-[18px] text-[15px] lg:inline-flex" onClick={() => setSheet(true)}>
-          Price & colour{activeExtras ? ` (${activeExtras})` : ""}
-        </Button>
+        <div className="hidden lg:block">
+          <Button variant="secondary" size="sm" className="h-11 px-[18px] text-[15px]" onClick={() => setSheet(true)}>
+            Price & colour{activeExtras ? ` (${activeExtras})` : ""}
+          </Button>
+        </div>
       </div>
 
       <div className="container-page flex items-center justify-between py-4 lg:hidden">
