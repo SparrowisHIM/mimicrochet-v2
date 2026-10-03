@@ -18,7 +18,13 @@ const figtree = Figtree({
   subsets: ["latin"],
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3020");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  openGraph: { images: ["/images/story/hero-ruby.jpg"], siteName: site.name },
   title: {
     default: `${site.name} · Handmade crochet from Port Harcourt`,
     template: `%s · ${site.name}`,
