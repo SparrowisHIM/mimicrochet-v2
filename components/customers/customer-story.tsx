@@ -64,15 +64,15 @@ function Story({ customer, next, onNext, onClose }: { customer: Customer; next: 
   const actions = (
     <div className="flex gap-2.5">
       {primary ? (
-        <Link href={primary.href!} className={buttonClass("primary", "md", "flex-1 lg:flex-none")}>
+        <Link href={primary.href!} className={buttonClass("primary", "md", "min-w-0 flex-1 px-4 lg:flex-none lg:px-7")}>
           Shop this piece
         </Link>
       ) : (
-        <Link href="/custom-order" className={buttonClass("primary", "md", "flex-1 lg:flex-none")}>
+        <Link href="/custom-order" className={buttonClass("primary", "md", "min-w-0 flex-1 px-4 lg:flex-none lg:px-7")}>
           Have yours made
         </Link>
       )}
-      <Link href="/shop" className={buttonClass("secondary", "md", "flex-1 lg:flex-none")}>
+      <Link href="/shop" className={buttonClass("secondary", "md", "min-w-0 flex-1 px-4 lg:flex-none lg:px-7")}>
         Browse the shop
       </Link>
     </div>
@@ -102,7 +102,7 @@ function Story({ customer, next, onNext, onClose }: { customer: Customer; next: 
       role="dialog"
       aria-modal="true"
       aria-label={`${customer.name}, ${customer.city}`}
-      className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-orange-50"
+      className="fixed inset-0 z-50 flex flex-col overflow-x-hidden overflow-y-auto bg-orange-50"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -214,7 +214,7 @@ function Story({ customer, next, onNext, onClose }: { customer: Customer; next: 
         </div>
         <div className="flex gap-3 px-5 pt-3 text-[13px] leading-[1.45] text-stone-500">
           {count > 1 && (
-            <span className="font-semibold text-stone-900 tabular-nums">
+            <span className="font-semibold whitespace-nowrap text-stone-900 tabular-nums">
               {index + 1} / {count}
             </span>
           )}

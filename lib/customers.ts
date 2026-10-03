@@ -19,7 +19,7 @@ export const customers: Customer[] = [
     slug: "favour",
     name: "Favour",
     city: "Bayelsa",
-    quote: "It’s so beautiful. I love it ❤️",
+    quote: "It’s so beautiful. I love it ❤️",
     wearing: [
       { name: "Ruffle bucket hat", detail: "Made to order", image: "/images/customers/favour-6.jpg" },
       { name: "Crochet bikini", detail: "Made to order", image: "/images/customers/favour-5.jpg" },
