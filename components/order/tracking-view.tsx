@@ -1,0 +1,345 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { WhatsAppIcon } from "@/components/icons";
+import { StageIcon } from "@/components/order/stage-icons";
+import { Button, buttonClass } from "@/components/ui/button";
+import { findOrder, updateOrder, useOrders, type Order } from "@/lib/orders";
+import { formatNaira, whatsappLink } from "@/lib/site";
+import { stages } from "@/lib/stages";
+
+const ease = [0.22, 1, 0.36, 1] as const;
+
+function pieceWord(name: string) {
+  const n = name.toLowerCase();
+  if (n.includes("dress")) return "dress";
+  if (n.includes("shirt")) return "shirt";
+  if (n.includes("set") || n.includes("bikini") || n.includes("shorts")) return "set";
+  if (n.includes("hat") || n.includes("beanie")) return "hat";
+  if (n.includes("earring")) return "earrings";
+  if (n.includes("sweater") || n.includes("cardigan") || n.includes("vest")) return "top";
+  return "piece";
+}
+
+function headline(o: Order) {
+  const w = pieceWord(o.piece.name);
+  const isAre = w === "earrings" ? "are" : "is";
+  if (o.stage === 0) return { title: "Mimi has your idea", lead: "She’ll message you on WhatsApp to agree the price and the date." };
+  if (o.stage === 1 && !o.depositPaid) return { title: "Your price is ready", lead: "Mimi starts as soon as your deposit arrives." };
+  if (o.stage === 1) return { title: "Deposit received", lead: "Mimi is picking your yarn and starting soon." };
+  if (o.stage === 2) return { title: `Your ${w} ${isAre} being made`, lead: `Mimi started on it. She’ll update this page when it’s ready to send.` };
+  if (o.stage === 3) return { title: `Your ${w} ${isAre} ready`, lead: "Mimi is passing your number to a rider. You pay the rider when it arrives." };
+  return { title: "It’s home. Wear it loud.", lead: "Thank you for ordering from Mimi." };
+}
+
+/* ------------- the signature moment: spotlight what changed since the last visit ------------- */
+
+function SpotlightOutline({ show }: { show: boolean }) {
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.svg className="pointer-events-none absolute -inset-[2px] z-20 h-[calc(100%+4px)] w-[calc(100%+4px)] overflow-visible" initial={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.6 } }} aria-hidden>
+          <defs>
+            <linearGradient id="spot" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#fbbf24" />
+              <stop offset="0.5" stopColor="#fb7185" />
+              <stop offset="1" stopColor="#34d399" />
+            </linearGradient>
+          </defs>
+          <motion.rect x="0" y="0" width="100%" height="100%" rx="24" fill="none" stroke="url(#spot)" strokeWidth="3" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.9, ease: "easeInOut", delay: 0.35 }} />
+        </motion.svg>
+      )}
+    </AnimatePresence>
+  );
+}
+
+const seenKey = (code: string) => `mimi:seen:${code}`;
+
+function useSpotlight(o: Order | undefined) {
+  const reduce = useReducedMotion();
+  const [phase, setPhase] = useState<"idle" | "lift" | "done">("idle");
+  useEffect(() => {
+    if (!o) return;
+    let seen = o.stage;
+    const markSeen = () => {
+      try {
+        window.localStorage.setItem(seenKey(o.code), String(o.stage));
+      } catch {}
+    };
+    try {
+      const raw = window.localStorage.getItem(seenKey(o.code));
+      // First visit to the demo order: pretend the customer last saw "Price agreed".
+      seen = raw === null ? (o.sample ? o.stage - 1 : o.stage) : Number(raw);
+    } catch {}
+    if (reduce || o.stage <= seen) {
+      markSeen();
+      return;
+    }
+    // Only mark it seen once the moment has actually played.
+    const t1 = setTimeout(() => setPhase("lift"), 700);
+    const t2 = setTimeout(() => {
+      setPhase("done");
+      markSeen();
+    }, 3000);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [o, reduce]);
+  return phase;
+}
+
+/* ------------------------------------ pieces ------------------------------------ */
+
+function Stepper({ stage, lifted }: { stage: number; lifted: boolean }) {
+  return (
+    <ol className="flex items-start justify-between" aria-label="Order stages">
+      {stages.map((s, i) => {
+        const done = i < stage;
+        const now = i === stage;
+        return (
+          <li key={s.key} className="relative flex flex-1 flex-col items-center gap-1.5" aria-current={now ? "step" : undefined}>
+            {i > 0 && (
+              <span className="absolute top-[17px] right-1/2 left-[-50%] -z-0 h-0.5 bg-stone-200">
+                <motion.span className="block h-full origin-left bg-stone-900" initial={false} animate={{ scaleX: i <= stage ? 1 : 0 }} transition={{ duration: 0.6, ease, delay: lifted ? 0.5 : 0 }} />
+              </span>
+            )}
+            <motion.span
+              className={`relative z-10 grid size-9 place-items-center rounded-full ${
+                now ? "bg-amber-100 text-amber-800 shadow-[0_0_0_4px_#fde68a]" : done ? "bg-stone-900 text-orange-50" : "border border-dashed border-stone-300 bg-white text-stone-400"
+              }`}
+              animate={now && lifted ? { scale: [1, 1.25, 1] } : { scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+            >
+              <StageIcon index={i} />
+            </motion.span>
+            <span className={`text-[12px] ${now ? "font-semibold text-stone-900" : done ? "font-medium text-stone-700" : "text-stone-400"}`}>{s.short}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <section className={`rounded-[22px] bg-white p-5 lg:p-6 ${className}`}>{children}</section>;
+}
+
+export function TrackingView({ code }: { code: string }) {
+  const orders = useOrders();
+  const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
+  const order = findOrder(orders, code);
+  const phase = useSpotlight(order);
+  const [showAll, setShowAll] = useState(false);
+
+  if (!hydrated) return <div className="min-h-[70vh]" />;
+  if (!order)
+    return (
+      <div className="container-page flex min-h-[60vh] flex-col items-start justify-center gap-4 py-16">
+        <h1 className="font-serif text-[36px] leading-tight lg:text-[48px]">We can’t find that order on this phone</h1>
+        <p className="max-w-[520px] text-[17px] text-stone-600">Open the tracking link Mimi sent you on WhatsApp, or ask her for it. Tracking links look like mimicrochet.ng/t/k7x2p9.</p>
+        <div className="flex flex-wrap gap-3">
+          <a href={whatsappLink("Hi Mimi! Could you send me my tracking link?")} target="_blank" rel="noreferrer" className={buttonClass("primary")}>
+            <WhatsAppIcon size={18} /> Ask Mimi
+          </a>
+          <Link href="/t/k7x2p9" className={buttonClass("secondary")}>
+            See an example order
+          </Link>
+        </div>
+      </div>
+    );
+
+  const h = headline(order);
+  const latest = order.updates[order.updates.length - 1];
+  const lifted = phase === "lift";
+  const deposit = order.price ? Math.round(order.price * 0.6) : undefined;
+  const balance = order.price && deposit ? order.price - deposit : undefined;
+  const awaitingDeposit = order.stage === 1 && !order.depositPaid && order.price;
+  const ask = whatsappLink(`Hi Mimi! It’s about my order ${order.id}.`);
+
+  const latestCard = (
+    <div className={`relative transition-[transform,box-shadow] duration-500 ${lifted ? "z-40 scale-[1.03] shadow-[0_30px_80px_-20px_rgb(28_25_23/0.35)]" : ""} rounded-[22px]`}>
+      <SpotlightOutline show={lifted} />
+      <Card className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[16px] font-semibold">Latest from Mimi</h2>
+          <span className="text-[14px] text-stone-500">{latest.at}</span>
+        </div>
+        {latest.photo && (
+          <div className="relative aspect-[4/5] overflow-hidden rounded-[16px] bg-orange-100">
+            <Image src={latest.photo} alt="Mimi’s latest progress photo" fill sizes="(min-width: 1024px) 600px, 90vw" className="object-cover" preload />
+          </div>
+        )}
+        <div className="flex gap-3">
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-orange-100 font-serif text-[15px] text-amber-800">M</span>
+          <div className="flex flex-col">
+            <span className="text-[14px] font-semibold">Mimi</span>
+            <AnimatePresence mode="wait">
+              <motion.p key={latest.note} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="text-[15px] leading-[1.5] text-stone-600">
+                {latest.note}
+              </motion.p>
+            </AnimatePresence>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+
+  const timeline = (
+    <Card>
+      <div className="flex items-center justify-between">
+        <h2 className="text-[16px] font-semibold">Every update</h2>
+        <button type="button" onClick={() => setShowAll((v) => !v)} className="text-[14px] font-medium underline underline-offset-4" aria-expanded={showAll}>
+          {showAll ? "Hide" : "Show"}
+        </button>
+      </div>
+      <AnimatePresence initial={false}>
+        {showAll && (
+          <motion.ol initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+            {stages.map((s, i) => {
+              const u = order.updates.filter((x) => x.stage === i).at(-1);
+              const done = i <= order.stage;
+              return (
+                <li key={s.key} className="relative flex gap-3.5 pt-5">
+                  <span className="flex flex-col items-center">
+                    <span className={`mt-1 size-3 rounded-full ${i === order.stage ? "bg-amber-700 shadow-[0_0_0_4px_#fde68a]" : done ? "bg-stone-900" : "border-[1.5px] border-stone-300"}`} />
+                    {i < stages.length - 1 && <span className={`mt-1 w-px flex-1 ${i < order.stage ? "bg-stone-900" : "bg-stone-200"}`} />}
+                  </span>
+                  <span className="flex flex-col pb-1">
+                    <span className={`text-[16px] ${done ? "font-semibold" : "text-stone-400"}`}>{s.label}</span>
+                    {u ? (
+                      <>
+                        <span className="text-[13px] text-stone-500">{u.at}</span>
+                        <span className="text-[15px] text-stone-600">{u.note}</span>
+                      </>
+                    ) : (
+                      <span className="text-[14px] text-stone-400">{i === order.stage + 1 ? "Up next" : i === stages.length - 1 ? "Last step" : ""}</span>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </motion.ol>
+        )}
+      </AnimatePresence>
+    </Card>
+  );
+
+  const money = order.price ? (
+    awaitingDeposit ? (
+      <Card className="flex flex-col gap-4 border border-amber-200 bg-amber-50">
+        <div className="flex flex-col gap-1">
+          <span className="text-[14px] font-semibold text-amber-800">Deposit to pay now (60%)</span>
+          <span className="font-sans text-[34px] leading-none font-semibold tracking-[-0.01em]">{formatNaira(deposit!)}</span>
+        </div>
+        <p className="text-[15px] leading-[1.5] text-stone-700">Pay by bank transfer to the account Mimi sent with your price on WhatsApp, then tap below. She checks her bank and starts.</p>
+        <Button onClick={() => updateOrder(order.id, { depositPaid: true })} disabled={order.sample}>
+          I’ve paid the deposit
+        </Button>
+        <p className="text-[13px] text-amber-800">Balance when ready (40%): {formatNaira(balance!)}. Delivery is paid to the rider on arrival.</p>
+      </Card>
+    ) : (
+      <Card className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <span className="text-[14px] text-stone-500">{order.stage >= 4 ? "Paid in full" : "Left to pay when it’s ready (40%)"}</span>
+          <span className="text-[34px] leading-none font-semibold tracking-[-0.01em]">{formatNaira(order.stage >= 4 ? order.price : balance!)}</span>
+        </div>
+        <dl className="flex flex-col gap-2 border-t border-stone-100 pt-4 text-[15px]">
+          <div className="flex justify-between"><dt className="text-stone-500">Price</dt><dd>{formatNaira(order.price)}</dd></div>
+          <div className="flex justify-between"><dt className="text-stone-500">Deposit paid (60%)</dt><dd>−{formatNaira(deposit!)}</dd></div>
+          <div className="flex justify-between font-semibold"><dt>Balance (40%)</dt><dd>{formatNaira(balance!)}</dd></div>
+        </dl>
+        <p className="text-[13px] text-stone-500">Mimi confirms how to pay on WhatsApp. Delivery is paid to the rider on arrival.</p>
+      </Card>
+    )
+  ) : null;
+
+  const details = (
+    <Card className="flex flex-col gap-4">
+      <h2 className="text-[16px] font-semibold">Your order</h2>
+      <div className="flex items-center gap-3">
+        {order.piece.image && (
+          <span className="relative h-[75px] w-14 shrink-0 overflow-hidden rounded-[10px] bg-orange-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={order.piece.image} alt="" className="size-full object-cover" />
+          </span>
+        )}
+        <span className="flex flex-col">
+          <span className="text-[15px] font-medium">{order.piece.name}</span>
+          <span className="text-[14px] text-stone-500">
+            {[order.size ? `Size ${order.size}` : order.measurements ? "Your measurements" : "", order.colours === "photo" ? "Colours as in the photo" : order.colourNote].filter(Boolean).join(" · ")}
+          </span>
+        </span>
+      </div>
+      <dl className="flex flex-col gap-2 border-t border-stone-100 pt-4 text-[15px]">
+        <div className="flex justify-between gap-6"><dt className="text-stone-500">Delivery to</dt><dd className="text-right">{order.area}, {order.state}</dd></div>
+        {order.readyBy && <div className="flex justify-between"><dt className="text-stone-500">Expected ready</dt><dd>{order.readyBy}</dd></div>}
+        <div className="flex justify-between"><dt className="text-stone-500">Order</dt><dd>{order.id}</dd></div>
+      </dl>
+    </Card>
+  );
+
+  const contact = (
+    <a href={ask} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-[22px] bg-white p-4 hover:bg-orange-100/60">
+      <span className="grid size-10 place-items-center rounded-full bg-orange-100 font-serif text-[17px] text-amber-800">M</span>
+      <span className="flex flex-1 flex-col">
+        <span className="text-[15px] font-semibold">Mimi</span>
+        <span className="text-[13px] text-stone-500">Usually replies the same day</span>
+      </span>
+      <WhatsAppIcon size={20} />
+    </a>
+  );
+
+  return (
+    <div className="relative pb-28 lg:pb-24">
+      <AnimatePresence>
+        {lifted && (
+          <motion.div className="fixed inset-0 z-30 bg-orange-50/50 backdrop-blur-[6px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.5 } }} aria-hidden />
+        )}
+      </AnimatePresence>
+
+      <div className="container-page flex flex-col items-center gap-3 pt-8 pb-6 text-center lg:pt-14 lg:pb-10">
+        <span className="rounded-full border border-stone-200 bg-white px-3.5 py-1.5 text-[13px] font-medium">Order {order.id}</span>
+        <h1 className="max-w-[640px] font-serif text-[36px] leading-[1.05] tracking-[-0.01em] text-balance lg:text-[56px]">{h.title}</h1>
+        <p className="max-w-[520px] text-[16px] text-stone-600 lg:text-[18px]">{h.lead}</p>
+        {order.sample && <p className="text-[13px] text-stone-400">This is an example order, so you can see how tracking works.</p>}
+      </div>
+
+      <div className="container-page flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-8">
+        <div className="flex flex-col gap-4 lg:flex-1">
+          <div className={`relative rounded-[22px] transition-transform duration-500 ${lifted ? "z-40" : ""}`}>
+            <Card className="flex flex-col gap-5">
+              <Stepper stage={order.stage} lifted={lifted} />
+              {order.readyBy && (
+                <div className="flex justify-between border-t border-stone-100 pt-4 text-[15px]">
+                  <span className="text-stone-500">{order.stage >= 4 ? "Delivered" : "Expected ready"}</span>
+                  <span className="font-semibold">{order.readyBy}</span>
+                </div>
+              )}
+            </Card>
+          </div>
+          {latestCard}
+          {timeline}
+        </div>
+        <div className="flex flex-col gap-4 lg:sticky lg:top-28 lg:w-[400px]">
+          {money}
+          {details}
+          {contact}
+          <p className="pt-1 text-center text-[13px] text-stone-400">Only people with this link can see this page.</p>
+        </div>
+      </div>
+
+      <a
+        href={ask}
+        target="_blank"
+        rel="noreferrer"
+        className="fixed bottom-[max(16px,env(safe-area-inset-bottom))] left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-stone-900 px-5 py-3.5 text-[15px] font-semibold text-orange-50 shadow-[0_12px_32px_rgb(28_25_23/0.3)] lg:hidden"
+      >
+        <WhatsAppIcon size={18} /> Message Mimi
+      </a>
+    </div>
+  );
+}
