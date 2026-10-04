@@ -47,7 +47,7 @@ export function Header() {
         <div className="flex items-center lg:w-[280px]">
           <Link
             href="/"
-            className="font-serif text-[19px] tracking-[-0.01em] text-stone-900 lg:text-[22px]"
+            className="font-serif text-[19px] tracking-[-0.01em] text-stone-900 max-[380px]:text-[15px] lg:text-[22px]"
             aria-label={`${site.name}, home`}
           >
             {site.name}
@@ -79,7 +79,7 @@ export function Header() {
           <Link href="/shop?search=1" className={iconButton} aria-label="Search the shop">
             <SearchIcon />
           </Link>
-          <Link href="/saved" className={iconButton} aria-label={`Saved pieces, ${saved.length}`}>
+          <Link href="/saved" className={`${iconButton} max-[380px]:hidden`} aria-label={`Saved pieces, ${saved.length}`}>
             <HeartIcon />
             <CountBadge count={saved.length} />
           </Link>
@@ -110,7 +110,7 @@ export function Header() {
             className="absolute inset-x-0 top-full h-[calc(100dvh-62px)] border-t border-stone-200/70 bg-orange-50 px-5 pt-6 lg:hidden"
           >
             <ul className="flex flex-col">
-              {[...navLinks, { href: "/contact", label: "Contact" }].map((link, i) => (
+              {[...navLinks, { href: "/saved", label: "Saved pieces" }, { href: "/contact", label: "Contact" }].map((link, i) => (
                 <motion.li
                   key={link.href}
                   initial={{ opacity: 0, y: 12 }}

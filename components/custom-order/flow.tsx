@@ -654,7 +654,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                           <span className="text-[15px] font-semibold">Size</span>
                           <div className="flex gap-2" role="radiogroup" aria-label="Size">
                             {sizeLabels.map((s) => (
-                              <Chip key={s} on={d.size === s} onClick={() => set({ size: d.size === s ? undefined : s, sizeOk: false })} className="flex-1 justify-center lg:flex-none lg:px-6">
+                              <Chip key={s} on={d.size === s} onClick={() => set({ size: d.size === s ? undefined : s, sizeOk: false })} className="flex-1 justify-center max-[380px]:px-3 lg:flex-none lg:px-6">
                                 {s}
                               </Chip>
                             ))}

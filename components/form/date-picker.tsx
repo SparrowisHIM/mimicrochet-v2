@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, LayoutGroup, motion, useIsPresent, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { Chip } from "@/components/ui/chip";
 
@@ -26,6 +26,11 @@ export const longDate = (iso: string) => fromISO(iso).toLocaleDateString("en-GB"
 export const shortDate = (iso: string) => fromISO(iso).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 
 const weekdays = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+
+function CalendarMonth(props: React.ComponentProps<typeof motion.div>) {
+  const present = useIsPresent();
+  return <motion.div {...props} inert={!present} />;
+}
 const quick: [string, number][] = [
   ["In 2 weeks", 14],
   ["In 3 weeks", 21],
@@ -140,7 +145,7 @@ export function DatePicker({
               <motion.span
                 key={monthLabel}
                 custom={dir}
-                className="absolute inset-0 font-serif text-[22px] leading-8"
+                className="absolute inset-0 font-serif text-[22px] leading-8 max-[380px]:text-[18px]"
                 initial={reduce ? { opacity: 0 } : { y: dir * 26, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={reduce ? { opacity: 0 } : { y: dir * -26, opacity: 0 }}
@@ -181,7 +186,7 @@ export function DatePicker({
         <LayoutGroup id={`cal-${id ?? "date"}`}>
           <div className="relative px-2.5 pb-3 lg:px-3.5" onKeyDown={nav} ref={grid}>
             <AnimatePresence mode="popLayout" initial={false} custom={dir}>
-              <motion.div
+              <CalendarMonth
                 key={monthLabel}
                 custom={dir}
                 role="grid"
@@ -244,7 +249,7 @@ export function DatePicker({
                     })}
                   </div>
                 ))}
-              </motion.div>
+              </CalendarMonth>
             </AnimatePresence>
           </div>
         </LayoutGroup>
