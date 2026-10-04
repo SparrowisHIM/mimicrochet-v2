@@ -222,7 +222,7 @@ export function DatePicker({
                             onClick={() => choose(d)}
                             onFocus={() => setFocusISO(iso)}
                             aria-label={`${d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}${isRush ? ", rush order" : ""}${off && d < min ? ", too soon" : ""}`}
-                            className={`group relative mx-auto grid size-11 place-items-center rounded-full text-[15px] tabular-nums outline-none lg:size-12 ${
+                            className={`group relative mx-auto grid h-11 w-full max-w-12 place-items-center rounded-full text-[15px] tabular-nums outline-none lg:h-12 ${
                               off ? "cursor-not-allowed text-stone-300" : "cursor-pointer text-stone-900"
                             } focus-visible:ring-2 focus-visible:ring-stone-900 focus-visible:ring-offset-1`}
                           >
