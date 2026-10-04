@@ -9,48 +9,55 @@ import { Button, buttonClass } from "@/components/ui/button";
 import { Confetti } from "@/components/ui/confetti";
 import { bagTotal, useBagItems } from "@/lib/bag";
 import { bagStore } from "@/lib/local-store";
-import { newOrderIds, nigerianStates, saveOrder, type Order } from "@/lib/orders";
+import { Field, inputClass, NameInput, PhoneInput, useNudge } from "@/components/form/fields";
+import { AreaPicker, StatePicker } from "@/components/form/place-picker";
+import { isLgaOf, isNigerianState } from "@/lib/nigeria";
+import { newOrderIds, saveOrder, type Order } from "@/lib/orders";
 import { formatNaira } from "@/lib/site";
+import { fullPhone, hasWords, isEmail, isName, phoneDigits, phoneProblem } from "@/lib/validate";
 
 const ease = [0.22, 1, 0.36, 1] as const;
-const input =
-  "h-[52px] w-full rounded-[14px] border border-stone-300 bg-white px-4 text-[16px] outline-none transition-[border-color,box-shadow] placeholder:text-stone-400 focus:border-stone-900 focus:shadow-[0_0_0_3px_rgb(28_25_23/0.08)] aria-[invalid=true]:border-red-500";
-
 function Num({ n }: { n: number }) {
   return <span className="grid size-6 place-items-center rounded-full bg-stone-900 text-[13px] font-semibold text-orange-50">{n}</span>;
-}
-
-function Shake({ on, children }: { on: boolean; children: React.ReactNode }) {
-  const reduce = useReducedMotion();
-  return (
-    <motion.div animate={on && !reduce ? { x: [0, -6, 6, -4, 4, 0] } : { x: 0 }} transition={{ duration: 0.3 }}>
-      {children}
-    </motion.div>
-  );
 }
 
 export function CheckoutView() {
   const items = useBagItems();
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const total = bagTotal(items);
-  const [f, setF] = useState({ name: "", phone: "", email: "", state: "", address: "", note: "" });
+  const [f, setF] = useState({ name: "", phone: "", email: "", state: "", area: "", address: "", note: "" });
   const [tried, setTried] = useState(0);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [nameNudge, nudgeName] = useNudge();
+  const [phoneNudge, nudgePhone] = useNudge();
   const [paying, setPaying] = useState(false);
   const [paid, setPaid] = useState<Order | null>(null);
   const [showItems, setShowItems] = useState(false);
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF((c) => ({ ...c, [k]: e.target.value }));
+  const put = (patch: Partial<typeof f>) => setF((c) => ({ ...c, ...patch }));
+  const blur = (k: string) => () => setTouched((t) => ({ ...t, [k]: true }));
 
+  const phoneErr = phoneProblem(f.phone);
   const bad = {
-    name: f.name.trim().length < 2,
-    phone: f.phone.replace(/\D/g, "").length < 10,
-    email: !/^\S+@\S+\.\S+$/.test(f.email),
-    state: !f.state,
-    address: f.address.trim().length < 4,
+    name: !isName(f.name),
+    phone: Boolean(phoneErr),
+    email: !isEmail(f.email),
+    state: !isNigerianState(f.state),
+    area: !isLgaOf(f.state, f.area),
+    address: !hasWords(f.address, 6),
   };
   const ok = !Object.values(bad).some(Boolean);
+  const show = (k: keyof typeof bad) => (tried > 0 || Boolean(touched[k])) && bad[k];
 
   const pay = async () => {
-    if (!ok) return setTried((n) => n + 1);
+    if (paying) return;
+    if (!ok) {
+      setTried((n) => n + 1);
+      const first = (Object.keys(bad) as (keyof typeof bad)[]).find((k) => bad[k]);
+      const el = first ? document.getElementById(`co-${first}`) : null;
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      el?.focus({ preventScroll: true });
+      return;
+    }
     setPaying(true);
     await new Promise((r) => setTimeout(r, 1300));
     const { id, code } = newOrderIds();
@@ -65,10 +72,10 @@ export function CheckoutView() {
       colours: "photo",
       when: "No rush",
       name: f.name.trim(),
-      phone: f.phone.trim(),
+      phone: fullPhone(phoneDigits(f.phone)),
       email: f.email.trim(),
       state: f.state,
-      area: f.address.trim(),
+      area: `${f.address.trim()}, ${f.area}`,
       notes: f.note.trim() || undefined,
       stage: 0,
       price: total,
@@ -173,29 +180,37 @@ export function CheckoutView() {
         transition={{ duration: 0.45, ease, delay: 0.08 }}
         className="flex flex-col gap-7 lg:w-[520px] lg:rounded-[28px] lg:bg-white lg:p-8 lg:shadow-[0_24px_60px_-20px_rgb(28_25_23/0.18)]"
       >
-        <fieldset className="flex flex-col gap-4">
+        <fieldset className="flex flex-col gap-5">
           <legend className="mb-4 flex items-center gap-2.5 text-[17px] font-semibold"><Num n={1} /> Your details</legend>
-          <Shake on={tried > 0 && bad.name}><label className="flex flex-col gap-2"><span className="text-[14px] font-medium">Your name</span><input autoComplete="name" className={input} value={f.name} onChange={set("name")} aria-invalid={tried > 0 && bad.name} /></label></Shake>
-          <Shake on={tried > 0 && bad.phone}><label className="flex flex-col gap-2"><span className="text-[14px] font-medium">WhatsApp number</span><input type="tel" autoComplete="tel" placeholder="+234 801 234 5678" className={input} value={f.phone} onChange={set("phone")} aria-invalid={tried > 0 && bad.phone} /></label></Shake>
-          <Shake on={tried > 0 && bad.email}><label className="flex flex-col gap-2"><span className="text-[14px] font-medium">Email (for your receipt)</span><input type="email" autoComplete="email" className={input} value={f.email} onChange={set("email")} aria-invalid={tried > 0 && bad.email} /></label></Shake>
+          <Field label="Your name" htmlFor="co-name" error={show("name") ? "Add your name, using letters only." : null} nudge={nameNudge} shake={tried}>
+            <NameInput id="co-name" value={f.name} onChange={(name) => put({ name })} onBlur={blur("name")} invalid={show("name")} onNudge={nudgeName} />
+          </Field>
+          <Field label="WhatsApp number" htmlFor="co-phone" hint="Mimi and the rider use this to reach you." error={show("phone") ? phoneErr : null} nudge={phoneNudge} shake={tried}>
+            <PhoneInput id="co-phone" value={f.phone} onChange={(phone) => put({ phone })} onBlur={blur("phone")} invalid={show("phone")} onNudge={nudgePhone} />
+          </Field>
+          <Field label="Email" htmlFor="co-email" hint="For your receipt." error={show("email") ? "Add an email like name@example.com." : null} shake={tried}>
+            <input id="co-email" type="email" inputMode="email" autoComplete="email" className={inputClass} value={f.email} onChange={(e) => put({ email: e.target.value.replace(/\s/g, "") })} onBlur={blur("email")} aria-invalid={show("email")} />
+          </Field>
         </fieldset>
 
-        <fieldset className="flex flex-col gap-4">
+        <fieldset className="flex flex-col gap-5">
           <legend className="mb-4 flex items-center gap-2.5 text-[17px] font-semibold"><Num n={2} /> Delivery</legend>
           <div className="rounded-[14px] bg-amber-100 px-4 py-3 text-[14px] leading-[1.45] text-amber-800">
             <p className="font-semibold">Delivery anywhere in Nigeria</p>
             Mimi passes your number to a rider. You pay the rider for delivery when it arrives.
           </div>
-          <Shake on={tried > 0 && bad.state}>
-            <label className="flex flex-col gap-2"><span className="text-[14px] font-medium">State</span>
-              <select className={`${input} appearance-none`} value={f.state} onChange={set("state")} aria-invalid={tried > 0 && bad.state}>
-                <option value="">Choose your state</option>
-                {nigerianStates.map((s) => <option key={s}>{s}</option>)}
-              </select>
-            </label>
-          </Shake>
-          <Shake on={tried > 0 && bad.address}><label className="flex flex-col gap-2"><span className="text-[14px] font-medium">Address</span><input autoComplete="street-address" className={input} value={f.address} onChange={set("address")} aria-invalid={tried > 0 && bad.address} /></label></Shake>
-          <label className="flex flex-col gap-2"><span className="text-[14px] font-medium">Note for the rider (optional)</span><input className={input} placeholder="e.g. Call when you’re at the gate" value={f.note} onChange={set("note")} /></label>
+          <Field label="State" htmlFor="co-state" error={show("state") ? "Choose your state from the list." : null} shake={tried}>
+            <StatePicker id="co-state" value={f.state} onChange={(state) => put({ state, area: isLgaOf(state, f.area) ? f.area : "" })} invalid={show("state")} />
+          </Field>
+          <Field label="Area" htmlFor="co-area" hint="Your local government area. Search by town too, like Lekki or Rumuola." error={!bad.state && show("area") ? "Choose your area from the list." : null} shake={tried}>
+            <AreaPicker id="co-area" state={f.state} value={f.area} onChange={(area) => put({ area })} invalid={!bad.state && show("area")} />
+          </Field>
+          <Field label="Street address" htmlFor="co-address" hint="House number, street and a landmark the rider can find." error={show("address") ? "Add your street address so the rider can find you." : null} shake={tried}>
+            <input id="co-address" autoComplete="street-address" className={inputClass} placeholder="e.g. 12 Woji Road, by the filling station" value={f.address} onChange={(e) => put({ address: e.target.value.slice(0, 120) })} onBlur={blur("address")} aria-invalid={show("address")} />
+          </Field>
+          <Field label="Note for the rider (optional)" htmlFor="co-note">
+            <input id="co-note" className={inputClass} placeholder="e.g. Call when you’re at the gate" value={f.note} onChange={(e) => put({ note: e.target.value.slice(0, 120) })} />
+          </Field>
         </fieldset>
 
         <fieldset className="flex flex-col gap-4">
