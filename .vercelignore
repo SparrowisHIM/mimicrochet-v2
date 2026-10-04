@@ -4,3 +4,4 @@ notes.md
 .claude/
 .git/
 tests/
+.env*
