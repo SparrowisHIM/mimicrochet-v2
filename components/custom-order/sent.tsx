@@ -14,12 +14,14 @@ const ease = [0.22, 1, 0.36, 1] as const;
 const origin = () => window.location.origin;
 const useOrigin = () => useSyncExternalStore(() => () => {}, origin, () => "");
 
-export function orderMessage(o: Order, link: string) {
-  const parts = [`Hi Mimi! I just sent a custom order: ${o.id}`];
+export function orderMessage(o: Order) {
+  const parts = [`Hi Mimi! I'd like to discuss this custom request: ${o.id}`];
   let what = o.piece.source === "photo" ? "from my photo" : o.piece.source === "words" ? "my own idea" : `the ${o.piece.name}`;
   if (o.size) what += ` in size ${o.size}`;
-  what += o.colours === "photo" ? ", colours as in the photo" : `, in ${o.colourNote}`;
+  const visual = o.piece.source !== "words";
+  what += o.colours === "different" ? `, in ${o.colourNote}` : visual ? ", colours as in the photo" : ", colours your choice";
   parts[0] += `, ${what}.`;
+  parts.push(`Deliver to ${o.area}, ${o.state}.`);
   if (o.measurements) {
     const m = o.measurements;
     const bits = (["bust", "waist", "hips", "length"] as const).filter((k) => m[k]).map((k) => `${k} ${m[k]}cm`);
@@ -27,7 +29,9 @@ export function orderMessage(o: Order, link: string) {
   }
   if (o.when !== "No rush") parts.push(`I need it ${o.when.toLowerCase()}.`);
   if (o.description) parts.push(o.description);
-  parts.push(`My tracking link is ${link}`);
+  if (o.budget) parts.push(`My budget: ${o.budget}.`);
+  if (o.notes) parts.push(`Notes: ${o.notes}`);
+  parts.push(`My name is ${o.name}. You can reach me on ${o.phone}.`);
   return parts.join(" ");
 }
 
@@ -36,7 +40,7 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
   const base = useOrigin();
   const link = `${base}/t/${order.code}`;
   const pretty = link.replace(/^https?:\/\//, "");
-  const [message, setMessage] = useState(() => orderMessage(order, link || `/t/${order.code}`));
+  const [message, setMessage] = useState(() => orderMessage(order));
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
@@ -52,13 +56,14 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
   };
 
   const send = async () => {
-    const text = message.replace(`/t/${order.code}`, pretty);
+    const text = message;
     // Phones can share the photos and voice note straight into WhatsApp with the message.
     if (files.length && navigator.canShare?.({ files, text })) {
       try {
         await navigator.share({ files, text });
         return;
-      } catch {
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
         // cancelled: fall back to the chat link
       }
     }
@@ -85,18 +90,18 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
           </motion.span>
         </div>
         <motion.div {...rise(0.1)} className="flex flex-col gap-3">
-          <h1 className="font-serif text-[36px] leading-[1.05] tracking-[-0.01em] lg:text-[52px]">Sent! Mimi’s on it.</h1>
+          <h1 className="font-serif text-[36px] leading-[1.05] tracking-[-0.01em] lg:text-[52px]">Your idea, ready for Mimi.</h1>
           <p className="text-[16px] leading-[1.5] text-stone-600 lg:text-[18px]">
-            Your order number is <span className="whitespace-nowrap">{order.id}</span>. Mimi usually replies on WhatsApp the same day.
+            Your request number is <span className="whitespace-nowrap">{order.id}</span>. Check your message below, then send it on WhatsApp so Mimi can agree the price and timing with you.
           </p>
         </motion.div>
 
         <motion.div {...rise(0.2)}>
-          <TrackingCard orderId={order.id} piece={order.piece.name} stage={0} note="Request sent. Mimi will reply on WhatsApp." noteFrom="Just now" />
+          <TrackingCard orderId={order.id} piece={order.piece.name} stage={0} note="Ready to share. Send your request on WhatsApp to agree the next step." noteFrom="Just now" />
         </motion.div>
 
         <motion.div {...rise(0.3)} className="flex flex-col gap-2.5 rounded-[22px] border border-stone-200 bg-white p-5">
-          <span className="text-[15px] font-semibold">Your tracking link</span>
+          <span className="text-[15px] font-semibold">Preview your order</span>
           <div className="flex items-center justify-between gap-3">
             <Link href={`/t/${order.code}`} className="truncate text-[16px] font-medium underline-offset-4 hover:underline">
               {pretty || `/t/${order.code}`}
@@ -105,7 +110,7 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
               {copied ? "Copied" : "Copy"}
             </Button>
           </div>
-          <span className="text-[14px] text-stone-500">Save it. It shows every step, from today to your door.</span>
+          <span className="text-[14px] text-stone-500">This preview is saved on this browser only. Live tracking across devices is not connected yet.</span>
         </motion.div>
 
         <motion.div {...rise(0.4)} className="flex flex-col gap-3 rounded-[22px] border border-stone-200 bg-white p-5">
@@ -120,7 +125,7 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
           {editing ? (
             <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={5} className="w-full rounded-[12px] border border-stone-300 p-3 text-[15px] leading-[1.5] outline-none focus:border-stone-900" aria-label="Edit the message" />
           ) : (
-            <p className="border-l-2 border-stone-200 pl-3 text-[15px] leading-[1.55] text-stone-700">{message.replace(`/t/${order.code}`, pretty || `/t/${order.code}`)}</p>
+            <p className="border-l-2 border-stone-200 pl-3 text-[15px] leading-[1.55] text-stone-700">{message}</p>
           )}
           {(order.photos.length > 0 || order.hasVoiceNote) && (
             <div className="flex items-center gap-2 pl-3">
