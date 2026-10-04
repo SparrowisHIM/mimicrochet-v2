@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@keyframes customer-photo-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
 /*
   Mimi Crochet v2 foundations (Figma "Foundations" page).
   Colours are Tailwind palette values used directly in markup:
