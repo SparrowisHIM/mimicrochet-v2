@@ -63,7 +63,7 @@ export const demoOrder: Order = {
   updates: [
     { stage: 0, note: "Request sent with your size and colours.", at: "2 Oct" },
     { stage: 1, note: "Price agreed with Mimi on WhatsApp.", at: "3 Oct" },
-    { stage: 2, note: "The top is done. Starting the skirt now.", at: "Today", photo: "/images/story/ruby-in-progress.jpg" },
+    { stage: 2, note: "The top is done. Starting the skirt now.", at: "Today", photo: "/images/story/ruby-taking-shape.jpg" },
   ],
 };
 

@@ -1,87 +1,317 @@
 "use client";
 
 import Image from "next/image";
-import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import {
+  animate,
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useMotionValueEvent,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+  type MotionValue,
+} from "motion/react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { RevealText } from "@/components/motion/reveal";
 import { ButtonLink } from "@/components/ui/button";
+import { demoOrder } from "@/lib/orders";
+import { formatNaira } from "@/lib/site";
 import { stages } from "@/lib/stages";
+import { useMedia } from "@/lib/use-media";
 
-const story = [
-  { photo: "/images/story/hero-ruby.jpg", alt: "The full Ruby crochet set laid flat beside red yarn", title: "Start with a little inspiration.", detail: "A saved photo, a colour you love, an idea you can't shake. Give Mimi a starting point.", caption: "The idea: a red set with a little movement." },
-  { photo: "/images/story/ruby-yarn.jpg", alt: "The red yarn selected for the Ruby Dress", title: "Make a plan together.", detail: "Agree your measurements, price and timing on WhatsApp. Your 60% deposit gets things moving.", caption: "Colour chosen. Yarn ready for the first stitch." },
-  { photo: "/images/story/ruby-in-progress.jpg", alt: "The Ruby skirt panel in progress, shown without cropping", title: "Watch your piece take shape.", detail: "Mimi shares the details as she works, so you can follow the making from your phone.", caption: "A work in progress, one row at a time." },
-  { photo: "/images/products/red-fringe-beach-set-1.jpg", alt: "The complete Ruby Dress with its fringe visible", title: "Every last detail, finished.", detail: "See the finished piece, settle the remaining 40%, and agree delivery with Mimi.", caption: "The finished piece. Every fringe in place." },
-  { photo: "/images/story/ruby-skirt-detail.jpg", alt: "The finished crochet and fringe of the Ruby skirt", title: "Now, make it your own.", detail: "Your handmade piece is on its way to your wardrobe. Delivery is arranged to your address.", caption: "The finishing details, ready for a new wardrobe." },
+// One order told start to finish: the Ruby Dress, then a real customer wearing hers.
+// Desktop: the stage list scrolls normally and the photo beside it follows the scroll exactly,
+// so fast scrolling or scrolling back up can never skip a stage. Phones: tap or swipe.
+
+type Media = { kind: "image"; src: string; position?: string } | { kind: "video"; src: string; poster: string };
+type Stage = { tag: string; media: Media; alt: string; title: string; detail: string; caption: string };
+
+const story: Stage[] = [
+  {
+    tag: "The Ruby Dress",
+    media: { kind: "image", src: "/images/story/hero-ruby.jpg" },
+    alt: "The full Ruby crochet set laid flat beside red yarn",
+    title: "Start with a little inspiration.",
+    detail: "A saved photo, a colour you love, an idea you can’t shake. Give Mimi a starting point.",
+    caption: "The idea: a red set with a little movement.",
+  },
+  {
+    tag: "The Ruby Dress",
+    media: { kind: "image", src: "/images/story/ruby-plan.jpg" },
+    alt: "The red yarn picked for the Ruby Dress beside the first panel",
+    title: "Make a plan together.",
+    detail: "Agree your measurements, price and timing on WhatsApp. Your 60% deposit gets things moving.",
+    caption: "",
+  },
+  {
+    tag: "The Ruby Dress",
+    media: { kind: "video", src: "/video/ruby-taking-shape.mp4", poster: "/images/story/ruby-taking-shape.jpg" },
+    alt: "Mimi’s hook over the Ruby skirt panel as it takes shape",
+    title: "Watch your piece take shape.",
+    detail: "Mimi shares the details as she works, so you can follow the making from your phone.",
+    caption: "The skirt panel, one row at a time.",
+  },
+  {
+    tag: "The Ruby Dress",
+    media: { kind: "image", src: "/images/products/red-fringe-beach-set-1.jpg" },
+    alt: "The complete Ruby Dress with its fringe, on Mimi’s mannequin",
+    title: "Every last detail, finished.",
+    detail: "See the finished piece, settle the remaining 40%, and agree delivery with Mimi.",
+    caption: "Finished. Every fringe in place.",
+  },
+  {
+    tag: "Favour, Bayelsa",
+    media: { kind: "image", src: "/images/customers/favour-5.jpg", position: "50% 22%" },
+    alt: "Favour wearing the ruffle bucket hat and crochet bikini Mimi made for her",
+    title: "Now, make it your own.",
+    detail: "Your handmade piece arrives at your door, ready to wear. Here’s Favour in hers.",
+    caption: "Delivered to Favour in Bayelsa. She loved it ❤️",
+  },
 ];
-const ease = [0.22, 1, 0.36, 1] as const;
 
-// Sage reference: a stable navigation rail with an inset selected row.
-// Desktop stages follow normal scrolling; the photograph stays beside them.
-function StageRow({ index, active, onSelect }: { index: number; active: number; onSelect: (index: number) => void }) {
-  const ref = useRef<HTMLLIElement>(null);
-  const inView = useInView(ref, { margin: "-32% 0px -42% 0px" });
-  const reduce = useReducedMotion();
+const last = story.length - 1;
+const deposit = Math.round((demoOrder.price ?? 0) * 0.6);
+const plan = [
+  ["Size", demoOrder.size ?? "L"],
+  ["Price", formatNaira(demoOrder.price ?? 0)],
+  ["Ready by", demoOrder.readyBy ?? ""],
+  ["Deposit (60%)", `${formatNaira(deposit)} paid`],
+] as const;
+
+/* --------------------------------- the photo stack --------------------------------- */
+
+// Each layer sits above the one before it and wipes up into view as the scroll position
+// reaches its stage, so the change is exact in both directions and never cross-fades two photos.
+// The wipe runs between i-0.8 and i-0.2, so each photo holds still while its stage is centred.
+function Layer({ i, pos, active, reduce }: { i: number; pos: MotionValue<number>; active: number; reduce: boolean }) {
+  const s = story[i];
+  const clip = useTransform(pos, [i - 0.8, i - 0.2], ["inset(100% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]);
+  const zoom = useTransform(pos, [i - 0.8, i - 0.2], [1.18, 1]);
+  const video = useRef<HTMLVideoElement>(null);
+  const showing = active === i;
+
   useEffect(() => {
-    if (inView && !reduce && window.matchMedia("(min-width: 1024px)").matches) onSelect(index);
-  }, [inView, index, onSelect, reduce]);
-  const selected = active === index;
+    const v = video.current;
+    if (!v) return;
+    if (showing && !reduce) v.play().catch(() => {});
+    else v.pause();
+  }, [showing, reduce]);
+
+  const style = reduce ? { opacity: i <= active ? 1 : 0 } : i === 0 ? undefined : { clipPath: clip };
   return (
-    <li ref={ref} className="relative py-2">
-      <button type="button" onClick={() => onSelect(index)} aria-pressed={selected} aria-controls="order-story-media" className="relative flex min-h-[152px] w-full gap-5 rounded-[20px] px-5 py-6 text-left outline-offset-4">
-        {selected && <motion.span layoutId="story-selected" className="absolute inset-0 rounded-[20px] border border-stone-200 bg-white shadow-[0_12px_32px_-24px_rgb(28_25_23/0.3)]" transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 320, damping: 34 }} />}
-        <span className={`relative mt-1 grid size-8 shrink-0 place-items-center rounded-full border text-[12px] font-semibold tabular-nums transition-colors ${selected ? "border-stone-900 bg-stone-900 text-orange-50" : "border-stone-300 bg-orange-50 text-stone-500"}`}>{String(index + 1).padStart(2, "0")}</span>
-        <span className="relative flex flex-col gap-2">
-          <span className={`text-[13px] font-semibold ${selected ? "text-amber-800" : "text-stone-500"}`}>{stages[index].label}</span>
-          <span className="font-serif text-[23px] leading-tight">{story[index].title}</span>
-          <span className="max-w-[350px] text-[15px] leading-relaxed text-stone-600">{story[index].detail}</span>
-        </span>
-      </button>
-    </li>
+    <motion.div className="absolute inset-0 overflow-hidden" style={style} aria-hidden={!showing}>
+      <motion.div className="absolute inset-0" style={reduce ? undefined : { scale: zoom }}>
+        {s.media.kind === "image" ? (
+          <Image src={s.media.src} alt={s.alt} fill sizes="(min-width: 1024px) 520px, 92vw" className="object-cover" style={{ objectPosition: s.media.position }} preload={i === 0} />
+        ) : (
+          <video ref={video} className="size-full object-cover" src={s.media.src} poster={s.media.poster} muted loop playsInline preload="none" aria-label={s.alt} />
+        )}
+      </motion.div>
+    </motion.div>
   );
 }
 
-export function OrderStory() {
+function Note({ active }: { active: number }) {
   const reduce = useReducedMotion();
-  const [active, setActive] = useState(0);
-  const current = story[active];
   return (
-    <section className="overflow-clip border-y border-stone-200/70 bg-orange-50 py-16 lg:py-24" aria-labelledby="order-story-heading">
+    <AnimatePresence mode="popLayout" initial={false}>
+      <motion.div
+        key={active}
+        className="absolute inset-x-3 bottom-3 rounded-[18px] bg-white/95 p-4 shadow-[0_18px_40px_-18px_rgb(28_25_23/0.45)] backdrop-blur-md lg:inset-x-4 lg:bottom-4 lg:p-5"
+        initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24, filter: "blur(6px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        exit={reduce ? { opacity: 0 } : { opacity: 0, y: -12, filter: "blur(6px)" }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      >
+        <div className="flex items-center gap-2.5">
+          <span className="grid size-7 shrink-0 place-items-center rounded-full bg-orange-100 font-serif text-[14px] text-amber-900" aria-hidden>
+            M
+          </span>
+          <span className={`rounded-full px-2.5 py-1 text-[12px] leading-none font-semibold ${active >= 3 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+            {stages[active].label}
+          </span>
+        </div>
+        {active === 1 ? (
+          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5">
+            {plan.map(([k, v], n) => (
+              <motion.div key={k} className="flex flex-col" initial={reduce ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 + n * 0.06 }}>
+                <dt className="text-[12px] text-stone-500">{k}</dt>
+                <dd className={`text-[15px] font-semibold ${k.startsWith("Deposit") ? "text-emerald-800" : ""}`}>{v}</dd>
+              </motion.div>
+            ))}
+          </dl>
+        ) : (
+          <p className="mt-2.5 text-[15px] leading-snug text-stone-800 lg:text-[16px]">{story[active].caption}</p>
+        )}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+/* --------------------------------- the section --------------------------------- */
+
+export function OrderStory() {
+  const reduce = Boolean(useReducedMotion());
+  const desktop = useMedia("(min-width: 1024px)");
+  const [active, setActive] = useState(0);
+  const pos = useMotionValue(0);
+  const rows = useRef<(HTMLLIElement | null)[]>([]);
+  const rail = useTransform(pos, [0, last], [0, 1]);
+
+  // Where the stage list sits against a focus line 45% down the screen, as a continuous number:
+  // 1.5 means halfway between stage 2 and stage 3.
+  const measure = () => {
+    const focus = window.innerHeight * 0.45;
+    const centers = rows.current.map((r) => {
+      const b = r?.getBoundingClientRect();
+      return b ? b.top + b.height / 2 : 0;
+    });
+    let p = 0;
+    if (focus >= centers[last]) p = last;
+    else if (focus > centers[0]) {
+      const k = centers.findIndex((c, n) => focus >= c && focus < centers[n + 1]);
+      p = k + (focus - centers[k]) / (centers[k + 1] - centers[k]);
+    }
+    pos.set(p);
+    const a = Math.round(p);
+    setActive((cur) => (cur === a ? cur : a));
+  };
+
+  const { scrollY } = useScroll();
+  useMotionValueEvent(scrollY, "change", () => {
+    if (desktop) measure();
+  });
+  const onLayout = useEffectEvent(() => {
+    if (desktop) measure();
+  });
+  useEffect(() => {
+    const id = requestAnimationFrame(() => onLayout());
+    const resize = () => onLayout();
+    window.addEventListener("resize", resize);
+    return () => {
+      cancelAnimationFrame(id);
+      window.removeEventListener("resize", resize);
+    };
+  }, [desktop]);
+
+  /** Desktop: scroll the list so the stage meets the focus line. Phones: wipe straight to it. */
+  const go = (i: number) => {
+    const to = Math.max(0, Math.min(last, i));
+    if (desktop) {
+      const r = rows.current[to]?.getBoundingClientRect();
+      if (r) window.scrollTo({ top: window.scrollY + r.top + r.height / 2 - window.innerHeight * 0.45, behavior: reduce ? "auto" : "smooth" });
+      return;
+    }
+    if (to === active) return;
+    if (Math.abs(to - active) > 1) pos.jump(to - Math.sign(to - active));
+    setActive(to);
+    if (reduce) pos.jump(to);
+    else animate(pos, to, { type: "spring", stiffness: 170, damping: 26 });
+  };
+
+  const current = story[active];
+
+  return (
+    <section className="border-y border-stone-200/70 bg-orange-50 py-16 lg:py-24" aria-labelledby="order-story-heading">
       <div className="container-page">
-        <div className="mb-9 flex flex-col gap-5 lg:mb-14 lg:flex-row lg:items-end lg:justify-between lg:gap-16">
-          <div className="flex flex-col gap-4">
-            <RevealText id="order-story-heading" text={"From idea\nto doorstep."} className="max-w-[680px] font-serif text-[38px] leading-[1.08] tracking-[-0.025em] lg:text-[60px]" />
-          </div>
+        <div className="mb-9 flex flex-col gap-5 lg:mb-6 lg:flex-row lg:items-end lg:justify-between lg:gap-16">
+          <RevealText id="order-story-heading" text={"From idea\nto doorstep."} className="max-w-[680px] font-serif text-[38px] leading-[1.08] tracking-[-0.025em] lg:text-[60px]" />
           <p className="max-w-[355px] text-[16px] leading-relaxed text-stone-600 lg:pb-1 lg:text-[18px]">You bring the idea, Mimi brings the hook. Here’s how a piece becomes yours.</p>
         </div>
+
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16 xl:gap-24">
-          <div className="hidden lg:block">
-            <ol className="relative" aria-label="Explore the order stages">
-              <span className="absolute top-12 bottom-12 left-9 w-px bg-stone-200" aria-hidden />
-              {stages.map((stage, i) => <StageRow key={stage.key} index={i} active={active} onSelect={setActive} />)}
+          {/* Desktop: the stage list (sage reference: a rail with an inset selected row) */}
+          {/* The space under the button keeps the photo fully on screen while the last stage is centred. */}
+          <div className="hidden lg:block lg:pb-[24vh]">
+            <ol className="relative" aria-label="Order stages">
+              <span className="absolute top-[18vh] bottom-[18vh] left-9 w-px bg-stone-200" aria-hidden />
+              <motion.span className="absolute top-[18vh] bottom-[18vh] left-9 w-px origin-top bg-stone-900" style={{ scaleY: reduce ? active / last : rail }} aria-hidden />
+              {story.map((s, i) => {
+                const on = i === active;
+                return (
+                  <li key={s.title} ref={(el) => { rows.current[i] = el; }} className="flex min-h-[36vh] items-center">
+                    <button
+                      type="button"
+                      onClick={() => go(i)}
+                      aria-current={on ? "step" : undefined}
+                      className={`relative flex w-full gap-5 rounded-[20px] px-5 py-6 text-left transition-opacity duration-500 ${on ? "opacity-100" : "opacity-45 hover:opacity-80"}`}
+                    >
+                      {on && <motion.span layoutId="story-selected" className="absolute inset-0 rounded-[20px] border border-stone-200 bg-white shadow-[0_12px_32px_-24px_rgb(28_25_23/0.3)]" transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 36 }} />}
+                      <span className={`relative mt-1 grid size-8 shrink-0 place-items-center rounded-full border text-[12px] font-semibold tabular-nums transition-colors duration-300 ${on ? "border-stone-900 bg-stone-900 text-orange-50" : "border-stone-300 bg-orange-50 text-stone-500"}`}>
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span className="relative flex flex-col gap-2">
+                        <span className={`text-[13px] font-semibold ${on ? "text-amber-800" : "text-stone-500"}`}>{stages[i].label}</span>
+                        <span className="font-serif text-[26px] leading-tight">{s.title}</span>
+                        <span className="max-w-[380px] text-[16px] leading-relaxed text-stone-600">{s.detail}</span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
             </ol>
-            <div className="mt-8 pl-5"><ButtonLink href="/custom-order">Let’s make your piece</ButtonLink></div>
+            <div className="pl-5">
+              <ButtonLink href="/custom-order">Let’s make your piece</ButtonLink>
+            </div>
           </div>
-          <div className="lg:sticky lg:top-28">
-            <div className="mb-5 flex justify-between gap-2 lg:hidden" role="group" aria-label="Choose an order stage">
-              {stages.map((stage, i) => <button key={stage.key} type="button" aria-pressed={i === active} aria-controls="order-story-media" aria-label={stage.label} onClick={() => setActive(i)} className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[12px] border text-[11px] font-medium transition-colors ${i === active ? "border-stone-900 bg-stone-900 text-orange-50" : "border-stone-200 bg-white text-stone-600"}`}><span className="text-[13px] tabular-nums">0{i + 1}</span>{stage.short}</button>)}
+
+          {/* The photo, with the tag on top and Mimi's note over it */}
+          <div className="lg:sticky lg:top-24">
+            <div className="mb-4 flex justify-between gap-1.5 lg:hidden" role="group" aria-label="Choose an order stage">
+              {stages.map((st, i) => (
+                <button
+                  key={st.key}
+                  type="button"
+                  aria-pressed={i === active}
+                  aria-label={st.label}
+                  onClick={() => go(i)}
+                  className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[12px] border text-[11px] font-medium transition-colors ${
+                    i === active ? "border-stone-900 bg-stone-900 text-orange-50" : "border-stone-200 bg-white text-stone-600"
+                  }`}
+                >
+                  <span className="text-[13px] tabular-nums">{i + 1}</span>
+                  {st.short}
+                </button>
+              ))}
             </div>
-            <div id="order-story-media" className="rounded-[24px] border border-stone-200 bg-white p-3 shadow-[0_24px_64px_-40px_rgb(28_25_23/0.35)] lg:p-4">
-              <div className="flex items-center justify-between px-1 pb-3 text-[13px] font-medium text-stone-500"><span className="font-semibold text-stone-900">The Ruby Dress</span><span className="tabular-nums">{active + 1} of {story.length}</span></div>
-              <div className="relative aspect-[4/5] w-full max-h-[58svh] overflow-hidden rounded-[15px] bg-stone-100">
-                <AnimatePresence initial={false}>
-                  <motion.div key={active} className="absolute inset-0" initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduce ? 0.1 : 0.55, ease }}>
-                    <Image src={current.photo} alt={current.alt} fill sizes="(min-width: 1440px) 540px, (min-width: 1024px) 42vw, 90vw" className="object-contain" />
-                  </motion.div>
+
+            <div className="mx-auto w-full rounded-[26px] border border-stone-200 bg-white p-2.5 shadow-[0_30px_70px_-40px_rgb(28_25_23/0.4)] lg:max-w-[min(100%,calc((100svh-210px)*0.75+20px))] lg:p-3">
+              <div className="flex items-center justify-between px-2 pt-1 pb-3 text-[13px] font-medium text-stone-500">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.span key={current.tag} className="font-semibold text-stone-900" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+                    {current.tag}
+                  </motion.span>
                 </AnimatePresence>
+                <span className="tabular-nums">
+                  {active + 1} of {story.length}
+                </span>
               </div>
-              <div className="flex items-start gap-3 px-2 pt-4 pb-2" aria-live="polite">
-                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-orange-100 font-serif text-amber-900" aria-hidden>M</span>
-                <div className="min-h-[62px] flex-1"><p className="text-[12px] font-semibold text-stone-500">{stages[active].label}</p><AnimatePresence mode="wait" initial={false}><motion.p key={active} initial={{ opacity: 0, y: reduce ? 0 : 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="mt-1 text-[15px] leading-snug">{current.caption}</motion.p></AnimatePresence></div>
+              <motion.div
+                className="relative aspect-[3/4] w-full touch-pan-y overflow-hidden rounded-[18px] bg-stone-200"
+                drag={desktop ? false : "x"}
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.18}
+                onDragEnd={(_, info) => {
+                  if (info.offset.x < -50) go(active + 1);
+                  else if (info.offset.x > 50) go(active - 1);
+                }}
+              >
+                {story.map((s, i) => (
+                  <Layer key={s.title} i={i} pos={pos} active={active} reduce={reduce} />
+                ))}
+                <Note active={active} />
+              </motion.div>
+            </div>
+
+            <div className="mt-5 flex flex-col gap-3 lg:hidden" aria-live="polite">
+              <h3 className="font-serif text-[23px] leading-tight">{current.title}</h3>
+              <p className="text-[15px] leading-relaxed text-stone-600">{current.detail}</p>
+              <p className="text-[13px] text-stone-500">Swipe the photo or tap a stage.</p>
+              <div className="pt-2">
+                <ButtonLink href="/custom-order" className="max-sm:w-full">Let’s make your piece</ButtonLink>
               </div>
             </div>
-            <div className="mt-5 flex flex-col gap-3 lg:hidden"><h3 className="font-serif text-[23px] leading-tight">{current.title}</h3><p className="text-[15px] leading-relaxed text-stone-600">{current.detail}</p><div className="pt-2"><ButtonLink href="/custom-order">Let’s make your piece</ButtonLink></div></div>
-            <p className="mt-4 text-center text-[12px] text-stone-500">Five stages. A timeline agreed with you.</p>
           </div>
         </div>
       </div>
