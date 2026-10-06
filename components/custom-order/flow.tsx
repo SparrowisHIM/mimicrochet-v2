@@ -729,18 +729,27 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                             </motion.div>
                           )}
                         </AnimatePresence>
-                        <button
-                          type="button"
-                          onClick={() => setMorePieces((v) => !v)}
-                          aria-expanded={morePieces}
-                          aria-controls="more-pieces"
-                          className="flex h-10 items-center gap-2 self-start rounded-full border border-stone-300 bg-white pr-3.5 pl-4 text-[14px] font-medium transition-colors duration-150 hover:border-stone-900 max-lg:hidden"
-                        >
-                          {morePieces ? "Show fewer pieces" : "View more pieces"}
-                          <motion.span animate={{ rotate: morePieces ? 180 : 0 }} transition={{ type: "spring", duration: 0.3, bounce: 0 }} className="flex">
-                            <ChevronIcon size={15} className="rotate-90 text-stone-500" />
-                          </motion.span>
-                        </button>
+                        {/* "More pieces" on a hairline, the same device as the "or" divider (Figma, option A) */}
+                        <div className="flex items-center gap-3.5 max-lg:hidden">
+                          <span className="h-px flex-1 bg-stone-200" aria-hidden />
+                          <button
+                            type="button"
+                            onClick={() => setMorePieces((v) => !v)}
+                            aria-expanded={morePieces}
+                            aria-controls="more-pieces"
+                            className="group flex items-center gap-2 rounded-full py-1 pr-1 pl-2 text-[14px] font-medium text-stone-900"
+                          >
+                            <span className="underline-offset-4 group-hover:underline">{morePieces ? "Fewer pieces" : "More pieces"}</span>
+                            <motion.span
+                              animate={{ rotate: morePieces ? 180 : 0 }}
+                              transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+                              className="grid size-[26px] place-items-center rounded-full border border-stone-200 bg-white text-stone-600 transition-colors duration-150 group-hover:border-stone-400 group-hover:text-stone-900"
+                            >
+                              <ChevronIcon size={13} className="rotate-90" />
+                            </motion.span>
+                          </button>
+                          <span className="h-px flex-1 bg-stone-200" aria-hidden />
+                        </div>
                         {ideasCard}
                       </div>
                     </>
