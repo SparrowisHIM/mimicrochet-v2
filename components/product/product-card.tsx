@@ -28,7 +28,7 @@ export function ProductCard({
             fill
             sizes={sizes}
             preload={preload}
-            className="object-cover transition-transform duration-700 ease-[var(--ease-out-soft)] group-hover:scale-[1.03]"
+            className="object-cover transition-transform duration-1000 ease-[var(--ease-out-soft)] group-hover:scale-[1.07]"
           />
           {second && (
             <Image
@@ -36,7 +36,7 @@ export function ProductCard({
               alt=""
               fill
               sizes={sizes}
-              className="object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100 max-lg:hidden"
+              className="scale-[1.07] object-cover [clip-path:inset(0_0_0_100%)] transition-[clip-path,scale] duration-700 ease-[var(--ease-out-soft)] group-hover:scale-100 group-hover:[clip-path:inset(0_0_0_0%)] max-lg:hidden"
             />
           )}
         </Link>
