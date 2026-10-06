@@ -3,7 +3,6 @@ import { Figtree, Young_Serif } from "next/font/google";
 import { BagDrawer } from "@/components/cart/bag-drawer";
 import { Announcement } from "@/components/site/announcement";
 import { Footer } from "@/components/site/footer";
-import { SiteChrome } from "@/components/site/chrome";
 import { Header } from "@/components/site/header";
 import { site } from "@/lib/site";
 import "./globals.css";
@@ -47,16 +46,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <SiteChrome>
-          <Announcement />
-          <Header />
-        </SiteChrome>
+        <Announcement />
+        <Header />
         <main id="main" className="flex-1">
           {children}
         </main>
-        <SiteChrome>
-          <Footer />
-        </SiteChrome>
+        <Footer />
         <BagDrawer />
       </body>
     </html>

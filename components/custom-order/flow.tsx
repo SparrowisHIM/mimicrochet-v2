@@ -21,7 +21,6 @@ import { isRequestDate } from "@/lib/request-date";
 import { newOrderIds, saveOrder, thumbnail, type Order } from "@/lib/orders";
 import { pieceFromIdea, pieceFromProduct, type Piece } from "@/lib/pieces";
 import { getProduct, type Product } from "@/lib/products";
-import { site } from "@/lib/site";
 import { sizeLabels } from "@/lib/sizes";
 import { formatPhone, fullPhone, hasWords, isName, phoneDigits, phoneProblem } from "@/lib/validate";
 
@@ -145,30 +144,18 @@ function Label({ children, hint }: { children: React.ReactNode; hint?: string })
   );
 }
 
-/** Focused header: no site menu while ordering (Figma: logo, step, Exit). Without a step it's the confirmation. */
-function FocusHeader({ step }: { step?: number }) {
+/** The step and the way out, under the site header. Without a step it's the confirmation. */
+function StepBar({ step }: { step?: number }) {
   return (
-    <>
-      <header className="container-page flex items-center justify-between gap-4 pt-4 pb-4 lg:pt-6 lg:pb-5">
-        <Link href="/" className="font-serif text-[19px] tracking-[-0.01em] text-stone-900 max-[380px]:text-[16px] lg:text-[24px]" aria-label={`${site.name}, home`}>
-          {site.name}
+    <div className="container-page flex flex-col gap-3 pt-5 lg:pt-8">
+      <div className="flex items-center justify-between text-[14px]">
+        <span className="font-medium text-stone-500 tabular-nums">{step === undefined ? "Custom order" : `Custom order · Step ${step + 1} of 3`}</span>
+        <Link href="/" className="font-medium underline underline-offset-4">
+          Exit
         </Link>
-        <span className="flex items-center gap-5 text-[14px] font-medium lg:text-[15px]">
-          {step !== undefined && (
-            <span className="text-stone-500 tabular-nums">
-              <span className="max-lg:hidden">Step </span>
-              {step + 1} of 3
-            </span>
-          )}
-          <Link href="/" className="text-stone-900 underline-offset-4 hover:underline">
-            Exit
-          </Link>
-        </span>
-      </header>
-      <div className="container-page">
-        <Progress step={step ?? 3} />
       </div>
-    </>
+      <Progress step={step ?? 3} />
+    </div>
   );
 }
 
@@ -618,9 +605,9 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
 
   const flow = (
     <div ref={top} className="scroll-mt-4">
-      <FocusHeader step={step} />
+      <StepBar step={step} />
 
-      <div className="container-page flex justify-between gap-12 pt-7 pb-36 lg:pt-14 lg:pb-28 xl:gap-16">
+      <div className="container-page flex justify-between gap-12 pt-7 pb-10 lg:pt-12 lg:pb-28 xl:gap-16">
         <div className="relative min-w-0 flex-1 lg:max-w-[640px]">
           <AnimatePresence mode="popLayout" custom={dir} initial={false}>
             <motion.div key={step} custom={dir} variants={stepMotion} initial="enter" animate="center" exit="exit" className="flex flex-col gap-8">
@@ -946,14 +933,14 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
         </div>
 
         <aside className="hidden shrink-0 lg:block lg:w-[360px] xl:w-[460px] min-[87.5rem]:w-[560px]" aria-label="Your request">
-          <div className="sticky top-8">
+          <div className="sticky top-28">
             <Summary draft={d} rows={rows} step={step} onJump={jump} />
           </div>
         </aside>
       </div>
 
       {/* Phones: the actions stay in reach at the bottom */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-stone-200/70 bg-orange-50/95 backdrop-blur-md lg:hidden">
+      <div className="sticky bottom-0 z-30 border-t border-stone-200/70 bg-orange-50/95 backdrop-blur-md lg:hidden">
         <div className="container-page flex items-center gap-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">
           {backButton}
           {mainButton("flex-1")}
@@ -986,7 +973,6 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
     <>
       {sent ? (
         <>
-          <FocusHeader />
           <SentView order={sent.order} files={sent.files} />
         </>
       ) : (
