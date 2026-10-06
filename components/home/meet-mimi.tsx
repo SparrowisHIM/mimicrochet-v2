@@ -46,13 +46,6 @@ export function MeetMimi() {
               aria-label="Mimi’s hands crocheting the red Ruby Dress with an orange hook"
             />
           </motion.div>
-          <span className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full bg-white/90 px-3.5 py-2 text-[13px] font-medium backdrop-blur-sm lg:bottom-5 lg:left-5">
-            <span className="relative flex size-2">
-              <span className="absolute inset-0 animate-ping rounded-full bg-red-500/70 motion-reduce:animate-none" />
-              <span className="relative size-2 rounded-full bg-red-600" />
-            </span>
-            The Ruby Dress, in progress
-          </span>
         </motion.div>
         <div className="flex max-w-[672px] flex-col gap-5">
           <RevealText text="Meet the hands behind every stitch" className="font-serif text-[32px] leading-[1.08] tracking-[-0.02em] lg:text-[56px]" />
