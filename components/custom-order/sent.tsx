@@ -7,6 +7,7 @@ import { WhatsAppIcon } from "@/components/icons";
 import { TrackingCard } from "@/components/order/tracking-card";
 import { Button, buttonClass } from "@/components/ui/button";
 import { Confetti } from "@/components/ui/confetti";
+import { RevealText } from "@/components/motion/reveal";
 import type { Order } from "@/lib/orders";
 import { whatsappLink } from "@/lib/site";
 
@@ -90,7 +91,7 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
           </motion.span>
         </div>
         <motion.div {...rise(0.1)} className="flex flex-col gap-3">
-          <h1 className="font-serif text-[36px] leading-[1.05] tracking-[-0.01em] lg:text-[52px]">Your idea, ready for Mimi.</h1>
+          <RevealText as="h1" immediate text="Your idea, ready for Mimi." className="font-serif text-[36px] leading-[1.05] tracking-[-0.01em] lg:text-[52px]" />
           <p className="text-[16px] leading-[1.5] text-stone-600 lg:text-[18px]">
             Your request number is <span className="whitespace-nowrap">{order.id}</span>. Check your message below, then send it on WhatsApp so Mimi can agree the price and timing with you.
           </p>

@@ -9,6 +9,7 @@ import { Button, buttonClass } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
 import { Toggle } from "@/components/ui/toggle";
+import { Curtain, RevealText } from "@/components/motion/reveal";
 import { categories, colourGroups, type ColourGroup } from "@/lib/products";
 import { applyFilters, defaultFilters, priceBands, sorts, type ShopFilters } from "@/lib/shop-filter";
 
@@ -83,7 +84,7 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
     <>
       <div className="container-page flex flex-col gap-5 pt-6 pb-4 lg:flex-row lg:items-end lg:justify-between lg:pt-11 lg:pb-5">
         <div className="flex items-end justify-between gap-4 lg:flex-col lg:items-start lg:gap-2.5">
-          <h1 className="font-serif text-[40px] leading-none tracking-[-0.02em] lg:text-[56px]">Shop</h1>
+          <RevealText as="h1" immediate text="Shop" className="font-serif text-[40px] leading-none tracking-[-0.02em] lg:text-[56px]" />
           <p className="text-[15px] text-stone-600 lg:text-[17px]">
             <span className="lg:hidden">{results.length} pieces</span>
             <span className="max-lg:hidden">One-of-one pieces ready to wear, and pieces Mimi makes for you in your size.</span>
@@ -178,12 +179,12 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
                   <motion.li
                     key={visible[c.i].slug}
                     layout
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.96 }}
-                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: c.i >= shown - PAGE ? (c.i % PAGE) * 0.03 : 0 }}
+                    exit={{ opacity: 0, scale: 0.92, filter: "blur(4px)" }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                   >
-                    <ProductCard product={visible[c.i]} preload={c.i < 4} />
+                    <Curtain index={c.i}>
+                      <ProductCard product={visible[c.i]} preload={c.i < 4} />
+                    </Curtain>
                   </motion.li>
                 ),
               )}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Faq } from "@/components/contact/faq";
 import { ArrowUpRightIcon, ChevronIcon, WhatsAppIcon } from "@/components/icons";
 import { TrackForm } from "@/components/order/track-form";
+import { RevealText } from "@/components/motion/reveal";
 import { site, whatsappLink } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -16,7 +17,7 @@ export default function ContactPage() {
     <>
       <section className="container-page flex flex-col gap-10 pt-8 pb-14 lg:flex-row lg:items-center lg:justify-between lg:pt-16 lg:pb-20">
         <div className="flex max-w-[560px] flex-col gap-5">
-          <h1 className="font-serif text-[48px] leading-none tracking-[-0.02em] lg:text-[72px]">Talk to Mimi.</h1>
+          <RevealText as="h1" immediate text="Talk to Mimi." className="font-serif text-[48px] leading-none tracking-[-0.02em] lg:text-[72px]" />
           <p className="text-[17px] leading-[1.55] text-stone-600 lg:text-[20px]">Ask about a piece, your size, or that idea in your head. WhatsApp is the fastest way, and she usually replies the same day.</p>
         </div>
         <div className="flex w-full flex-col gap-4 rounded-[28px] bg-stone-900 p-5 text-orange-50 lg:w-[560px] lg:p-7">

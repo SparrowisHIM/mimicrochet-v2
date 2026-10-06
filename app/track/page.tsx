@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { TrackForm } from "@/components/order/track-form";
+import { RevealText } from "@/components/motion/reveal";
 
 export const metadata: Metadata = {
   title: "Track an order",
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
 export default function TrackPage() {
   return (
     <div className="container-page flex min-h-[64vh] flex-col justify-center py-16 lg:items-center lg:py-24 lg:text-center">
-      <h1 className="font-serif text-[40px] leading-[1.05] tracking-[-0.01em] lg:text-[64px]">Track an order</h1>
+      <RevealText as="h1" immediate text="Track an order" className="font-serif text-[40px] leading-[1.05] tracking-[-0.01em] lg:text-[64px]" />
       <p className="mt-3 max-w-[520px] text-[17px] text-stone-600 lg:text-[18px]">Pop in your order number, or open the tracking link Mimi sent you on WhatsApp.</p>
       <TrackForm />
     </div>
