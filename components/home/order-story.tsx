@@ -20,7 +20,7 @@ import { formatNaira } from "@/lib/site";
 import { stages } from "@/lib/stages";
 import { useMedia } from "@/lib/use-media";
 
-// One order told start to finish: the Ruby Dress, then a real customer wearing hers.
+// One order told start to finish: the Ruby Dress, from the idea to Mimi's packed bag.
 // Desktop: the stage list scrolls normally and the photo beside it follows the scroll exactly,
 // so fast scrolling or scrolling back up can never skip a stage. Phones: tap or swipe.
 
@@ -61,12 +61,12 @@ const story: Stage[] = [
     caption: "Finished. Every fringe in place.",
   },
   {
-    tag: "Favour, Bayelsa",
-    media: { kind: "image", src: "/images/customers/favour-5.jpg", position: "50% 22%" },
-    alt: "Favour wearing the ruffle bucket hat and crochet bikini Mimi made for her",
+    tag: "The Ruby Dress",
+    media: { kind: "image", src: "/images/story/packed-order.jpg" },
+    alt: "A finished order sealed in Mimi’s white Mimicrochet bag, printed with her logo and “Thanks for your patronage”",
     title: "Now, make it your own.",
-    detail: "Your handmade piece arrives at your door, ready to wear. Here’s Favour in hers.",
-    caption: "Delivered to Favour in Bayelsa. She loved it ❤️",
+    detail: "Your piece arrives sealed in Mimi’s own bag, ready to wear. Delivery is arranged to your address.",
+    caption: "Sealed in Mimi’s bag and on its way to your door.",
   },
 ];
 
