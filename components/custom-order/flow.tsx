@@ -14,6 +14,7 @@ import { DatePicker, shortDate } from "@/components/form/date-picker";
 import { Check, Field, inputClass, NameInput, PhoneInput, useNudge } from "@/components/form/fields";
 import { AreaPicker, StatePicker } from "@/components/form/place-picker";
 import { Button } from "@/components/ui/button";
+import { CardStack } from "@/components/ui/card-stack";
 import { Chip } from "@/components/ui/chip";
 import { isLgaOf } from "@/lib/nigeria";
 import { isRequestDate } from "@/lib/request-date";
@@ -54,7 +55,8 @@ export type Draft = {
   sizeOk: boolean;
 };
 
-const starter = ["red-fringe-beach-set", "royal-wave-crochet-shirt", "lilac-ruffle-tube-dress", "candy-bloom-ruffle-set", "monochrome-crochet-shirt", "noir-bloom-crochet-shirt", "heart-sweater", "sunflower-crop-cardigan"]
+// First row is what shows; the second row opens with "View more pieces" (desktop) or by swiping (phones).
+const starter = ["sunflower-crop-cardigan", "noir-bloom-crochet-shirt", "heart-sweater", "monochrome-crochet-shirt", "red-fringe-beach-set", "royal-wave-crochet-shirt", "lilac-ruffle-tube-dress", "candy-bloom-ruffle-set"]
   .map((s) => getProduct(s))
   .filter(Boolean) as Product[];
 
@@ -361,6 +363,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
   const set = (patch: Partial<Draft>) => setD((cur) => ({ ...cur, ...patch }));
   const [today] = useState(() => Date.now());
   const [ideasOpen, setIdeasOpen] = useState(false);
+  const [morePieces, setMorePieces] = useState(false);
   const [measuring, setMeasuring] = useState<MeasureKey | null>(null);
   const [sending, setSending] = useState<{ order: Order; files: File[] } | null>(null);
   const [sent, setSent] = useState<{ order: Order; files: File[] } | null>(null);
@@ -577,15 +580,34 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       </Button>
     );
 
+  const pieceTile = (p: Product, extra = "") => {
+    const on = d.piece?.slug === p.slug;
+    return (
+      <motion.button key={p.slug} type="button" whileTap={{ scale: 0.97 }} aria-pressed={on} onClick={() => set({ piece: on ? undefined : pieceFromProduct(p) })} className={`flex w-[120px] shrink-0 flex-col gap-2 text-left lg:w-auto ${extra}`}>
+        <span className={`relative block aspect-[3/4] overflow-hidden rounded-[14px] bg-orange-100 transition-shadow duration-150 ${on ? "ring-[2.5px] ring-stone-900 ring-offset-2 ring-offset-orange-50" : ""}`}>
+          <Image src={p.images[0]} alt="" fill sizes="(min-width: 1024px) 150px, 120px" className="object-cover" />
+          <AnimatePresence>
+            {on && (
+              <motion.span
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0, transition: { duration: 0.12 } }}
+                transition={{ type: "spring", duration: 0.3, bounce: 0.3 }}
+                className="absolute top-2 right-2 grid size-6 place-items-center rounded-full bg-stone-900 text-white"
+              >
+                <Check size={12} />
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </span>
+        <span className="text-[14px] leading-tight font-medium lg:min-h-[2lh]">{p.name}</span>
+      </motion.button>
+    );
+  };
+
   const ideasCard = (
-    <button type="button" onClick={() => setIdeasOpen(true)} className="group flex items-center gap-3 rounded-[16px] bg-amber-100 p-3 pr-4 text-left transition-colors duration-150 hover:bg-amber-200/70">
-      <span className="flex -space-x-3.5">
-        {["/images/ideas/daisy-ruffle-crochet-set.jpg", "/images/ideas/carnival-granny-crochet-shirt.jpg", "/images/ideas/azure-bloom-granny-bucket-hat.jpg"].map((s) => (
-          <span key={s} className="relative h-11 w-8 overflow-hidden rounded-[8px] border-2 border-amber-100">
-            <Image src={s} alt="" fill sizes="32px" className="object-cover" />
-          </span>
-        ))}
-      </span>
+    <button type="button" onClick={() => setIdeasOpen(true)} className="group flex items-center gap-2 rounded-[16px] bg-amber-100 py-2 pr-4 pl-1 text-left transition-colors duration-150 hover:bg-amber-200/70">
+      <CardStack images={["/images/ideas/daisy-ruffle-crochet-set.jpg", "/images/ideas/azure-bloom-granny-bucket-hat.jpg", "/images/ideas/carnival-granny-crochet-shirt.jpg"]} />
       <span className="flex flex-1 flex-col">
         <span className="text-[15px] font-semibold text-amber-900">{d.piece?.source === "idea" ? `Idea: ${d.piece.name}` : "Need ideas?"}</span>
         <span className="text-[13px] text-amber-800">Concepts, or search Pinterest</span>
@@ -691,32 +713,34 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
 
                       <div className="flex flex-col gap-3.5">
                         <Label>Pick one of Mimi’s pieces</Label>
-                        <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-x-4 lg:gap-y-6 lg:overflow-visible lg:px-0">
-                          {starter.map((p) => {
-                            const on = d.piece?.slug === p.slug;
-                            return (
-                              <motion.button key={p.slug} type="button" whileTap={{ scale: 0.97 }} aria-pressed={on} onClick={() => set({ piece: on ? undefined : pieceFromProduct(p) })} className="flex w-[120px] shrink-0 flex-col gap-2 text-left lg:w-auto">
-                                <span className={`relative block aspect-[3/4] overflow-hidden rounded-[14px] bg-orange-100 transition-shadow duration-150 ${on ? "ring-[2.5px] ring-stone-900 ring-offset-2 ring-offset-orange-50" : ""}`}>
-                                  <Image src={p.images[0]} alt="" fill sizes="(min-width: 1024px) 150px, 120px" className="object-cover" />
-                                  <AnimatePresence>
-                                    {on && (
-                                      <motion.span
-                                        initial={{ scale: 0.6, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        exit={{ scale: 0.8, opacity: 0, transition: { duration: 0.12 } }}
-                                        transition={{ type: "spring", duration: 0.3, bounce: 0.3 }}
-                                        className="absolute top-2 right-2 grid size-6 place-items-center rounded-full bg-stone-900 text-white"
-                                      >
-                                        <Check size={12} />
-                                      </motion.span>
-                                    )}
-                                  </AnimatePresence>
-                                </span>
-                                <span className="text-[14px] leading-tight font-medium lg:min-h-[2lh]">{p.name}</span>
-                              </motion.button>
-                            );
-                          })}
+                        <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-x-4 lg:overflow-visible lg:px-0">
+                          {starter.map((p, i) => pieceTile(p, i >= 4 ? "lg:hidden" : ""))}
                         </div>
+                        <AnimatePresence initial={false}>
+                          {morePieces && (
+                            <motion.div
+                              id="more-pieces"
+                              className="-mx-1.5 overflow-hidden px-1.5 max-lg:hidden"
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1, transition: { duration: 0.27, ease: [0.25, 1, 0.5, 1] } }}
+                              exit={{ height: 0, opacity: 0, transition: { duration: 0.2, ease: easeOutExpo } }}
+                            >
+                              <div className="grid grid-cols-4 gap-x-4 pt-3 pb-1.5">{starter.slice(4).map((p) => pieceTile(p))}</div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                        <button
+                          type="button"
+                          onClick={() => setMorePieces((v) => !v)}
+                          aria-expanded={morePieces}
+                          aria-controls="more-pieces"
+                          className="flex h-10 items-center gap-2 self-start rounded-full border border-stone-300 bg-white pr-3.5 pl-4 text-[14px] font-medium transition-colors duration-150 hover:border-stone-900 max-lg:hidden"
+                        >
+                          {morePieces ? "Show fewer pieces" : "View more pieces"}
+                          <motion.span animate={{ rotate: morePieces ? 180 : 0 }} transition={{ type: "spring", duration: 0.3, bounce: 0 }} className="flex">
+                            <ChevronIcon size={15} className="rotate-90 text-stone-500" />
+                          </motion.span>
+                        </button>
                         {ideasCard}
                       </div>
                     </>

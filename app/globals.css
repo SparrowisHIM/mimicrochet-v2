@@ -62,3 +62,39 @@
     display: none;
   }
 }
+
+/* Fanned card stack (components/ui/card-stack.tsx). Cards tilt out from a shared base point;
+   on hover (mouse only) the fan spreads wider with a strong ease-out. Reduced motion: no movement. */
+@layer components {
+  .card-fan {
+    position: relative;
+    display: inline-block;
+  }
+  .card-fan > * {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    width: var(--card-w);
+    height: var(--card-h);
+    margin-left: calc(var(--card-w) / -2);
+    overflow: hidden;
+    border: 1px solid #fff;
+    border-radius: 7px;
+    background: var(--color-orange-100);
+    box-shadow: 0 3px 8px -2px rgb(28 25 23 / 0.24);
+    transform-origin: 50% 92%;
+    transform: translateX(calc(var(--i) * var(--fan-x))) rotate(calc(var(--i) * var(--fan-r)));
+    transition: transform 220ms cubic-bezier(0.19, 1, 0.22, 1);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .group:hover .card-fan > *,
+    .card-fan:hover > * {
+      transform: translateX(calc(var(--i) * var(--fan-x-open))) translateY(-2px) rotate(calc(var(--i) * var(--fan-r-open)));
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card-fan > * {
+      transition: none;
+    }
+  }
+}

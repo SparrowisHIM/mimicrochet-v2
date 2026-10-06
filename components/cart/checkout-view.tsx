@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState, useSyncExternalStore } from "react";
 import { ShopOrderCard } from "@/components/cart/shop-order-card";
 import { Button, buttonClass } from "@/components/ui/button";
+import { CardStack } from "@/components/ui/card-stack";
 import { Confetti } from "@/components/ui/confetti";
 import { bagTotal, useBagItems } from "@/lib/bag";
 import { bagStore } from "@/lib/local-store";
@@ -144,14 +145,8 @@ export function CheckoutView() {
         <p className="hidden rounded-[14px] bg-amber-100 px-4 py-3 text-[14px] text-amber-800 lg:block">Mimi packs your order within 2 days. You’ll get a tracking link right after paying.</p>
 
         <div className="rounded-[18px] bg-white p-4 lg:hidden">
-          <button type="button" onClick={() => setShowItems((v) => !v)} className="flex w-full items-center gap-3 text-left" aria-expanded={showItems}>
-            <span className="flex -space-x-3">
-              {items.slice(0, 3).map((p) => (
-                <span key={p.slug} className="relative h-12 w-9 overflow-hidden rounded-[8px] border-2 border-white bg-orange-100">
-                  <Image src={p.images[0]} alt="" fill sizes="36px" className="object-cover" />
-                </span>
-              ))}
-            </span>
+          <button type="button" onClick={() => setShowItems((v) => !v)} className="group flex w-full items-center gap-3 text-left" aria-expanded={showItems}>
+            <CardStack images={items.map((p) => p.images[0])} />
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="text-[15px] font-semibold">{items.length} {items.length === 1 ? "piece" : "pieces"}</span>
               <span className="truncate text-[13px] text-stone-500">{items.map((i) => i.name).join(" and ")}</span>

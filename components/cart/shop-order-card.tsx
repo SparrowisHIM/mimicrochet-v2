@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { CardStack } from "@/components/ui/card-stack";
 import type { Order } from "@/lib/orders";
 import { shopStages } from "@/lib/stages";
 
@@ -13,14 +14,7 @@ export function ShopOrderCard({ order }: { order: Order }) {
         <span className="rounded-full bg-emerald-100 px-3 py-1.5 text-[13px] leading-none font-semibold text-emerald-800">{shopStages[order.stage]}</span>
       </div>
       <div className="flex items-center gap-3">
-        <span className="flex -space-x-4">
-          {items.slice(0, 3).map((it) => (
-            <span key={it.slug} className="relative h-[68px] w-[51px] overflow-hidden rounded-[10px] border-2 border-white bg-orange-100">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={it.image} alt="" className="size-full object-cover" />
-            </span>
-          ))}
-        </span>
+        <CardStack images={items.map((it) => it.image)} size="md" />
         <span className="text-[15px] leading-snug font-medium">{items.map((i) => i.name + (i.size && i.size !== "One size" ? ` · ${i.size}` : "")).join(" and ")}</span>
       </div>
       <div className="flex flex-col gap-2">
