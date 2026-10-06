@@ -49,7 +49,6 @@ export function OrderStory() {
       <div className="container-page">
         <div className="mb-9 flex flex-col gap-5 lg:mb-14 lg:flex-row lg:items-end lg:justify-between lg:gap-16">
           <div className="flex flex-col gap-4">
-            <span className="text-[12px] font-semibold tracking-[0.16em] text-amber-800 uppercase">A little idea. A lot of care.</span>
             <h2 id="order-story-heading" className="max-w-[680px] font-serif text-[38px] leading-[1.08] tracking-[-0.025em] lg:text-[60px]">From idea<br />to doorstep.</h2>
           </div>
           <p className="max-w-[355px] text-[16px] leading-relaxed text-stone-600 lg:pb-1 lg:text-[18px]">You bring the idea, Mimi brings the hook. Here’s how a piece becomes yours.</p>
@@ -67,7 +66,7 @@ export function OrderStory() {
               {stages.map((stage, i) => <button key={stage.key} type="button" aria-pressed={i === active} aria-controls="order-story-media" aria-label={stage.label} onClick={() => setActive(i)} className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[12px] border text-[11px] font-medium transition-colors ${i === active ? "border-stone-900 bg-stone-900 text-orange-50" : "border-stone-200 bg-white text-stone-600"}`}><span className="text-[13px] tabular-nums">0{i + 1}</span>{stage.short}</button>)}
             </div>
             <div id="order-story-media" className="rounded-[24px] border border-stone-200 bg-white p-3 shadow-[0_24px_64px_-40px_rgb(28_25_23/0.35)] lg:p-4">
-              <div className="flex items-center justify-between px-1 pb-3 text-[11px] font-semibold tracking-[0.1em] text-stone-500 uppercase"><span>The Ruby Dress</span><span className="tabular-nums">0{active + 1} / 05</span></div>
+              <div className="flex items-center justify-between px-1 pb-3 text-[13px] font-medium text-stone-500"><span className="font-semibold text-stone-900">The Ruby Dress</span><span className="tabular-nums">{active + 1} of {story.length}</span></div>
               <div className="relative aspect-[4/5] w-full max-h-[58svh] overflow-hidden rounded-[15px] bg-stone-100">
                 <AnimatePresence initial={false}>
                   <motion.div key={active} className="absolute inset-0" initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduce ? 0.1 : 0.55, ease }}>
