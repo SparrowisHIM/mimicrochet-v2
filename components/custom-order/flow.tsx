@@ -20,10 +20,15 @@ import { isRequestDate } from "@/lib/request-date";
 import { newOrderIds, saveOrder, thumbnail, type Order } from "@/lib/orders";
 import { pieceFromIdea, pieceFromProduct, type Piece } from "@/lib/pieces";
 import { getProduct, type Product } from "@/lib/products";
+import { site } from "@/lib/site";
 import { sizeLabels } from "@/lib/sizes";
 import { formatPhone, fullPhone, hasWords, isName, phoneDigits, phoneProblem } from "@/lib/validate";
 
-const ease = [0.22, 1, 0.36, 1] as const;
+// Layout follows the Figma frames "v2 · Design · Desktop · 1–3" and the shared "Request summary" component.
+// Step change follows the motion brief (6 Oct): direction only, a 24px nudge with a fade, a no-bounce spring
+// that can turn around mid-move, a quicker exit, and a plain fade for reduced motion. One entrance per step.
+
+const easeOutExpo = [0.19, 1, 0.22, 1] as const;
 
 type Photo = { id: string; name: string; bytes: number; preview: string; file: File };
 
@@ -83,24 +88,15 @@ function Choice({ on, onClick, label, hint, invalid }: { on: boolean; onClick: (
 
 function Progress({ step }: { step: number }) {
   return (
-    <div className="flex gap-1.5" aria-hidden>
+    <div className="flex gap-1.5 lg:gap-2" aria-hidden>
       {[0, 1, 2].map((i) => (
         <span key={i} className="relative h-1 flex-1 overflow-hidden rounded-full bg-stone-200">
           <motion.span
             className="absolute inset-0 origin-left rounded-full bg-stone-900"
             initial={false}
             animate={{ scaleX: i <= step ? 1 : 0 }}
-            transition={{ type: "spring", stiffness: 90, damping: 18 }}
+            transition={{ type: "spring", duration: 0.45, bounce: 0 }}
           />
-          {i === step && (
-            <motion.span
-              key={step}
-              className="absolute inset-y-0 w-10 bg-linear-to-r from-transparent via-white/70 to-transparent"
-              initial={{ x: "-100%" }}
-              animate={{ x: "700%" }}
-              transition={{ duration: 1.1, ease: "easeOut", delay: 0.2 }}
-            />
-          )}
         </span>
       ))}
     </div>
@@ -110,7 +106,7 @@ function Progress({ step }: { step: number }) {
 /** A section the summary can jump to; it glows for a moment when you land on it. */
 function Spot({ id, flash, className = "", children }: { id: string; flash: { id: string; n: number } | null; className?: string; children: React.ReactNode }) {
   return (
-    <div id={id} className={`relative scroll-mt-28 ${className}`}>
+    <div id={id} className="relative scroll-mt-28">
       {flash?.id === id && (
         <motion.span
           key={flash.n}
@@ -121,19 +117,15 @@ function Spot({ id, flash, className = "", children }: { id: string; flash: { id
           aria-hidden
         />
       )}
-      <div className="relative">{children}</div>
+      {/* The layout classes go on the inner box, so gaps between the children actually apply. */}
+      <div className={`relative ${className}`}>{children}</div>
     </div>
   );
 }
 
 function Problem({ children }: { children: React.ReactNode }) {
   return (
-    <motion.p
-      role="alert"
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex items-center gap-1.5 text-[13px] font-medium text-red-700"
-    >
+    <motion.p role="alert" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-1.5 text-[13px] font-medium text-red-700">
       <span className="grid size-4 shrink-0 place-items-center rounded-full bg-red-600 text-[10px] font-bold text-white" aria-hidden>
         !
       </span>
@@ -142,24 +134,105 @@ function Problem({ children }: { children: React.ReactNode }) {
   );
 }
 
-/* ----------------------------- the request summary ----------------------------- */
+function Label({ children, hint }: { children: React.ReactNode; hint?: string }) {
+  return (
+    <span className="flex flex-col gap-0.5">
+      <span className="text-[15px] font-semibold">{children}</span>
+      {hint && <span className="text-[14px] text-stone-500">{hint}</span>}
+    </span>
+  );
+}
+
+/** Focused header: no site menu while ordering (Figma: logo, step, Exit). Without a step it's the confirmation. */
+function FocusHeader({ step }: { step?: number }) {
+  return (
+    <>
+      <header className="container-page flex items-center justify-between gap-4 pt-4 pb-4 lg:pt-6 lg:pb-5">
+        <Link href="/" className="font-serif text-[19px] tracking-[-0.01em] text-stone-900 max-[380px]:text-[16px] lg:text-[24px]" aria-label={`${site.name}, home`}>
+          {site.name}
+        </Link>
+        <span className="flex items-center gap-5 text-[14px] font-medium lg:text-[15px]">
+          {step !== undefined && (
+            <span className="text-stone-500 tabular-nums">
+              <span className="max-lg:hidden">Step </span>
+              {step + 1} of 3
+            </span>
+          )}
+          <Link href="/" className="text-stone-900 underline-offset-4 hover:underline">
+            Exit
+          </Link>
+        </span>
+      </header>
+      <div className="container-page">
+        <Progress step={step ?? 3} />
+      </div>
+    </>
+  );
+}
+
+/* ----------------------------- the request summary (Figma "Request summary") ----------------------------- */
 
 type RowState = "done" | "todo" | "warn";
 type Row = { key: string; value: string; state: RowState; step: number; field: string };
 const groups = ["The idea", "Make it yours", "You"];
 
-function StatusDot({ state }: { state: RowState }) {
+function RowIcon({ state }: { state: RowState }) {
+  const reduce = useReducedMotion();
+  if (state === "todo") return <span className="block size-4 shrink-0 rounded-full border-[1.5px] border-dashed border-stone-300" aria-hidden />;
   return (
     <motion.span
-      className={`grid size-[18px] shrink-0 place-items-center rounded-full ${
-        state === "done" ? "bg-emerald-600 text-white" : state === "warn" ? "bg-amber-500 text-white" : "border-[1.5px] border-dashed border-stone-300"
-      }`}
-      initial={false}
-      animate={{ scale: state === "todo" ? 1 : [0.5, 1.2, 1] }}
-      transition={{ duration: 0.35 }}
+      key={state}
+      className={`grid size-4 shrink-0 place-items-center rounded-full text-white ${state === "done" ? "bg-emerald-600" : "bg-amber-500"}`}
+      initial={reduce ? false : { scale: 0.6, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: "spring", duration: 0.3, bounce: 0.3 }}
+      aria-hidden
     >
-      {state === "done" ? <Check /> : state === "warn" ? <span className="text-[11px] leading-none font-bold">!</span> : null}
+      {state === "done" ? <Check size={9} /> : <span className="text-[10px] leading-none font-bold">!</span>}
     </motion.span>
+  );
+}
+
+function PieceSlot({ draft, onChange }: { draft: Draft; onChange: () => void }) {
+  const p = draft.piece;
+  const photo = draft.photos[0];
+  const chosen = Boolean(p || photo || hasWords(draft.words, 4) || draft.voice);
+  const name = p ? p.name : photo ? "Your photo" : chosen ? "Your idea" : "Your piece";
+  const meta = p
+    ? p.price
+      ? `From ₦${p.price.toLocaleString("en-NG")}, made to order`
+      : "Price on request"
+    : chosen
+      ? "Mimi prices it with you on WhatsApp."
+      : "Add a photo or pick a piece, and it shows up here.";
+  return (
+    <div className="flex items-center gap-4">
+      <span className="relative h-32 w-24 shrink-0 overflow-hidden rounded-[12px] xl:h-40 xl:w-[120px]">
+        {p ? (
+          <Image src={p.image} alt="" fill sizes="120px" className="object-cover" />
+        ) : photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photo.preview} alt="" className="size-full object-cover" />
+        ) : (
+          <span className="grid size-full place-items-center rounded-[12px] border-[1.5px] border-dashed border-stone-300 bg-stone-50 text-stone-400" aria-hidden>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="4" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.6" />
+              <circle cx="8.5" cy="9.5" r="1.6" fill="currentColor" />
+              <path d="m4 17 4.8-4.6a1.5 1.5 0 0 1 2 0L15 16.5l2-1.9a1.5 1.5 0 0 1 2 0l1.5 1.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        )}
+      </span>
+      <span className="flex min-w-0 flex-col gap-1">
+        <span className={`font-serif text-[22px] leading-tight ${chosen ? "text-stone-900" : "text-stone-400"}`}>{name}</span>
+        <span className="text-[14px] leading-snug text-stone-500">{meta}</span>
+        {chosen && (
+          <button type="button" onClick={onChange} className="self-start text-[14px] font-medium underline underline-offset-4">
+            Change
+          </button>
+        )}
+      </span>
+    </div>
   );
 }
 
@@ -169,91 +242,90 @@ function Summary({ draft, rows, step, onJump, compact }: { draft: Draft; rows: R
   const all = ready === rows.length && (unsized(draft.piece) || draft.sizeOk);
 
   return (
-    <div className="relative flex flex-col gap-1 rounded-[24px] border border-stone-200 bg-stone-50 p-2 shadow-[0_24px_60px_-36px_rgb(28_25_23/0.4)]">
-      <div className="flex items-center justify-between px-3 pt-3 pb-2">
+    <div className="relative flex flex-col gap-[18px] rounded-[22px] bg-white p-5 shadow-[0_24px_56px_-32px_rgb(28_25_23/0.3)] lg:p-6">
+      <div className="flex items-center justify-between">
         <span className="text-[16px] font-semibold">Your request</span>
-        <motion.span
-          className="rounded-[8px] bg-amber-100 px-2 py-1 text-[13px] font-semibold text-amber-800 tabular-nums"
-          animate={{ opacity: all ? 0 : 1 }}
-        >
+        <motion.span className="text-[14px] font-medium text-stone-500 tabular-nums" animate={{ opacity: all ? 0 : 1 }} transition={{ duration: 0.15 }}>
           {ready} of {rows.length}
         </motion.span>
       </div>
-      {!compact && (draft.piece || draft.photos[0]) && (
-        <div className="mx-1 mb-1 flex items-center gap-3 rounded-[16px] bg-white p-2.5">
-          <span className="relative h-16 w-12 overflow-hidden rounded-[10px] bg-orange-100">
-            <Image src={draft.piece?.image ?? draft.photos[0].preview} alt="" fill sizes="48px" className="object-cover" unoptimized={!draft.piece} />
-          </span>
-          <span className="flex min-w-0 flex-col">
-            <span className="truncate text-[15px] font-medium">{draft.piece?.name ?? "Your photo"}</span>
-            <span className="text-[13px] text-stone-500">{draft.piece?.price ? `From ₦${draft.piece.price.toLocaleString("en-NG")}, made to order` : "Price agreed on WhatsApp"}</span>
-          </span>
-        </div>
+
+      {!compact && <PieceSlot draft={draft} onChange={() => onJump(rows[0])} />}
+
+      <div className="flex flex-col gap-3.5">
+        {groups.map((g, gi) => {
+          const here = gi === step;
+          return (
+            <div key={g} className="flex flex-col gap-1.5">
+              <span className="flex items-center gap-2 px-3 text-[12px] font-medium text-stone-400">
+                {g}
+                <span className="h-px flex-1 border-t border-dashed border-stone-200" aria-hidden />
+              </span>
+              <div className={`flex flex-col rounded-[14px] px-3 transition-colors duration-200 ${here ? "bg-stone-50 ring-1 ring-stone-100" : ""}`}>
+                {rows
+                  .filter((r) => r.step === gi)
+                  .map((r) => (
+                    <button
+                      key={r.key}
+                      type="button"
+                      onClick={() => onJump(r)}
+                      className="group relative flex items-center gap-2.5 border-b border-stone-100 py-[11px] text-left text-[15px] last:border-b-0"
+                      aria-label={`${r.key}: ${r.value || "not added yet"}. Change`}
+                    >
+                      {/* A fresh key per value makes the row flash amber when it's filled or changed. */}
+                      {r.value && !reduce && (
+                        <motion.span
+                          key={r.value}
+                          className="absolute -inset-x-2 inset-y-0.5 rounded-[10px] bg-amber-100"
+                          initial={{ opacity: 0.9 }}
+                          animate={{ opacity: 0 }}
+                          transition={{ duration: 0.6, ease: easeOutExpo }}
+                          aria-hidden
+                        />
+                      )}
+                      <span className="relative">
+                        <RowIcon state={r.state} />
+                      </span>
+                      <span className="relative text-stone-500 transition-colors duration-150 group-hover:text-stone-900">{r.key}</span>
+                      <span
+                        className={`relative ml-auto max-w-[60%] truncate text-right ${
+                          r.state === "done" ? "font-medium text-stone-900" : r.state === "warn" ? "font-medium text-amber-800" : "text-stone-300"
+                        }`}
+                      >
+                        {r.value || "—"}
+                      </span>
+                      <ChevronIcon size={14} className="relative -mr-1 shrink-0 text-stone-300 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100" />
+                    </button>
+                  ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {ready > 0 && (
+        <p className="text-[13px] text-stone-400">
+          <span className="lg:hidden">Tap</span>
+          <span className="max-lg:hidden">Click</span> any line to change it.
+        </p>
       )}
 
-      {groups.map((g, gi) => {
-        const items = rows.filter((r) => r.step === gi);
-        const here = gi === step;
-        return (
-          <div key={g} className="flex flex-col">
-            <span className="flex items-center gap-2 px-3 pt-3 pb-1.5 text-[12px] font-medium text-stone-400">
-              {g}
-              <span className="h-px flex-1 border-t border-dashed border-stone-200" aria-hidden />
-            </span>
-            <div className={`relative flex flex-col rounded-[14px] transition-colors duration-300 ${here ? "border border-stone-200 bg-white shadow-[0_1px_2px_rgb(28_25_23/0.06)]" : "border border-transparent"}`}>
-              {here && <motion.span layoutId="summary-here" className="absolute top-3 bottom-3 left-0 w-[2.5px] rounded-full bg-stone-900" aria-hidden />}
-              {items.map((r) => (
-                <button
-                  key={r.key}
-                  type="button"
-                  onClick={() => onJump(r)}
-                  className="group relative flex items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left text-[15px] transition-colors hover:bg-stone-100/70"
-                  aria-label={`${r.key}: ${r.value || "still needed"}. Change`}
-                >
-                  {/* A fresh key per value makes the row flash amber each time it's filled or changed. */}
-                  {r.value && !reduce && (
-                    <motion.span
-                      key={r.value}
-                      className="absolute inset-0.5 rounded-[10px] bg-amber-100"
-                      initial={{ opacity: 1 }}
-                      animate={{ opacity: 0 }}
-                      transition={{ duration: 0.95 }}
-                      aria-hidden
-                    />
-                  )}
-                  <span className="relative">
-                    <StatusDot state={r.state} />
-                  </span>
-                  <span className="relative text-stone-500">{r.key}</span>
-                  <span
-                    className={`relative ml-auto max-w-[58%] truncate text-right ${
-                      r.state === "done" ? "font-medium text-stone-900" : r.state === "warn" ? "font-medium text-amber-800" : "text-stone-400"
-                    }`}
-                  >
-                    {r.value || "Still needed"}
-                  </span>
-                  <ChevronIcon size={16} className="relative shrink-0 text-stone-300 transition-[transform,color] group-hover:translate-x-0.5 group-hover:text-stone-900" />
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-      })}
-
-      <p className="px-3 pt-2 pb-2 text-[12px] text-stone-400">Tap any line to change it.</p>
+      {!compact && (
+        <p className="rounded-[12px] bg-orange-50 px-4 py-3.5 text-[14px] leading-snug text-stone-600">No payment now. Mimi confirms the price on WhatsApp before she starts.</p>
+      )}
 
       <AnimatePresence>
         {all && (
           <motion.div
-            className="absolute -top-5 -right-3 grid size-[92px] place-items-center rounded-full border-2 border-emerald-700 bg-emerald-50 text-center text-[13px] leading-[1.1] font-semibold text-emerald-800 shadow-[0_10px_24px_-10px_rgb(4_120_87/0.5)]"
-            initial={reduce ? { opacity: 0 } : { scale: 2.4, rotate: -30, opacity: 0 }}
+            className="absolute -top-4 -right-3 grid size-[92px] place-items-center rounded-full border-2 border-emerald-700 bg-emerald-50 text-center text-[13px] leading-[1.15] font-semibold text-emerald-800 shadow-[0_10px_24px_-10px_rgb(4_120_87/0.5)]"
+            initial={reduce ? { opacity: 0 } : { scale: 1.6, rotate: -30, opacity: 0 }}
             animate={{ scale: 1, rotate: -12, opacity: 1 }}
-            exit={{ opacity: 0, scale: 0.6, rotate: 10 }}
-            transition={reduce ? { duration: 0.2 } : { type: "spring", stiffness: 380, damping: 14 }}
+            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
+            transition={reduce ? { duration: 0.2 } : { type: "spring", duration: 0.45, bounce: 0.35 }}
             role="status"
           >
             <span className="flex flex-col items-center gap-1">
-              <Check size={16} />
+              <Check size={15} />
               Ready
               <br />
               to send
@@ -266,7 +338,6 @@ function Summary({ draft, rows, step, onJump, compact }: { draft: Draft; rows: R
 }
 
 /* ----------------------------- the flow ----------------------------- */
-
 
 export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: Piece; initialSize?: string }) {
   const reduce = useReducedMotion();
@@ -354,7 +425,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       state: whenDone ? "done" : d.when ? "warn" : "todo",
     },
     {
-      key: "You",
+      key: "Contact",
       step: 2,
       field: !nameOk && d.name ? "f-name" : phoneErr && d.phone ? "f-phone" : !nameOk ? "f-name" : "f-phone",
       value:
@@ -396,16 +467,14 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
     setDir(next > step ? 1 : -1);
     setStep(next);
     setTried(0);
-    if (then) setTimeout(() => focusField(then), reduce ? 60 : 520);
+    if (then) setTimeout(() => focusField(then), reduce ? 60 : 320);
     else requestAnimationFrame(() => top.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" }));
   };
 
-  /** From the summary: go straight to a line, unless an earlier step still needs something. */
+  /** From the summary: go straight to a line. */
   const jump = (r: Row) => {
-    const to = r.step;
-    const field = r.field;
-    if (to === step) focusField(field);
-    else go(to, field);
+    if (r.step === step) focusField(r.field);
+    else go(r.step, r.field);
   };
 
   const next = () => {
@@ -470,372 +539,391 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
     setSending({ order, files: [...d.photos.map((p) => p.file), ...(d.voice ? [d.voice.file] : [])] });
   };
 
-  const variants = {
-    enter: (dr: number) => (reduce ? { opacity: 0 } : { opacity: 0, x: 60 * dr, filter: "blur(6px)" }),
-    center: { opacity: 1, x: 0, filter: "blur(0px)" },
-    exit: (dr: number) => (reduce ? { opacity: 0 } : { opacity: 0, x: -60 * dr, filter: "blur(6px)" }),
+  // The step change, per the brief.
+  const stepMotion = {
+    enter: (dr: number) => (reduce ? { opacity: 0 } : { opacity: 0, x: 24 * dr, filter: "blur(2px)" }),
+    center: {
+      opacity: 1,
+      x: 0,
+      filter: "blur(0px)",
+      transition: reduce ? { duration: 0.15 } : { type: "spring" as const, duration: 0.28, bounce: 0 },
+    },
+    exit: (dr: number) =>
+      reduce
+        ? { opacity: 0, transition: { duration: 0.15 } }
+        : { opacity: 0, x: -24 * dr, filter: "blur(2px)", transition: { duration: 0.15, ease: easeOutExpo } },
   };
-  const item = {
-    hidden: reduce ? { opacity: 0 } : { opacity: 0, y: 22 },
-    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 260, damping: 26 } },
-  };
-  const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } } };
 
   const title = ["What should Mimi make?", "Make it yours", "Where can Mimi reach you?"][step];
   const lead = [
-    "Start with a photo, one of Mimi’s pieces, or your own words. There’s no payment now.",
+    "Show her a photo or one of her pieces, then tell her about it. No payment now.",
     "Mimi uses this to price your piece and plan the timeline.",
     "She’ll message you on WhatsApp to agree the price. Nothing is charged today.",
   ][step];
 
+  const backButton = step > 0 && (
+    <button type="button" onClick={() => go(step - 1)} className="px-1 text-[16px] font-semibold underline underline-offset-4">
+      Back
+    </button>
+  );
+  const mainButton = (cls: string) =>
+    step < 2 ? (
+      <Button className={cls} onClick={next}>
+        Continue
+      </Button>
+    ) : (
+      <Button className={cls} onClick={send} disabled={Boolean(sending)}>
+        Send to Mimi
+      </Button>
+    );
+
+  const ideasCard = (
+    <button type="button" onClick={() => setIdeasOpen(true)} className="group flex items-center gap-3 rounded-[16px] bg-amber-100 p-3 pr-4 text-left transition-colors duration-150 hover:bg-amber-200/70">
+      <span className="flex -space-x-3.5">
+        {["/images/ideas/daisy-ruffle-crochet-set.jpg", "/images/ideas/carnival-granny-crochet-shirt.jpg", "/images/ideas/azure-bloom-granny-bucket-hat.jpg"].map((s) => (
+          <span key={s} className="relative h-11 w-8 overflow-hidden rounded-[8px] border-2 border-amber-100">
+            <Image src={s} alt="" fill sizes="32px" className="object-cover" />
+          </span>
+        ))}
+      </span>
+      <span className="flex flex-1 flex-col">
+        <span className="text-[15px] font-semibold text-amber-900">{d.piece?.source === "idea" ? `Idea: ${d.piece.name}` : "Need ideas?"}</span>
+        <span className="text-[13px] text-amber-800">Concepts, or search Pinterest</span>
+      </span>
+      <ChevronIcon size={18} className="text-amber-800 transition-transform duration-150 group-hover:translate-x-0.5" />
+    </button>
+  );
+
   const flow = (
-    <div ref={top} className="scroll-mt-20">
-      <div className="container-page flex flex-col gap-3 pt-5 lg:pt-8">
-        <div className="flex items-center justify-between text-[14px]">
-          <span className="font-medium text-stone-500">Custom order · Step {step + 1} of 3</span>
-          <Link href="/" className="font-medium underline underline-offset-4">
-            Exit
-          </Link>
-        </div>
-        <Progress step={step} />
-      </div>
+    <div ref={top} className="scroll-mt-4">
+      <FocusHeader step={step} />
 
-      <div className="container-page flex gap-16 pt-7 pb-36 lg:pt-12 lg:pb-24">
-        <div className="min-w-0 flex-1 lg:max-w-[640px]">
-          <AnimatePresence mode="wait" custom={dir} initial={false}>
-            <motion.div key={step} custom={dir} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.38, ease }}>
-              <motion.div variants={stagger} initial="hidden" animate="show" className="flex flex-col gap-7">
-                {step === 1 && d.piece && (
-                  <motion.div variants={item} className="flex items-center gap-3 rounded-[18px] bg-white p-3 pr-4">
-                    <span className="relative h-20 w-[60px] shrink-0 overflow-hidden rounded-[10px] bg-orange-100">
-                      <Image src={d.piece.image} alt="" fill sizes="60px" className="object-cover" />
-                    </span>
-                    <span className="flex flex-1 flex-col">
-                      <span className="text-[15px] font-medium">{d.piece.name}</span>
-                      <span className="text-[14px] text-stone-500">
-                        {d.piece.price ? `From ₦${d.piece.price.toLocaleString("en-NG")}` : "Price on request"} · {d.piece.source === "idea" ? "Idea" : "Made to order"}
-                      </span>
-                    </span>
-                    <button type="button" onClick={() => go(0)} className="text-[14px] font-medium underline underline-offset-4">
-                      Change
-                    </button>
-                  </motion.div>
-                )}
+      <div className="container-page flex justify-between gap-12 pt-7 pb-36 lg:pt-14 lg:pb-28 xl:gap-16">
+        <div className="relative min-w-0 flex-1 lg:max-w-[640px]">
+          <AnimatePresence mode="popLayout" custom={dir} initial={false}>
+            <motion.div key={step} custom={dir} variants={stepMotion} initial="enter" animate="center" exit="exit" className="flex flex-col gap-8">
+              {step === 1 && d.piece && (
+                <div className="flex items-center gap-3 rounded-[18px] bg-white p-3 pr-4 lg:hidden">
+                  <span className="relative h-20 w-[60px] shrink-0 overflow-hidden rounded-[10px] bg-orange-100">
+                    <Image src={d.piece.image} alt="" fill sizes="60px" className="object-cover" />
+                  </span>
+                  <span className="flex flex-1 flex-col">
+                    <span className="text-[15px] font-medium">{d.piece.name}</span>
+                    <span className="text-[14px] text-stone-500">{d.piece.price ? `From ₦${d.piece.price.toLocaleString("en-NG")}, made to order` : "Price on request"}</span>
+                  </span>
+                  <button type="button" onClick={() => go(0)} className="text-[14px] font-medium underline underline-offset-4">
+                    Change
+                  </button>
+                </div>
+              )}
 
-                <motion.div variants={item} className="flex flex-col gap-2.5">
-                  <h1 className="font-serif text-[32px] leading-[1.08] tracking-[-0.01em] lg:text-[48px]">{title}</h1>
-                  <p className="text-[16px] leading-[1.5] text-stone-600 lg:text-[18px]">{lead}</p>
-                </motion.div>
+              <div className="flex flex-col gap-2.5">
+                <h1 className="font-serif text-[32px] leading-[1.08] tracking-[-0.01em] lg:text-[44px]">{title}</h1>
+                <p className="text-[16px] leading-[1.5] text-stone-600">{lead}</p>
+              </div>
 
-                {step === 0 && (
-                  <Spot id="f-source" flash={flash} className="flex flex-col gap-7">
-                    <motion.div variants={item} className="flex flex-col gap-3">
-                      <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
-                      {d.photos.length === 0 ? (
-                        <motion.button
-                          type="button"
-                          whileTap={{ scale: 0.985 }}
-                          onClick={() => fileInput.current?.click()}
-                          onDragOver={(e) => e.preventDefault()}
-                          onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
-                          className="group flex flex-col items-center gap-2 rounded-[22px] border-[1.5px] border-dashed border-stone-300 bg-white px-6 py-8 text-center transition-colors hover:border-stone-900"
-                        >
-                          <span className="grid size-12 place-items-center rounded-full bg-orange-100 text-[26px] leading-none transition-transform duration-300 group-hover:scale-110 group-hover:rotate-90">+</span>
-                          <span className="text-[17px] font-semibold">Add a photo</span>
-                          <span className="max-w-[300px] text-[14px] text-stone-500">A screenshot, a Pinterest pin, or a photo of something you love.</span>
-                        </motion.button>
-                      ) : (
-                        <div className="flex flex-col gap-2.5">
-                          <span className="text-[15px] font-semibold">Your photos</span>
-                          <AnimatePresence initial={false}>
-                            {d.photos.map((p, i) => (
-                              <motion.div
-                                key={p.id}
-                                layout
-                                initial={{ opacity: 0, scale: 0.9, filter: "blur(6px)" }}
-                                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                                exit={{ opacity: 0, x: 30 }}
-                                transition={{ duration: 0.35, ease }}
-                                className="flex items-center gap-3 rounded-[16px] bg-white p-2.5 pr-4"
-                              >
-                                <span className="relative size-12 shrink-0 overflow-hidden rounded-[10px]">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={p.preview} alt="" className="size-full object-cover" />
+              {step === 0 && (
+                <Spot id="f-source" flash={flash} className="flex flex-col gap-9">
+                  <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
+
+                  <div className="flex flex-col gap-3.5">
+                    <Label>Show Mimi a photo</Label>
+                    {d.photos.length === 0 ? (
+                      <motion.button
+                        type="button"
+                        whileTap={{ scale: 0.985 }}
+                        onClick={() => fileInput.current?.click()}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
+                        className={`group flex flex-col items-center gap-2 rounded-[18px] border-[1.5px] border-dashed bg-white px-6 py-8 text-center transition-colors duration-150 hover:border-stone-900 lg:py-9 ${tried && !hasSource ? "border-red-400" : "border-stone-400"}`}
+                      >
+                        <span className="grid size-12 place-items-center rounded-full bg-orange-100 text-[24px] leading-none text-amber-800 transition-colors duration-150 group-hover:bg-amber-200">+</span>
+                        <span className="text-[17px] font-semibold">Add a photo</span>
+                        <span className="max-w-[320px] text-[14px] text-stone-600">A screenshot, a Pinterest pin, or a photo of something you love.</span>
+                        <span className="text-[13px] text-stone-400 max-lg:hidden">or drop it here</span>
+                      </motion.button>
+                    ) : (
+                      <div className="flex flex-col gap-2.5">
+                        <AnimatePresence initial={false}>
+                          {d.photos.map((p, i) => (
+                            <motion.div
+                              key={p.id}
+                              layout
+                              initial={{ opacity: 0, scale: 0.96 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                              transition={{ duration: 0.3, ease: easeOutExpo }}
+                              className="flex items-center gap-3 rounded-[16px] bg-white p-2.5 pr-4"
+                            >
+                              <span className="relative size-12 shrink-0 overflow-hidden rounded-[10px]">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={p.preview} alt="" className="size-full object-cover" />
+                              </span>
+                              <span className="flex min-w-0 flex-1 flex-col">
+                                <span className="flex items-center gap-2">
+                                  <span className="truncate text-[15px] font-medium">{p.name}</span>
+                                  {i === 0 && <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-semibold text-amber-800">Main</span>}
                                 </span>
-                                <span className="flex min-w-0 flex-1 flex-col">
-                                  <span className="flex items-center gap-2">
-                                    <span className="truncate text-[15px] font-medium">{p.name}</span>
-                                    {i === 0 && <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-semibold text-amber-800">Main</span>}
-                                  </span>
-                                  <span className="text-[13px] text-stone-500">{fmtBytes(p.bytes)}</span>
-                                </span>
-                                <button type="button" onClick={() => set({ photos: d.photos.filter((x) => x.id !== p.id) })} className="text-[14px] underline underline-offset-2">
-                                  Remove
-                                </button>
-                              </motion.div>
-                            ))}
-                          </AnimatePresence>
-                          {d.photos.length < 6 && (
-                            <button type="button" onClick={() => fileInput.current?.click()} className="flex h-12 items-center justify-center gap-2 rounded-[16px] border-[1.5px] border-dashed border-stone-300 text-[15px] font-medium hover:border-stone-900">
-                              + Add another photo
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </motion.div>
+                                <span className="text-[13px] text-stone-500">{fmtBytes(p.bytes)}</span>
+                              </span>
+                              <button type="button" onClick={() => set({ photos: d.photos.filter((x) => x.id !== p.id) })} className="text-[14px] underline underline-offset-2">
+                                Remove
+                              </button>
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                        {d.photos.length < 6 && (
+                          <button type="button" onClick={() => fileInput.current?.click()} className="flex h-12 items-center justify-center gap-2 rounded-[16px] border-[1.5px] border-dashed border-stone-300 text-[15px] font-medium transition-colors duration-150 hover:border-stone-900">
+                            + Add another photo
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
-                    {d.photos.length === 0 && (
-                      <motion.div variants={item} className="flex flex-col gap-3">
-                        <span className="text-[15px] font-semibold">Or start from one of Mimi’s pieces</span>
-                        <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 lg:mx-0 lg:px-0">
+                  {d.photos.length === 0 && (
+                    <>
+                      <div className="flex items-center gap-3.5 text-[14px] font-medium text-stone-500" aria-hidden>
+                        <span className="h-px flex-1 bg-stone-200" />
+                        or
+                        <span className="h-px flex-1 bg-stone-200" />
+                      </div>
+
+                      <div className="flex flex-col gap-3.5">
+                        <Label>Pick one of Mimi’s pieces</Label>
+                        <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-x-4 lg:gap-y-6 lg:overflow-visible lg:px-0">
                           {starter.map((p) => {
                             const on = d.piece?.slug === p.slug;
                             return (
-                              <motion.button key={p.slug} type="button" whileTap={{ scale: 0.96 }} aria-pressed={on} onClick={() => set({ piece: on ? undefined : pieceFromProduct(p) })} className="flex w-[120px] shrink-0 flex-col gap-2 text-left">
-                                <span className={`relative block aspect-[3/4] overflow-hidden rounded-[14px] bg-orange-100 transition-shadow ${on ? "ring-[2.5px] ring-stone-900 ring-offset-2 ring-offset-orange-50" : ""}`}>
-                                  <Image src={p.images[0]} alt="" fill sizes="120px" className={`object-cover transition-transform duration-500 ${on ? "scale-105" : ""}`} />
+                              <motion.button key={p.slug} type="button" whileTap={{ scale: 0.97 }} aria-pressed={on} onClick={() => set({ piece: on ? undefined : pieceFromProduct(p) })} className="flex w-[120px] shrink-0 flex-col gap-2 text-left lg:w-auto">
+                                <span className={`relative block aspect-[3/4] overflow-hidden rounded-[14px] bg-orange-100 transition-shadow duration-150 ${on ? "ring-[2.5px] ring-stone-900 ring-offset-2 ring-offset-orange-50" : ""}`}>
+                                  <Image src={p.images[0]} alt="" fill sizes="(min-width: 1024px) 150px, 120px" className="object-cover" />
                                   <AnimatePresence>
                                     {on && (
-                                      <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ type: "spring", stiffness: 500, damping: 18 }} className="absolute top-2 right-2 grid size-6 place-items-center rounded-full bg-stone-900 text-white">
+                                      <motion.span
+                                        initial={{ scale: 0.6, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        exit={{ scale: 0.8, opacity: 0, transition: { duration: 0.12 } }}
+                                        transition={{ type: "spring", duration: 0.3, bounce: 0.3 }}
+                                        className="absolute top-2 right-2 grid size-6 place-items-center rounded-full bg-stone-900 text-white"
+                                      >
                                         <Check size={12} />
                                       </motion.span>
                                     )}
                                   </AnimatePresence>
                                 </span>
-                                <span className="text-[14px] leading-tight font-medium">{p.name}</span>
+                                <span className="text-[14px] leading-tight font-medium lg:min-h-[2lh]">{p.name}</span>
                               </motion.button>
                             );
                           })}
                         </div>
-                      </motion.div>
-                    )}
+                        {ideasCard}
+                      </div>
+                    </>
+                  )}
 
-                    <motion.button variants={item} type="button" onClick={() => setIdeasOpen(true)} className="flex items-center gap-3 rounded-[18px] bg-white p-3 pr-4 text-left">
-                      <span className="flex -space-x-3">
-                        {["/images/ideas/daisy-ruffle-crochet-set.jpg", "/images/ideas/carnival-granny-crochet-shirt.jpg", "/images/ideas/azure-bloom-granny-bucket-hat.jpg"].map((s) => (
-                          <span key={s} className="relative h-12 w-9 overflow-hidden rounded-[8px] border-2 border-white">
-                            <Image src={s} alt="" fill sizes="36px" className="object-cover" />
-                          </span>
-                        ))}
-                      </span>
-                      <span className="flex flex-1 flex-col">
-                        <span className="text-[15px] font-semibold">{d.piece?.source === "idea" ? `Idea: ${d.piece.name}` : "Need ideas?"}</span>
-                        <span className="text-[13px] text-stone-500">Concepts, or search Pinterest</span>
-                      </span>
-                      <ChevronIcon size={20} />
-                    </motion.button>
-
-                    <motion.div variants={item} className={`flex flex-col gap-3 rounded-[22px] border bg-white p-4 focus-within:border-stone-900 ${tried && !hasSource ? "border-red-400" : "border-stone-300"}`}>
-                      <label className="sr-only" htmlFor="describe">Describe it</label>
+                  <div className="flex flex-col gap-2.5">
+                    <Label hint={hasVisual ? "Optional. Type it, or hold the mic for a voice note." : "Type it, or hold the mic for a voice note."}>Tell Mimi about it</Label>
+                    <div className={`flex flex-col gap-3 rounded-[22px] border bg-white p-4 transition-colors duration-150 focus-within:border-stone-900 ${tried && !hasSource ? "border-red-400" : "border-stone-300"}`}>
+                      <label className="sr-only" htmlFor="describe">Tell Mimi about it</label>
                       <textarea
                         id="describe"
                         rows={3}
                         value={d.words}
                         onChange={(e) => set({ words: e.target.value })}
-                        placeholder={d.photos.length ? "Anything to add? Type it here." : "Or tell Mimi in your own words: the piece, colours, the occasion…"}
+                        placeholder="The piece, the colours, the occasion…"
                         className="w-full resize-none bg-transparent text-[16px] leading-[1.5] outline-none placeholder:text-stone-400"
                       />
                       <div className="flex items-center justify-between gap-3">
-                        <button type="button" onClick={() => fileInput.current?.click()} className="grid size-10 place-items-center rounded-full bg-orange-50 text-[22px] leading-none hover:bg-orange-100" aria-label="Add a photo">
+                        <button type="button" onClick={() => fileInput.current?.click()} className="grid size-10 place-items-center rounded-full bg-orange-50 text-[22px] leading-none transition-colors duration-150 hover:bg-orange-100" aria-label="Add a photo">
                           +
                         </button>
                         <VoiceNote value={d.voice} onChange={(voice) => set({ voice })} />
                       </div>
-                    </motion.div>
-                    {tried > 0 && !hasSource && <Problem>Add a photo, pick one of Mimi’s pieces, or describe your idea in a few words.</Problem>}
-                  </Spot>
-                )}
+                    </div>
+                  </div>
+                  {tried > 0 && !hasSource && <Problem>Add a photo, pick one of Mimi’s pieces, or describe your idea in a few words.</Problem>}
+                </Spot>
+              )}
 
-                {step === 1 && (
-                  <>
-                    {!unsized(d.piece) && (
-                      <motion.div variants={item}>
-                        <Spot id="f-size" flash={flash} className="flex flex-col gap-3">
-                          <span className="text-[15px] font-semibold">Size</span>
-                          <div className="flex gap-2" role="radiogroup" aria-label="Size">
-                            {sizeLabels.map((s) => (
-                              <Chip key={s} on={d.size === s} onClick={() => set({ size: d.size === s ? undefined : s, sizeOk: false })} className="flex-1 justify-center max-[380px]:px-3 lg:flex-none lg:px-6">
-                                {s}
-                              </Chip>
+              {step === 1 && (
+                <>
+                  {!unsized(d.piece) && (
+                    <Spot id="f-size" flash={flash} className="flex flex-col gap-3">
+                      <Label>Size</Label>
+                      <div className="flex gap-2" role="radiogroup" aria-label="Size">
+                        {sizeLabels.map((s) => (
+                          <Chip key={s} on={d.size === s} onClick={() => set({ size: d.size === s ? undefined : s, sizeOk: false })} className="flex-1 justify-center max-[380px]:px-3 lg:flex-none lg:px-6">
+                            {s}
+                          </Chip>
+                        ))}
+                      </div>
+                      <div className="flex flex-col gap-3 rounded-[18px] bg-white p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="flex flex-col">
+                            <span className="text-[15px] font-semibold">Not sure of your size?</span>
+                            <span className="text-[13px] text-stone-500">Add your measurements and Mimi uses them instead.</span>
+                          </span>
+                          <span className="flex shrink-0 gap-0.5 rounded-full bg-orange-100 p-[3px]">
+                            {(["cm", "in"] as const).map((u) => (
+                              <button key={u} type="button" onClick={() => set({ unit: u })} aria-pressed={d.unit === u} className={`rounded-full px-3 py-1 text-[13px] ${d.unit === u ? "bg-stone-900 font-semibold text-orange-50" : "text-stone-600"}`}>
+                                {u}
+                              </button>
                             ))}
-                          </div>
-                          <div className="flex flex-col gap-3 rounded-[18px] bg-white p-4">
-                            <div className="flex items-start justify-between gap-3">
-                              <span className="flex flex-col">
-                                <span className="text-[15px] font-semibold">Not sure of your size?</span>
-                                <span className="text-[13px] text-stone-500">Add your measurements and Mimi uses them instead.</span>
-                              </span>
-                              <span className="flex shrink-0 gap-0.5 rounded-full bg-orange-100 p-[3px]">
-                                {(["cm", "in"] as const).map((u) => (
-                                  <button key={u} type="button" onClick={() => set({ unit: u })} aria-pressed={d.unit === u} className={`rounded-full px-3 py-1 text-[13px] ${d.unit === u ? "bg-stone-900 font-semibold text-orange-50" : "text-stone-600"}`}>
-                                    {u}
-                                  </button>
-                                ))}
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2.5">
-                              {measureSteps.map((m) => {
-                                const v = d.measures[m.key];
-                                return (
-                                  <button key={m.key} type="button" onClick={() => setMeasuring(m.key)} className="flex flex-col gap-1.5 text-left">
-                                    <span className="text-[13px] font-medium text-stone-600">{m.label}</span>
-                                    <span className={`flex h-12 items-center justify-between rounded-[12px] border px-3.5 text-[16px] ${v ? "border-stone-900 font-medium" : "border-stone-300 text-stone-400"}`}>
-                                      {v ? formatMeasure(v, d.unit) : "Add"}
-                                      <span className="text-[13px] text-stone-400">{d.unit}</span>
-                                    </span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                            <p className="text-[13px] text-stone-500">Tip: measure a top or dress that already fits you well, laid flat.</p>
-                          </div>
-                          {tried > 0 && !sizeDone && <Problem>Pick a size, or add your measurements.</Problem>}
-                        </Spot>
-                      </motion.div>
-                    )}
-
-                    <motion.div variants={item}>
-                      <Spot id="f-colours" flash={flash} className="flex flex-col gap-2.5">
-                        <span className="text-[15px] font-semibold" id="colours-label">Colours</span>
-                        <div role="radiogroup" aria-labelledby="colours-label" className="flex flex-col gap-2.5">
-                          <Choice
-                            on={d.colours === "photo"}
-                            onClick={() => set({ colours: "photo" })}
-                            label={hasVisual ? "As in the photo" : "Mimi’s choice"}
-                            hint={hasVisual ? (d.piece ? "Like the piece you picked" : "Like your photo") : "She suggests colours that suit the piece"}
-                            invalid={tried > 0 && !d.colours}
-                          />
-                          <Choice on={d.colours === "different"} onClick={() => set({ colours: "different" })} label="Different colours" hint="Tell Mimi which colours you’d like" invalid={tried > 0 && !d.colours} />
+                          </span>
                         </div>
-                        <AnimatePresence initial={false}>
-                          {d.colours === "different" && (
-                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden px-0.5 pb-0.5">
-                              <input autoFocus value={d.colourNote} onChange={(e) => set({ colourNote: e.target.value.slice(0, 80) })} placeholder="e.g. lilac and white" className={`${inputClass} mt-1`} aria-label="Which colours" aria-invalid={tried > 0 && !coloursDone} />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                        {tried > 0 && !coloursDone && <Problem>{d.colours === "different" ? "Name the colours you’d like." : "Choose the colours."}</Problem>}
-                      </Spot>
-                    </motion.div>
-
-                    <motion.div variants={item}>
-                      <Spot id="f-when" flash={flash} className="flex flex-col gap-3">
-                        <span className="text-[15px] font-semibold">When do you need it?</span>
-                        <div className="flex gap-2">
-                          <Chip on={d.when === "none"} onClick={() => set({ when: "none" })}>No rush</Chip>
-                          <Chip on={d.when === "date"} onClick={() => set({ when: "date" })}>By a date</Chip>
+                        <div className="grid grid-cols-2 gap-2.5">
+                          {measureSteps.map((m) => {
+                            const v = d.measures[m.key];
+                            return (
+                              <button key={m.key} type="button" onClick={() => setMeasuring(m.key)} className="flex flex-col gap-1.5 text-left">
+                                <span className="text-[13px] font-medium text-stone-600">{m.label}</span>
+                                <span className={`flex h-12 items-center justify-between rounded-[12px] border px-3.5 text-[16px] transition-colors duration-150 hover:border-stone-500 ${v ? "border-stone-900 font-medium" : "border-stone-300 text-stone-400"}`}>
+                                  {v ? formatMeasure(v, d.unit) : "Add"}
+                                  <span className="text-[13px] text-stone-400">{d.unit}</span>
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
-                        <AnimatePresence initial={false}>
-                          {d.when === "date" && (
-                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.4, ease }} className="overflow-hidden px-0.5 pb-1">
-                              <DatePicker id="when-date" value={d.date} onChange={(date) => set({ date })} now={today} />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                        {tried > 0 && !whenDone && <Problem>{d.when === "date" ? "Pick a date on the calendar." : "Choose when you need it."}</Problem>}
-                      </Spot>
-                    </motion.div>
+                        <p className="text-[13px] text-stone-500">Tip: measure a top or dress that already fits you well, laid flat.</p>
+                      </div>
+                      {tried > 0 && !sizeDone && <Problem>Pick a size, or add your measurements.</Problem>}
+                    </Spot>
+                  )}
 
-                    {needsBudget && (
-                      <motion.div variants={item} className="flex flex-col gap-3">
-                        <span className="text-[15px] font-semibold">Your budget <span className="font-normal text-stone-500">(optional)</span></span>
-                        <div className="flex flex-wrap gap-2">
-                          {["Under ₦30k", "₦30k–60k", "₦60k–100k", "Over ₦100k"].map((b) => (
-                            <Chip key={b} on={d.budget === b} onClick={() => set({ budget: d.budget === b ? undefined : b })}>{b}</Chip>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
+                  <Spot id="f-colours" flash={flash} className="flex flex-col gap-2.5">
+                    <span className="text-[15px] font-semibold" id="colours-label">Colours</span>
+                    <div role="radiogroup" aria-labelledby="colours-label" className="flex flex-col gap-2.5">
+                      <Choice
+                        on={d.colours === "photo"}
+                        onClick={() => set({ colours: "photo" })}
+                        label={hasVisual ? "As in the photo" : "Mimi’s choice"}
+                        hint={hasVisual ? (d.piece ? "Like the piece you picked" : "Like your photo") : "She suggests colours that suit the piece"}
+                        invalid={tried > 0 && !d.colours}
+                      />
+                      <Choice on={d.colours === "different"} onClick={() => set({ colours: "different" })} label="Different colours" hint="Tell Mimi which colours you’d like" invalid={tried > 0 && !d.colours} />
+                    </div>
+                    <AnimatePresence initial={false}>
+                      {d.colours === "different" && (
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: easeOutExpo }} className="overflow-hidden px-0.5 pb-0.5">
+                          <input autoFocus value={d.colourNote} onChange={(e) => set({ colourNote: e.target.value.slice(0, 80) })} placeholder="e.g. lilac and white" className={`${inputClass} mt-1`} aria-label="Which colours" aria-invalid={tried > 0 && !coloursDone} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    {tried > 0 && !coloursDone && <Problem>{d.colours === "different" ? "Name the colours you’d like." : "Choose the colours."}</Problem>}
+                  </Spot>
 
-                    <motion.div variants={item} className="flex flex-col gap-2">
-                      <label htmlFor="notes" className="text-[15px] font-semibold">
-                        Anything else? <span className="font-normal text-stone-500">(optional)</span>
+                  <Spot id="f-when" flash={flash} className="flex flex-col gap-3">
+                    <Label>When do you need it?</Label>
+                    <div className="flex gap-2">
+                      <Chip on={d.when === "none"} onClick={() => set({ when: "none" })}>No rush</Chip>
+                      <Chip on={d.when === "date"} onClick={() => set({ when: "date" })}>By a date</Chip>
+                    </div>
+                    <AnimatePresence initial={false}>
+                      {d.when === "date" && (
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: easeOutExpo }} className="overflow-hidden px-0.5 pb-1">
+                          <DatePicker id="when-date" value={d.date} onChange={(date) => set({ date })} now={today} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    {tried > 0 && !whenDone && <Problem>{d.when === "date" ? "Pick a date on the calendar." : "Choose when you need it."}</Problem>}
+                  </Spot>
+
+                  {needsBudget && (
+                    <div className="flex flex-col gap-3">
+                      <span className="text-[15px] font-semibold">
+                        Your budget <span className="font-normal text-stone-500">(optional)</span>
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {["Under ₦30k", "₦30k–60k", "₦60k–100k", "Over ₦100k"].map((b) => (
+                          <Chip key={b} on={d.budget === b} onClick={() => set({ budget: d.budget === b ? undefined : b })}>
+                            {b}
+                          </Chip>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="notes" className="text-[15px] font-semibold">
+                      Anything else? <span className="font-normal text-stone-500">(optional)</span>
+                    </label>
+                    <textarea id="notes" rows={3} value={d.notes} onChange={(e) => set({ notes: e.target.value.slice(0, 500) })} placeholder="Length, neckline, the occasion…" className={`${inputClass} h-auto py-3.5 leading-[1.5]`} />
+                  </div>
+                </>
+              )}
+
+              {step === 2 && (
+                <>
+                  <div className="flex flex-col gap-6">
+                    <Spot id="f-name" flash={flash}>
+                      <Field label="Your name" htmlFor="name" error={show("name") && !nameOk ? "Add your name, using letters only." : null} nudge={nameNudge} shake={tried}>
+                        <NameInput id="name" value={d.name} onChange={(name) => set({ name })} onBlur={() => setTouched((t) => ({ ...t, name: true }))} invalid={show("name") && !nameOk} onNudge={nudgeName} />
+                      </Field>
+                    </Spot>
+                    <Spot id="f-phone" flash={flash}>
+                      <Field label="WhatsApp number" htmlFor="phone" hint="Mimi messages you here to agree the price." error={show("phone") ? phoneErr : null} nudge={phoneNudge} shake={tried}>
+                        <PhoneInput id="phone" value={d.phone} onChange={(phone) => set({ phone })} onBlur={() => setTouched((t) => ({ ...t, phone: true }))} invalid={show("phone") && Boolean(phoneErr)} onNudge={nudgePhone} />
+                      </Field>
+                    </Spot>
+                  </div>
+
+                  <Spot id="f-place" flash={flash} className="flex flex-col gap-4">
+                    <Label hint="Mimi delivers anywhere in Nigeria. You pay the rider on arrival.">Delivery</Label>
+                    <Field label="State" htmlFor="state" error={tried > 0 && !d.state ? "Choose your state from the list." : null} shake={tried}>
+                      <StatePicker id="state" value={d.state} onChange={(state) => set({ state, area: isLgaOf(state, d.area) ? d.area : "" })} invalid={tried > 0 && !d.state} />
+                    </Field>
+                    <Field label="Area" htmlFor="area" hint="Your local government area. Search by town too, like Lekki or Rumuola." error={tried > 0 && d.state && !placeOk ? "Choose your area from the list." : null} shake={tried}>
+                      <AreaPicker id="area" state={d.state} value={d.area} onChange={(area) => set({ area })} invalid={tried > 0 && Boolean(d.state) && !placeOk} />
+                    </Field>
+                  </Spot>
+
+                  <div className="lg:hidden">
+                    <Summary draft={d} rows={rows} step={step} onJump={jump} compact />
+                  </div>
+
+                  {!unsized(d.piece) && (
+                    <Spot id="f-sizeok" flash={flash}>
+                      <label className={`flex cursor-pointer gap-3 rounded-[18px] border-[1.5px] bg-white p-4 transition-colors duration-150 ${tried > 0 && !d.sizeOk ? "border-red-400" : d.sizeOk ? "border-stone-900" : "border-transparent"}`}>
+                        <input type="checkbox" checked={d.sizeOk} onChange={(e) => set({ sizeOk: e.target.checked })} className="mt-0.5 size-5 shrink-0 accent-stone-900" />
+                        <span className="flex flex-col gap-1">
+                          <span className="text-[15px] font-semibold">My size is right{d.size ? ` (${d.size})` : ""}</span>
+                          <span className="text-[13px] leading-[1.45] text-stone-500">Mimi makes the piece to the size or measurements I gave. If they’re wrong, it can’t be remade for free.</span>
+                        </span>
                       </label>
-                      <textarea id="notes" rows={3} value={d.notes} onChange={(e) => set({ notes: e.target.value.slice(0, 500) })} placeholder="Length, neckline, the occasion…" className={`${inputClass} h-auto py-3.5 leading-[1.5]`} />
-                    </motion.div>
-                  </>
-                )}
-
-                {step === 2 && (
-                  <>
-                    <motion.div variants={item} className="flex flex-col gap-5">
-                      <Spot id="f-name" flash={flash}>
-                        <Field label="Your name" htmlFor="name" error={show("name") && !nameOk ? "Add your name, using letters only." : null} nudge={nameNudge} shake={tried}>
-                          <NameInput id="name" value={d.name} onChange={(name) => set({ name })} onBlur={() => setTouched((t) => ({ ...t, name: true }))} invalid={show("name") && !nameOk} onNudge={nudgeName} />
-                        </Field>
-                      </Spot>
-                      <Spot id="f-phone" flash={flash}>
-                        <Field label="WhatsApp number" htmlFor="phone" hint="Mimi messages you here to agree the price." error={show("phone") ? phoneErr : null} nudge={phoneNudge} shake={tried}>
-                          <PhoneInput id="phone" value={d.phone} onChange={(phone) => set({ phone })} onBlur={() => setTouched((t) => ({ ...t, phone: true }))} invalid={show("phone") && Boolean(phoneErr)} onNudge={nudgePhone} />
-                        </Field>
-                      </Spot>
-                    </motion.div>
-
-                    <motion.div variants={item}>
-                      <Spot id="f-place" flash={flash} className="flex flex-col gap-4">
-                        <div className="flex flex-col">
-                          <span className="text-[15px] font-semibold">Delivery</span>
-                          <span className="text-[14px] text-stone-500">Mimi delivers anywhere in Nigeria. You pay the rider on arrival.</span>
+                      {tried > 0 && !d.sizeOk && (
+                        <div className="pt-2">
+                          <Problem>Tick this to confirm your size.</Problem>
                         </div>
-                        <Field label="State" htmlFor="state" error={tried > 0 && !d.state ? "Choose your state from the list." : null} shake={tried}>
-                          <StatePicker id="state" value={d.state} onChange={(state) => set({ state, area: isLgaOf(state, d.area) ? d.area : "" })} invalid={tried > 0 && !d.state} />
-                        </Field>
-                        <Field label="Area" htmlFor="area" hint="Your local government area. Search by town too, like Lekki or Rumuola." error={tried > 0 && d.state && !placeOk ? "Choose your area from the list." : null} shake={tried}>
-                          <AreaPicker id="area" state={d.state} value={d.area} onChange={(area) => set({ area })} invalid={tried > 0 && Boolean(d.state) && !placeOk} />
-                        </Field>
-                      </Spot>
-                    </motion.div>
-
-                    <motion.div variants={item} className="lg:hidden">
-                      <Summary draft={d} rows={rows} step={step} onJump={jump} compact />
-                    </motion.div>
-
-                    {!unsized(d.piece) && (
-                      <motion.div variants={item}>
-                        <Spot id="f-sizeok" flash={flash}>
-                          <label className={`flex cursor-pointer gap-3 rounded-[18px] border bg-white p-4 transition-colors ${tried > 0 && !d.sizeOk ? "border-red-400" : "border-transparent"}`}>
-                            <input type="checkbox" checked={d.sizeOk} onChange={(e) => set({ sizeOk: e.target.checked })} className="mt-0.5 size-5 shrink-0 accent-stone-900" />
-                            <span className="flex flex-col gap-1">
-                              <span className="text-[15px] font-semibold">My size is right{d.size ? ` (${d.size})` : ""}</span>
-                              <span className="text-[13px] leading-[1.45] text-stone-500">Mimi makes the piece to the size or measurements I gave. If they’re wrong, it can’t be remade for free.</span>
-                            </span>
-                          </label>
-                          {tried > 0 && !d.sizeOk && <div className="pt-2"><Problem>Tick this to confirm your size.</Problem></div>}
-                        </Spot>
-                      </motion.div>
-                    )}
-                    <motion.p variants={item} className="text-[14px] text-stone-500">No payment now. Mimi confirms the price with you on WhatsApp before she starts.</motion.p>
-                  </>
-                )}
-              </motion.div>
+                      )}
+                    </Spot>
+                  )}
+                  <p className="text-[14px] text-stone-500 lg:hidden">No payment now. Mimi confirms the price with you on WhatsApp before she starts.</p>
+                </>
+              )}
             </motion.div>
           </AnimatePresence>
+
+          {/* Desktop: the actions sit right under the form and stay put while the steps change */}
+          <div className="mt-10 hidden items-center gap-6 lg:flex">
+            {backButton}
+            {mainButton("px-8")}
+          </div>
         </div>
 
-        <aside className="hidden w-[400px] shrink-0 lg:block">
-          <div className="sticky top-28">
+        <aside className="hidden shrink-0 lg:block lg:w-[360px] xl:w-[460px] min-[87.5rem]:w-[560px]" aria-label="Your request">
+          <div className="sticky top-8">
             <Summary draft={d} rows={rows} step={step} onJump={jump} />
           </div>
         </aside>
       </div>
 
-      {/* Action bar */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-stone-200/70 bg-orange-50/95 backdrop-blur-md">
-        <div className="container-page flex items-center gap-3 py-3 pb-[max(12px,env(safe-area-inset-bottom))] lg:justify-end">
-          {step > 0 && (
-            <button type="button" onClick={() => go(step - 1)} className="px-2 text-[16px] font-semibold underline underline-offset-4">
-              Back
-            </button>
-          )}
-          {step < 2 ? (
-            <Button className="flex-1 lg:w-[240px] lg:flex-none" onClick={next}>
-              Continue
-            </Button>
-          ) : (
-            <Button className="flex-1 lg:w-[240px] lg:flex-none" onClick={send} disabled={Boolean(sending)}>
-              Send to Mimi
-            </Button>
-          )}
+      {/* Phones: the actions stay in reach at the bottom */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-stone-200/70 bg-orange-50/95 backdrop-blur-md lg:hidden">
+        <div className="container-page flex items-center gap-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+          {backButton}
+          {mainButton("flex-1")}
         </div>
       </div>
 
@@ -863,7 +951,14 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
 
   return (
     <>
-      {sent ? <SentView order={sent.order} files={sent.files} /> : flow}
+      {sent ? (
+        <>
+          <FocusHeader />
+          <SentView order={sent.order} files={sent.files} />
+        </>
+      ) : (
+        flow
+      )}
       <AnimatePresence>
         {sending && (
           <SendingMoment
