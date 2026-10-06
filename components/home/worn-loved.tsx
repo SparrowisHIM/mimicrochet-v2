@@ -17,17 +17,17 @@ const serverVisible = () => false;
 
 function CustomerPreview({ customer, open, onOpen }: { customer: Customer; open: boolean; onOpen: () => void }) {
   const ref = useRef<HTMLLIElement>(null);
-  const inView = useInView(ref, { amount: 0.45 });
+  const inView = useInView(ref, { amount: 0.4 });
   const reduce = useReducedMotion();
   const visible = useSyncExternalStore(subscribeVisibility, pageVisible, serverVisible);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [loaded, setLoaded] = useState("");
   const count = customer.photos.length;
   const photo = customer.photos[index];
-  const playing = count > 1 && inView && visible && !reduce && !paused && !hovered && !focused && !open && loaded === photo.src;
+  // Phones count a tap as a hover and leave focus behind, so only a real mouse hover or keyboard focus pauses it.
+  const playing = count > 1 && inView && visible && !reduce && !paused && !hovered && !focused && !open;
 
   useEffect(() => {
     if (!playing) return;
@@ -40,13 +40,13 @@ function CustomerPreview({ customer, open, onOpen }: { customer: Customer; open:
   };
   return (
     <li ref={ref} className="w-[76vw] max-w-[320px] shrink-0 snap-start lg:w-auto lg:max-w-none"
-      onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      onFocusCapture={() => setFocused(true)} onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}>
+      onPointerEnter={(e) => e.pointerType === "mouse" && setHovered(true)} onPointerLeave={() => setHovered(false)}
+      onFocusCapture={(e) => (e.target as Element).matches(":focus-visible") && setFocused(true)} onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}>
       <div className="relative aspect-[4/5] overflow-hidden rounded-[18px] bg-orange-100">
         <button type="button" onClick={onOpen} className="absolute inset-0 size-full text-left" aria-label={`Open ${customer.name}’s photos`}>
           <AnimatePresence initial={false}>
             <motion.span key={photo.src} className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduce ? 0 : 0.65 }}>
-              <Image src={photo.src} alt={photo.alt} fill sizes="(min-width: 1024px) 416px, 76vw" className="object-cover" onLoad={() => setLoaded(photo.src)} />
+              <Image src={photo.src} alt={photo.alt} fill sizes="(min-width: 1024px) 416px, 76vw" className="object-cover" />
             </motion.span>
           </AnimatePresence>
         </button>
