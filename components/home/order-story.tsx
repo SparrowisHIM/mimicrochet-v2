@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { RevealText } from "@/components/motion/reveal";
 import { ButtonLink } from "@/components/ui/button";
 import { stages } from "@/lib/stages";
 
@@ -49,7 +50,7 @@ export function OrderStory() {
       <div className="container-page">
         <div className="mb-9 flex flex-col gap-5 lg:mb-14 lg:flex-row lg:items-end lg:justify-between lg:gap-16">
           <div className="flex flex-col gap-4">
-            <h2 id="order-story-heading" className="max-w-[680px] font-serif text-[38px] leading-[1.08] tracking-[-0.025em] lg:text-[60px]">From idea<br />to doorstep.</h2>
+            <RevealText id="order-story-heading" text={"From idea\nto doorstep."} className="max-w-[680px] font-serif text-[38px] leading-[1.08] tracking-[-0.025em] lg:text-[60px]" />
           </div>
           <p className="max-w-[355px] text-[16px] leading-relaxed text-stone-600 lg:pb-1 lg:text-[18px]">You bring the idea, Mimi brings the hook. Here’s how a piece becomes yours.</p>
         </div>

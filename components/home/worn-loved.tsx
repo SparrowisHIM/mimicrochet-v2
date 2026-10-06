@@ -4,6 +4,7 @@ import Image from "next/image";
 import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { CustomerStory } from "@/components/customers/customer-story";
+import { RevealText } from "@/components/motion/reveal";
 import type { Customer } from "@/lib/customers";
 
 const SLIDE_MS = 4800;
@@ -83,7 +84,7 @@ export function WornLoved({ customers }: { customers: Customer[] }) {
   return (
     <section className="py-16 lg:py-28" aria-labelledby="worn-title">
       <div className="container-page flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <h2 id="worn-title" className="font-serif text-[32px] leading-[1.08] tracking-[-0.02em] lg:text-[48px]">Worn, loved, re-worn</h2>
+        <RevealText id="worn-title" text="Worn, loved, re-worn" className="font-serif text-[32px] leading-[1.08] tracking-[-0.02em] lg:text-[48px]" />
         <p className="text-[16px] leading-[1.5] text-stone-600 lg:text-[17px]">Photos from the people who wear them.</p>
       </div>
       <ul className="no-scrollbar mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 lg:container-page lg:mt-12 lg:grid lg:grid-cols-3 lg:gap-8 lg:overflow-visible">

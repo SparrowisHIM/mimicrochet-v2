@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
+import { Curtain, RevealText } from "@/components/motion/reveal";
 import { ProductCard } from "@/components/product/product-card";
 import { ButtonLink } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
@@ -14,7 +15,7 @@ export function FreshOffTheHook({ pieces }: { pieces: Product[] }) {
   return (
     <section className="container-page flex flex-col gap-6 py-16 lg:gap-10 lg:py-24">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <h2 className="font-serif text-[32px] leading-[1.08] tracking-[-0.02em] lg:text-[48px]">Fresh off the hook</h2>
+        <RevealText text="Fresh off the hook" className="font-serif text-[32px] leading-[1.08] tracking-[-0.02em] lg:text-[48px]" />
         <Toggle id="home-ready-only" label="Ready to wear only" checked={readyOnly} onChange={setReadyOnly} />
       </div>
 
@@ -24,13 +25,13 @@ export function FreshOffTheHook({ pieces }: { pieces: Product[] }) {
             <motion.li
               key={p.slug}
               layout
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
+              exit={{ opacity: 0, scale: 0.92, filter: "blur(4px)" }}
               transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
               className={i >= 6 ? "max-lg:hidden" : ""}
             >
-              <ProductCard product={p} />
+              <Curtain index={i}>
+                <ProductCard product={p} />
+              </Curtain>
             </motion.li>
           ))}
         </AnimatePresence>

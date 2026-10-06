@@ -3,6 +3,7 @@ import { Hero } from "@/components/home/hero";
 import { MeetMimi } from "@/components/home/meet-mimi";
 import { OrderStory } from "@/components/home/order-story";
 import { WornLoved } from "@/components/home/worn-loved";
+import { PieceMarquee } from "@/components/motion/piece-marquee";
 import { customers } from "@/lib/customers";
 import { getProduct, products, type Product } from "@/lib/products";
 
@@ -24,6 +25,7 @@ export default function Home() {
   return (
     <>
       <Hero />
+      <PieceMarquee pieces={lead.map((p) => ({ name: p.name, image: p.images[0] }))} />
       <FreshOffTheHook pieces={[...lead, ...rest]} />
       <OrderStory />
       <WornLoved customers={customers} />
