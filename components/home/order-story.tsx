@@ -6,6 +6,7 @@ import {
   AnimatePresence,
   motion,
   useMotionValue,
+  useInView,
   useMotionValueEvent,
   useReducedMotion,
   useScroll,
@@ -71,6 +72,8 @@ const story: Stage[] = [
 ];
 
 const last = story.length - 1;
+// Phones play the story by themselves while it's on screen.
+const STAGE_MS = 4500;
 const deposit = Math.round((demoOrder.price ?? 0) * 0.6);
 const plan = [
   ["Size", demoOrder.size ?? "L"],
@@ -196,7 +199,7 @@ export function OrderStory() {
   }, [desktop]);
 
   /** Desktop: scroll the list so the stage meets the focus line. Phones: wipe straight to it. */
-  const go = (i: number) => {
+  const go = (i: number, rewind = false) => {
     const to = Math.max(0, Math.min(last, i));
     if (desktop) {
       const r = rows.current[to]?.getBoundingClientRect();
@@ -204,11 +207,23 @@ export function OrderStory() {
       return;
     }
     if (to === active) return;
-    if (Math.abs(to - active) > 1) pos.jump(to - Math.sign(to - active));
+    // A jump of several stages wipes in from the neighbouring stage; the autoplay rewind runs back through them all.
+    if (!rewind && Math.abs(to - active) > 1) pos.jump(to - Math.sign(to - active));
     setActive(to);
     if (reduce) pos.jump(to);
-    else animate(pos, to, { type: "spring", stiffness: 170, damping: 26 });
+    else animate(pos, to, rewind ? { type: "spring", duration: 0.9, bounce: 0 } : { type: "spring", stiffness: 170, damping: 26 });
   };
+
+  // Phones: advance on a timer while the photo is on screen. Tapping or swiping restarts the clock.
+  const frame = useRef<HTMLDivElement>(null);
+  const onScreen = useInView(frame, { amount: 0.5 });
+  const autoplay = !desktop && !reduce && onScreen;
+  const advance = useEffectEvent(() => go(active === last ? 0 : active + 1, active === last));
+  useEffect(() => {
+    if (!autoplay) return;
+    const t = setTimeout(() => advance(), STAGE_MS);
+    return () => clearTimeout(t);
+  }, [autoplay, active]);
 
   const current = story[active];
 
@@ -266,12 +281,18 @@ export function OrderStory() {
                   aria-pressed={i === active}
                   aria-label={st.label}
                   onClick={() => go(i)}
-                  className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[12px] border text-[11px] font-medium transition-colors ${
+                  className={`relative flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 overflow-hidden rounded-[12px] border text-[11px] font-medium transition-colors ${
                     i === active ? "border-stone-900 bg-stone-900 text-orange-50" : "border-stone-200 bg-white text-stone-600"
                   }`}
                 >
                   <span className="text-[13px] tabular-nums">{i + 1}</span>
                   {st.short}
+                  {/* While it plays, a thin bar fills under the current stage. */}
+                  {i === active && autoplay && (
+                    <span className="absolute inset-x-2 bottom-1.5 h-[2px] overflow-hidden rounded-full bg-white/25" aria-hidden>
+                      <span key={active} className="block size-full origin-left bg-orange-50" style={{ animation: `customer-photo-progress ${STAGE_MS}ms linear forwards` }} />
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -288,6 +309,7 @@ export function OrderStory() {
                 </span>
               </div>
               <motion.div
+                ref={frame}
                 className="relative aspect-[3/4] w-full touch-pan-y overflow-hidden rounded-[18px] bg-stone-200"
                 drag={desktop ? false : "x"}
                 dragConstraints={{ left: 0, right: 0 }}
@@ -307,7 +329,7 @@ export function OrderStory() {
             <div className="mt-5 flex flex-col gap-3 lg:hidden" aria-live="polite">
               <h3 className="font-serif text-[23px] leading-tight">{current.title}</h3>
               <p className="text-[15px] leading-relaxed text-stone-600">{current.detail}</p>
-              <p className="text-[13px] text-stone-500">Swipe the photo or tap a stage.</p>
+              <p className="text-[13px] text-stone-500">It plays by itself. Swipe the photo or tap a stage to jump.</p>
               <div className="pt-2">
                 <ButtonLink href="/custom-order" className="max-sm:w-full">Let’s make your piece</ButtonLink>
               </div>
