@@ -38,14 +38,14 @@ export function RevealText({
       {lines.map((line, li) => (
         <span key={li} className="block" aria-hidden>
           {line.split(" ").map((w, wi, all) => {
-            const d = delay + n++ * 0.06;
+            const d = delay + n++ * 0.05;
             return (
               <span key={wi} className="inline-block overflow-hidden pb-[0.1em] -mb-[0.1em] align-bottom">
                 <motion.span
                   className="inline-block origin-bottom-left will-change-transform"
                   initial={reduce ? false : { y: "110%", rotate: 7 }}
                   animate={play ? { y: "0%", rotate: 0 } : undefined}
-                  transition={{ duration: 0.9, ease, delay: d }}
+                  transition={{ duration: 0.7, ease, delay: d }}
                 >
                   {w}
                 </motion.span>
@@ -60,7 +60,7 @@ export function RevealText({
 }
 
 /** A block that rises into place once as it reaches the screen. */
-export function Reveal({ children, className = "", delay = 0, y = 48 }: { children: ReactNode; className?: string; delay?: number; y?: number }) {
+export function Reveal({ children, className = "", delay = 0, y = 20 }: { children: ReactNode; className?: string; delay?: number; y?: number }) {
   const reduce = useReducedMotion();
   return (
     <motion.div
@@ -85,10 +85,10 @@ export function Curtain({ children, index = 0, columns = 4, className = "" }: { 
   return (
     <motion.div
       className={className}
-      initial={reduce ? false : { clipPath: "inset(100% 0% 0% 0% round 18px)", y: 70 }}
+      initial={reduce ? false : { clipPath: "inset(100% 0% 0% 0% round 18px)", y: 32 }}
       whileInView={{ clipPath: "inset(0% 0% 0% 0% round 0px)", y: 0 }}
       viewport={{ once: true, margin: "0px 0px -8% 0px" }}
-      transition={{ duration: 1, ease, delay: col * 0.09 }}
+      transition={{ duration: 0.7, ease, delay: col * 0.07 }}
     >
       {children}
     </motion.div>

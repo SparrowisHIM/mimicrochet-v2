@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useAnimationFrame, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform, useVelocity } from "motion/react";
+import { motion, useAnimationFrame, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform, useVelocity } from "motion/react";
 import { useRef } from "react";
 
 /**
@@ -18,9 +18,11 @@ export function PieceMarquee({ pieces }: { pieces: { name: string; image: string
   const skew = useTransform(velocity, [-2400, 0, 2400], [6, 0, -6]);
   const dir = useRef(1);
   const track = useRef<HTMLDivElement>(null);
+  const band = useRef<HTMLDivElement>(null);
+  const onScreen = useInView(band);
 
   useAnimationFrame((_, delta) => {
-    if (reduce) return;
+    if (reduce || !onScreen) return;
     const f = factor.get();
     if (f < -0.05) dir.current = -1;
     else if (f > 0.05) dir.current = 1;
@@ -45,7 +47,7 @@ export function PieceMarquee({ pieces }: { pieces: { name: string; image: string
   );
 
   return (
-    <div className="overflow-hidden border-y border-stone-200/80 bg-white py-6 lg:py-9" aria-hidden>
+    <div ref={band} className="overflow-hidden border-y border-stone-200/80 bg-white py-6 lg:py-9" aria-hidden>
       <motion.div ref={track} className="flex w-max" style={{ x, skewX: reduce ? 0 : skew }}>
         {row("a")}
         {row("b")}

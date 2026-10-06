@@ -8,7 +8,6 @@ import { WhatsAppIcon } from "@/components/icons";
 import { SaveButton } from "@/components/product/save-button";
 import { Button, buttonClass } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
-import { RevealText } from "@/components/motion/reveal";
 import { addToBag } from "@/lib/bag";
 import { bagStore } from "@/lib/local-store";
 import { priceLabel, tagLabel, type Product } from "@/lib/products";
@@ -182,7 +181,7 @@ export function ProductView({ product }: { product: Product }) {
               transition={{ duration: 0.6, ease }}
             >
               <p className={`text-[14px] font-semibold ${product.kind === "ready" ? "text-emerald-800" : "text-amber-800"}`}>{tagLabel(product)}</p>
-              <RevealText as="h1" immediate text={product.name} className="font-serif text-[32px] leading-[1.1] tracking-[-0.01em] lg:text-[44px]" />
+              <h1 className="font-serif text-[32px] leading-[1.1] tracking-[-0.01em] lg:text-[44px]">{product.name}</h1>
               <p className="text-[20px] font-medium lg:text-[24px]">{priceLabel(product)}</p>
               <p className="text-[16px] leading-[1.55] text-stone-600 lg:text-[17px]">{product.description}</p>
             </motion.div>

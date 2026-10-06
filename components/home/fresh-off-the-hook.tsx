@@ -25,8 +25,8 @@ export function FreshOffTheHook({ pieces }: { pieces: Product[] }) {
             <motion.li
               key={p.slug}
               layout
-              exit={{ opacity: 0, scale: 0.92, filter: "blur(4px)" }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15, ease: [0.19, 1, 0.22, 1] } }}
+              transition={{ duration: 0.3, ease: [0.19, 1, 0.22, 1] }}
               className={i >= 6 ? "max-lg:hidden" : ""}
             >
               <Curtain index={i}>

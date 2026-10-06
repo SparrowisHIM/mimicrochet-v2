@@ -16,7 +16,6 @@ export function MeetMimi() {
   const { scrollYProgress } = useScroll({ target: frame, offset: ["start end", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], ["-9%", "9%"]);
   const frameScale = useTransform(scrollYProgress, [0, 0.45], [0.86, 1]);
-  const radius = useTransform(scrollYProgress, [0, 0.45], [48, 28]);
 
   useEffect(() => {
     const v = video.current;
@@ -30,8 +29,8 @@ export function MeetMimi() {
       <div className="container-page flex flex-col gap-8 py-16 lg:flex-row lg:items-center lg:gap-20 lg:py-28">
         <motion.div
           ref={frame}
-          className="relative aspect-[4/5] w-full overflow-hidden rounded-[20px] bg-stone-200 lg:w-[560px] lg:shrink-0"
-          style={reduce ? undefined : { scale: frameScale, borderRadius: radius }}
+          className="relative aspect-[4/5] w-full overflow-hidden rounded-[20px] bg-stone-200 lg:w-[560px] lg:shrink-0 lg:rounded-[28px]"
+          style={reduce ? undefined : { scale: frameScale }}
         >
           <motion.div className="absolute inset-x-0 -inset-y-[10%]" style={reduce ? undefined : { y }}>
             <video

@@ -26,7 +26,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
           className="pointer-events-none fixed inset-x-0 top-0 bottom-0 z-30 bg-orange-50"
           initial={{ clipPath: "inset(0% 0% 0% 0%)" }}
           animate={{ clipPath: "inset(0% 0% 100% 0%)" }}
-          transition={{ duration: 0.75, ease: [0.76, 0, 0.24, 1], delay: 0.05 }}
+          transition={{ duration: 0.4, ease: [0.19, 1, 0.22, 1] }}
           onAnimationComplete={() => setDone(true)}
           aria-hidden
         >
@@ -34,7 +34,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
             className="absolute inset-x-0 bottom-0 h-[3px] bg-[repeating-linear-gradient(90deg,var(--color-amber-500)_0_14px,transparent_14px_22px)]"
             initial={{ opacity: 1 }}
             animate={{ opacity: [1, 1, 0] }}
-            transition={{ duration: 0.8, times: [0, 0.8, 1] }}
+            transition={{ duration: 0.4, times: [0, 0.7, 1] }}
           />
         </motion.div>
       )}

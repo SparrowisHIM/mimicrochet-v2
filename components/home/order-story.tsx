@@ -134,11 +134,11 @@ function Note({ active }: { active: number }) {
         </div>
         {active === 1 ? (
           <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5">
-            {plan.map(([k, v], n) => (
-              <motion.div key={k} className="flex flex-col" initial={reduce ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 + n * 0.06 }}>
+            {plan.map(([k, v]) => (
+              <div key={k} className="flex flex-col">
                 <dt className="text-[12px] text-stone-500">{k}</dt>
                 <dd className={`text-[15px] font-semibold ${k.startsWith("Deposit") ? "text-emerald-800" : ""}`}>{v}</dd>
-              </motion.div>
+              </div>
             ))}
           </dl>
         ) : (
@@ -235,7 +235,7 @@ export function OrderStory() {
                       type="button"
                       onClick={() => go(i)}
                       aria-current={on ? "step" : undefined}
-                      className={`relative flex w-full gap-5 rounded-[20px] px-5 py-6 text-left transition-opacity duration-500 ${on ? "opacity-100" : "opacity-45 hover:opacity-80"}`}
+                      className={`relative flex w-full gap-5 rounded-[20px] px-5 py-6 text-left transition-opacity duration-200 ${on ? "opacity-100" : "opacity-45 hover:opacity-80"}`}
                     >
                       {on && <motion.span layoutId="story-selected" className="absolute inset-0 rounded-[20px] border border-stone-200 bg-white shadow-[0_12px_32px_-24px_rgb(28_25_23/0.3)]" transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 36 }} />}
                       <span className={`relative mt-1 grid size-8 shrink-0 place-items-center rounded-full border text-[12px] font-semibold tabular-nums transition-colors duration-300 ${on ? "border-stone-900 bg-stone-900 text-orange-50" : "border-stone-300 bg-orange-50 text-stone-500"}`}>
@@ -279,7 +279,7 @@ export function OrderStory() {
             <div className="mx-auto w-full rounded-[26px] border border-stone-200 bg-white p-2.5 shadow-[0_30px_70px_-40px_rgb(28_25_23/0.4)] lg:max-w-[min(100%,calc((100svh-210px)*0.75+20px))] lg:p-3">
               <div className="flex items-center justify-between px-2 pt-1 pb-3 text-[13px] font-medium text-stone-500">
                 <AnimatePresence mode="popLayout" initial={false}>
-                  <motion.span key={current.tag} className="font-semibold text-stone-900" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+                  <motion.span key={current.tag} className="font-semibold text-stone-900" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ type: "spring", duration: 0.3, bounce: 0 }}>
                     {current.tag}
                   </motion.span>
                 </AnimatePresence>

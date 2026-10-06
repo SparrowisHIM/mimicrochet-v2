@@ -6,7 +6,7 @@ type Size = "md" | "sm";
 
 // Primary and secondary hovers sweep a fill up from the bottom (a ::before layer behind the label).
 const sweep =
-  "relative isolate overflow-hidden before:absolute before:inset-0 before:-z-10 before:origin-bottom before:scale-y-0 before:rounded-[inherit] before:transition-transform before:duration-500 before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:scale-y-100";
+  "relative isolate overflow-hidden before:absolute before:inset-0 before:-z-10 before:origin-bottom before:scale-y-0 before:rounded-[inherit] before:transition-transform before:duration-200 before:ease-[cubic-bezier(0.19,1,0.22,1)] hover:before:scale-y-100 motion-reduce:before:scale-y-100 motion-reduce:before:opacity-0 motion-reduce:before:transition-opacity motion-reduce:hover:before:opacity-100";
 
 const variants: Record<Variant, string> = {
   primary: `bg-stone-900 text-orange-50 border-[1.5px] border-stone-900 hover:border-amber-800 before:bg-amber-800 ${sweep}`,
@@ -21,7 +21,7 @@ const sizes: Record<Size, string> = {
 };
 
 export function buttonClass(variant: Variant = "primary", size: Size = "md", extra = "") {
-  return `inline-flex items-center justify-center gap-2 rounded-full font-semibold leading-none whitespace-nowrap transition-[background-color,color,border-color,transform] duration-300 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40 ${variants[variant]} ${sizes[size]} ${extra}`;
+  return `inline-flex items-center justify-center gap-2 rounded-full font-semibold leading-none whitespace-nowrap transition-[background-color,color,border-color,transform] duration-150 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40 ${variants[variant]} ${sizes[size]} ${extra}`;
 }
 
 type Common = { variant?: Variant; size?: Size; className?: string; children: ReactNode };

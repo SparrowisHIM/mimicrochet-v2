@@ -11,7 +11,6 @@ import { bagTotal, useBagItems } from "@/lib/bag";
 import { bagStore } from "@/lib/local-store";
 import { Field, inputClass, NameInput, PhoneInput, useNudge } from "@/components/form/fields";
 import { AreaPicker, StatePicker } from "@/components/form/place-picker";
-import { RevealText } from "@/components/motion/reveal";
 import { isLgaOf, isNigerianState } from "@/lib/nigeria";
 import { newOrderIds, saveOrder, type Order } from "@/lib/orders";
 import { formatNaira } from "@/lib/site";
@@ -131,7 +130,7 @@ export function CheckoutView() {
     <div className="container-page flex flex-col gap-8 pt-6 pb-20 lg:flex-row lg:gap-16 lg:pt-12 lg:pb-28">
       {/* Summary (Clerk-style: one big total, then the items) */}
       <div className="flex flex-col gap-5 lg:flex-1 lg:pt-4">
-        <RevealText as="h1" immediate text="Checkout" className="font-serif text-[36px] leading-none tracking-[-0.01em] lg:text-[48px]" />
+        <h1 className="font-serif text-[36px] leading-none tracking-[-0.01em] lg:text-[48px]">Checkout</h1>
         <div className="hidden flex-col gap-1 lg:flex">
           <span className="text-[15px] text-stone-500">Total to pay</span>
           <span className="flex items-baseline gap-2.5">
@@ -255,7 +254,7 @@ function Paid({ order }: { order: Order }) {
           <Confetti />
         </motion.span>
         <div className="flex flex-col gap-3">
-          <RevealText as="h1" immediate text="Paid! It’s all yours." className="font-serif text-[36px] leading-[1.05] lg:text-[52px]" />
+          <h1 className="font-serif text-[36px] leading-[1.05] lg:text-[52px]">Paid! It’s all yours.</h1>
           <p className="text-[16px] leading-[1.5] text-stone-600 lg:text-[18px]">Mimi is packing your order and will pass your number to a rider. Your order number is <span className="whitespace-nowrap">{order.id}</span>, and your receipt is below.</p>
         </div>
         <ShopOrderCard order={order} />

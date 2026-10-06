@@ -39,14 +39,14 @@ export function Hero() {
         style={scrollOut ? { scale: photoScale, y: photoY } : undefined}
         initial={reduce ? false : { clipPath: "inset(10% 10% 10% 10% round 28px)", opacity: 0.3 }}
         animate={{ clipPath: "inset(0% 0% 0% 0% round 0px)", opacity: 1 }}
-        transition={{ duration: 1.3, ease }}
+        transition={{ duration: 1, ease }}
       >
         <motion.div className="absolute inset-0" style={scrollOut ? { scale: inner } : undefined}>
         <motion.div
           className="absolute inset-0"
-          initial={reduce ? false : { scale: 1.25, rotate: -2 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ duration: 1.8, ease }}
+          initial={reduce ? false : { scale: 1.12 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 1.2, ease }}
         >
           <Image
             src="/images/story/hero-ruby.jpg"

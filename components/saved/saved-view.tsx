@@ -7,7 +7,6 @@ import { useSyncExternalStore } from "react";
 import { HeartIcon, WhatsAppIcon } from "@/components/icons";
 import { SaveButton } from "@/components/product/save-button";
 import { Button, buttonClass } from "@/components/ui/button";
-import { RevealText } from "@/components/motion/reveal";
 import { addToBag } from "@/lib/bag";
 import { bagStore, savedStore } from "@/lib/local-store";
 import { getProduct, priceLabel, type Product } from "@/lib/products";
@@ -52,7 +51,7 @@ export function SavedView() {
     <div className="pb-20 lg:pb-28">
       <div className="container-page flex flex-col gap-4 pt-6 pb-6 lg:flex-row lg:items-end lg:justify-between lg:pt-14 lg:pb-10">
         <div className="flex flex-col gap-2">
-          <RevealText as="h1" immediate text="Saved" className="font-serif text-[40px] leading-none tracking-[-0.02em] lg:text-[64px]" />
+          <h1 className="font-serif text-[40px] leading-none tracking-[-0.02em] lg:text-[64px]">Saved</h1>
           <p className="text-[15px] text-stone-600 lg:text-[17px]">
             {rows.length ? `${rows.length} ${rows.length === 1 ? "piece" : "pieces"}, kept on this device. No account needed.` : "Kept on this device. No account needed."}
           </p>
