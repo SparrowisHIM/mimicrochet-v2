@@ -64,8 +64,8 @@ export function SavedView() {
         </div>
         {rows.length > 0 && (
           <div className="hidden lg:block">
-            <a href={whatsappLink(message)} target="_blank" rel="noreferrer" className={buttonClass("secondary")}>
-              Send my list to Mimi
+            <a href={whatsappLink(message)} target="_blank" rel="noreferrer" className={linkClass}>
+              <WhatsAppIcon size={18} /> Send my list to Mimi
             </a>
           </div>
         )}
