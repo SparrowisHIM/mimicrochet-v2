@@ -116,3 +116,12 @@ export function WhatsAppIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function RulerIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="2.75" y="7" width="16.5" height="8" rx="1.75" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M6.5 7v3M10 7v2M13.5 7v3M17 7v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}

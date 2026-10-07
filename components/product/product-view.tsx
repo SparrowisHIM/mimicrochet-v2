@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { WhatsAppIcon } from "@/components/icons";
+import { RulerIcon, WhatsAppIcon } from "@/components/icons";
 import { SaveButton } from "@/components/product/save-button";
 import { Button, ButtonLink, buttonClass, linkClass } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
@@ -194,8 +194,9 @@ export function ProductView({ product }: { product: Product }) {
               <div className="flex flex-col gap-3.5 border-t border-stone-200 pt-7">
                 <div className="flex items-center justify-between">
                   <span className="text-[15px] font-semibold">Size{product.kind === "made" ? " (you can change it later)" : ""}</span>
-                  <button type="button" onClick={() => setGuide(true)} className="text-[15px] font-medium underline underline-offset-4">
-                    Size guide
+                  <button type="button" onClick={() => setGuide(true)} className="group -my-2 inline-flex items-center gap-1.5 py-2 text-[15px] font-medium">
+                    <RulerIcon size={18} className="text-stone-500 transition-[color,transform] duration-200 ease-out group-hover:-rotate-6 group-hover:text-stone-900" />
+                    <span className="underline decoration-stone-900/30 decoration-[1.5px] underline-offset-4 transition-[text-decoration-color] duration-200 group-hover:decoration-stone-900">Size guide</span>
                   </button>
                 </div>
                 <div className="flex gap-2" role="radiogroup" aria-label="Size">
