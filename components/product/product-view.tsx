@@ -6,7 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { WhatsAppIcon } from "@/components/icons";
 import { SaveButton } from "@/components/product/save-button";
-import { Button, buttonClass } from "@/components/ui/button";
+import { Button, ButtonLink, buttonClass } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { addToBag, bagUi } from "@/lib/bag";
 import { bagStore } from "@/lib/local-store";
@@ -108,9 +108,9 @@ export function ProductView({ product }: { product: Product }) {
       </Button>
     )
   ) : (
-    <Link href={requestHref} className={buttonClass("primary", "md", "w-full")}>
+    <ButtonLink href={requestHref} className="w-full">
       {otherSize ? `Request in size ${size}` : "Request this piece"}
-    </Link>
+    </ButtonLink>
   );
 
   return (

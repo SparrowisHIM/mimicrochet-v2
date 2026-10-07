@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { buttonClass } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { bagTotal, bagUi, useBagItems } from "@/lib/bag";
 import { bagStore } from "@/lib/local-store";
@@ -28,9 +28,9 @@ export function BagDrawer() {
               <span className="text-[16px] font-semibold">{formatNaira(total)}</span>
             </div>
             <p className="-mt-1.5 text-[13px] text-stone-500">Delivery is paid to the rider when it arrives.</p>
-            <Link href="/checkout" onClick={bagUi.close} className={buttonClass("primary", "md", "w-full")}>
+            <ButtonLink href="/checkout" onClick={bagUi.close} className="w-full">
               Checkout · {formatNaira(total)}
-            </Link>
+            </ButtonLink>
             <button type="button" onClick={bagUi.close} className="py-1 text-[15px] font-medium underline underline-offset-4">
               Keep shopping
             </button>
@@ -41,9 +41,9 @@ export function BagDrawer() {
       {items.length === 0 ? (
         <div className="flex flex-col items-start gap-4 py-6">
           <p className="text-[16px] text-stone-600">Your bag is empty. Every piece is one of one, so grab yours before it’s gone.</p>
-          <Link href="/shop" onClick={bagUi.close} className={buttonClass("primary")}>
+          <ButtonLink href="/shop" onClick={bagUi.close}>
             Shop the collection
-          </Link>
+          </ButtonLink>
         </div>
       ) : (
         <ul className="flex flex-col gap-3">

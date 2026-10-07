@@ -149,7 +149,7 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
         </motion.div>
 
         <motion.div {...rise(0.5)} className="flex flex-col gap-3">
-          <Button onClick={send}>
+          <Button onClick={send} arrow={false}>
             <WhatsAppIcon size={18} /> Send on WhatsApp
           </Button>
           {hint && <p className="text-center text-[14px] text-amber-800" role="status">{hint}</p>}

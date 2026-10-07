@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { CloseIcon, SearchIcon } from "@/components/icons";
 import { ProductCard } from "@/components/product/product-card";
-import { Button, buttonClass } from "@/components/ui/button";
+import { Button, ButtonLink, buttonClass } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
 import { Toggle } from "@/components/ui/toggle";
@@ -181,9 +181,7 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
               <Button variant="secondary" onClick={() => set(defaultFilters)}>
                 Clear filters
               </Button>
-              <Link href="/custom-order" className={buttonClass("primary")}>
-                Start a custom order
-              </Link>
+              <ButtonLink href="/custom-order">Start a custom order</ButtonLink>
             </div>
           </div>
         ) : (

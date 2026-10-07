@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useSyncExternalStore } from "react";
 import { HeartIcon, WhatsAppIcon } from "@/components/icons";
 import { SaveButton } from "@/components/product/save-button";
-import { Button, buttonClass } from "@/components/ui/button";
+import { Button, ButtonLink, buttonClass } from "@/components/ui/button";
 import { addToBag } from "@/lib/bag";
 import { bagStore, savedStore } from "@/lib/local-store";
 import { getProduct, priceLabel, type Product } from "@/lib/products";
@@ -73,9 +73,7 @@ export function SavedView() {
             </span>
             <p className="font-serif text-[28px] leading-tight">Nothing saved yet</p>
             <p className="max-w-[440px] text-[16px] text-stone-600">Tap the heart on any piece to keep it here. Every piece is one of one, so if one sells, Mimi can still make it for you.</p>
-            <Link href="/shop" className={buttonClass("primary")}>
-              Browse the shop
-            </Link>
+            <ButtonLink href="/shop">Browse the shop</ButtonLink>
           </div>
         </div>
       )}

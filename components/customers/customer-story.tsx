@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronIcon, CloseIcon } from "@/components/icons";
-import { buttonClass } from "@/components/ui/button";
+import { ButtonLink, buttonClass } from "@/components/ui/button";
 import type { Customer } from "@/lib/customers";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -64,13 +64,13 @@ function Story({ customer, next, instant, onNext, onClose }: { customer: Custome
   const actions = (
     <div className="flex gap-2.5">
       {primary ? (
-        <Link href={primary.href!} className={buttonClass("primary", "md", "min-w-0 flex-1 px-4 lg:flex-none lg:px-7")}>
+        <ButtonLink href={primary.href!} className="min-w-0 flex-1 px-4 lg:flex-none lg:px-7">
           Shop this piece
-        </Link>
+        </ButtonLink>
       ) : (
-        <Link href="/custom-order" className={buttonClass("primary", "md", "min-w-0 flex-1 px-4 lg:flex-none lg:px-7")}>
+        <ButtonLink href="/custom-order" className="min-w-0 flex-1 px-4 lg:flex-none lg:px-7">
           Have yours made
-        </Link>
+        </ButtonLink>
       )}
       <Link href="/shop" className={buttonClass("secondary", "md", "min-w-0 flex-1 px-4 lg:flex-none lg:px-7")}>
         Browse the shop

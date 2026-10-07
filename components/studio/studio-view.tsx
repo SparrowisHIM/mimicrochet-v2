@@ -90,7 +90,7 @@ function SetPrice({ o, onDone }: { o: Row; onDone: () => void }) {
         <span className="flex items-center gap-2 text-[14px] font-semibold"><WhatsAppIcon size={16} /> Message to {o.name} <span className="font-normal text-stone-400">draft</span></span>
         <p className="border-l-2 border-stone-200 pl-3 text-[14px] leading-[1.5] text-stone-600">{msg}</p>
       </div>
-      <Button
+      <Button arrow={false}
         disabled={!ok}
         onClick={() => {
           patchOrder(o, { stage: 1, price: total, readyBy: ready, depositPaid: false, updates: [...o.updates, { stage: 1, note: `${formatNaira(total)}, ready by ${ready}. Deposit ${formatNaira(deposit)}.`, at: "Today" }] });
