@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { WhatsAppIcon } from "@/components/icons";
 import { ShopOrderCard } from "@/components/cart/shop-order-card";
 import { Confetti } from "@/components/ui/confetti";
@@ -60,7 +60,7 @@ function SpotlightOutline({ show }: { show: boolean }) {
 
 const seenKey = (code: string) => `mimi:seen:${code}`;
 
-function useSpotlight(o: Order | undefined) {
+function useSpotlight(o: Order | undefined, target: RefObject<HTMLDivElement | null>) {
   const reduce = useReducedMotion();
   const [phase, setPhase] = useState<"idle" | "lift" | "done">("idle");
   useEffect(() => {
@@ -81,16 +81,30 @@ function useSpotlight(o: Order | undefined) {
       return;
     }
     // Only mark it seen once the moment has actually played.
-    const t1 = setTimeout(() => setPhase("lift"), 700);
-    const t2 = setTimeout(() => {
-      setPhase("done");
-      markSeen();
-    }, 3000);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const lift = () => {
+      setPhase("lift");
+      timers.push(
+        setTimeout(() => {
+          setPhase("done");
+          markSeen();
+        }, 2300),
+      );
     };
-  }, [o, reduce]);
+    timers.push(
+      setTimeout(() => {
+        // On phones the latest update sits below the stepper, often under the fold: bring it into
+        // view first, so the lift isn't a blur over nothing.
+        const el = target.current;
+        const r = el?.getBoundingClientRect();
+        if (el && r && window.matchMedia("(max-width: 1023px)").matches && (r.top < 72 || r.bottom > window.innerHeight)) {
+          el.scrollIntoView({ behavior: "smooth", block: r.height > window.innerHeight - 96 ? "start" : "center" });
+          timers.push(setTimeout(lift, 650));
+        } else lift();
+      }, 700),
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [o, reduce, target]);
   return phase;
 }
 
@@ -225,7 +239,8 @@ export function TrackingView({ code, justPaid = false }: { code: string; justPai
   const orders = useOrders();
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const order = findOrder(orders, code);
-  const phase = useSpotlight(order);
+  const latestRef = useRef<HTMLDivElement>(null);
+  const phase = useSpotlight(order, latestRef);
   const [showAll, setShowAll] = useState(false);
 
   if (!hydrated) return <div className="min-h-[70vh]" />;
@@ -256,7 +271,7 @@ export function TrackingView({ code, justPaid = false }: { code: string; justPai
   const ask = whatsappLink(`Hi Mimi! It’s about my order ${order.id}.`);
 
   const latestCard = (
-    <div className={`relative transition-[transform,box-shadow] duration-500 ${lifted ? "z-40 scale-[1.03] shadow-[0_30px_80px_-20px_rgb(28_25_23/0.35)]" : ""} rounded-[22px]`}>
+    <div ref={latestRef} className={`relative scroll-mt-20 transition-[transform,box-shadow] duration-500 ${lifted ? "z-40 scale-[1.03] shadow-[0_30px_80px_-20px_rgb(28_25_23/0.35)]" : ""} rounded-[22px]`}>
       <SpotlightOutline show={lifted} />
       <Card className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
