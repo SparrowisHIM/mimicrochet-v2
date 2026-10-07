@@ -30,7 +30,7 @@ function Name({ text }: { text: string }) {
   );
 }
 
-function Story({ customer, next, onNext, onClose }: { customer: Customer; next: Customer; onNext: () => void; onClose: () => void }) {
+function Story({ customer, next, instant, onNext, onClose }: { customer: Customer; next: Customer; instant: boolean; onNext: () => void; onClose: () => void }) {
   const [index, setIndex] = useState(0);
   const count = customer.photos.length;
   const go = useCallback((i: number) => setIndex(((i % count) + count) % count), [count]);
@@ -103,7 +103,7 @@ function Story({ customer, next, onNext, onClose }: { customer: Customer; next: 
       aria-modal="true"
       aria-label={`${customer.name}, ${customer.city}`}
       className="fixed inset-0 z-50 flex flex-col overflow-x-hidden overflow-y-auto bg-orange-50"
-      initial={{ opacity: 0 }}
+      initial={{ opacity: instant ? 1 : 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
@@ -205,7 +205,7 @@ function Story({ customer, next, onNext, onClose }: { customer: Customer; next: 
 
       {/* Phone: swipe gallery, then the words */}
       <div className="flex flex-1 flex-col lg:hidden">
-        <div ref={strip} onScroll={onScroll} className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto px-5">
+        <div ref={strip} onScroll={onScroll} className="no-scrollbar flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5">
           {customer.photos.map((p) => (
             <div key={p.src} className="relative aspect-[4/5] w-[78vw] max-w-[340px] shrink-0 snap-start overflow-hidden rounded-[16px] bg-orange-100">
               <Image src={p.src} alt={p.alt} fill sizes="78vw" className="object-cover" />
@@ -251,6 +251,14 @@ export function CustomerStory({
   const i = customers.findIndex((c) => c.slug === openSlug);
   const customer = i >= 0 ? customers[i] : null;
   const next = customers[(i + 1) % customers.length];
+  // "Next story" swaps one open story for another: the new one appears at once on top, instead of
+  // both fading together and letting the page show through for a moment.
+  const [shownSlug, setShownSlug] = useState(openSlug);
+  const [swapping, setSwapping] = useState(false);
+  if (shownSlug !== openSlug) {
+    setSwapping(shownSlug !== null && openSlug !== null);
+    setShownSlug(openSlug);
+  }
 
   useEffect(() => {
     if (!customer) return;
@@ -263,7 +271,7 @@ export function CustomerStory({
 
   return (
     <AnimatePresence>
-      {customer && <Story key={customer.slug} customer={customer} next={next} onNext={() => onChange(next.slug)} onClose={onClose} />}
+      {customer && <Story key={customer.slug} customer={customer} next={next} instant={swapping} onNext={() => onChange(next.slug)} onClose={onClose} />}
     </AnimatePresence>
   );
 }

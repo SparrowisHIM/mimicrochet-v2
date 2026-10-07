@@ -29,6 +29,13 @@ function nextStep(o: Row) {
   return "Done";
 }
 
+// Orders keep the customer's own wording ("From your photo"); Mimi reads them from her side.
+function pieceName(o: Order) {
+  if (o.piece.source === "photo") return "From their photo";
+  if (o.piece.source === "words") return "Their own idea";
+  return o.piece.name;
+}
+
 function greeting() {
   const h = new Date().getHours();
   return h < 12 ? "Good morning, Mimi" : h < 17 ? "Good afternoon, Mimi" : "Good evening, Mimi";
@@ -44,7 +51,8 @@ function SetPrice({ o, onDone }: { o: Row; onDone: () => void }) {
   const total = (Number(price.replace(/\D/g, "")) || 0) + rush;
   const deposit = Math.round(total * 0.6);
   const ready = date ? new Date(date + "T12:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }) : "";
-  const msg = `Hi ${o.name}! Your ${o.piece.name}${o.size ? ` in ${o.size}` : ""} is ${formatNaira(total)}${ready ? `, ready by ${ready}` : ""}. To start, please pay the 60% deposit (${formatNaira(deposit)}). ${riderPays ? "Delivery is paid to the rider on arrival." : "Delivery is included."} Your order page: ${typeof window !== "undefined" ? window.location.origin : ""}/t/${o.code}`;
+  const what = o.piece.source === "photo" || o.piece.source === "words" ? "custom piece" : o.piece.name;
+  const msg = `Hi ${o.name}! Your ${what}${o.size ? ` in ${o.size}` : ""} is ${total ? formatNaira(total) : "₦…"}${ready ? `, ready by ${ready}` : ""}. To start, please pay the 60% deposit (${total ? formatNaira(deposit) : "₦…"}). ${riderPays ? "Delivery is paid to the rider on arrival." : "Delivery is included."} Your order page: ${typeof window !== "undefined" ? window.location.origin : ""}/t/${o.code}`;
   const ok = total > 0 && Boolean(date);
 
   return (
@@ -104,7 +112,7 @@ function PostUpdate({ o, onDone }: { o: Row; onDone: () => void }) {
   const file = useRef<HTMLInputElement>(null);
   return (
     <div className="flex flex-col gap-5">
-      <p className="-mt-2 text-[15px] text-stone-600">{o.name} sees this on her tracking page.</p>
+      <p className="text-[15px] text-stone-600">{o.name} sees this on their tracking page.</p>
       <input ref={file} type="file" accept="image/*" capture="environment" hidden onChange={async (e) => { const f = e.target.files?.[0]; if (f) setPhoto(await thumbnail(f, 900)); }} />
       <div className="grid grid-cols-3 gap-2.5">
         {photo ? (
@@ -173,7 +181,7 @@ function OrderPanel({ o, onClose }: { o: Row; onClose: () => void }) {
                   </span>
                 )}
                 <span className="flex flex-col">
-                  <span className="text-[16px] font-semibold">{o.piece.name}</span>
+                  <span className="text-[16px] font-semibold">{pieceName(o)}</span>
                   <span className="text-[14px] text-stone-500">{[o.size && `Size ${o.size}`, o.colours === "photo" ? "Colours as in the photo" : o.colourNote, o.when].filter(Boolean).join(" · ")}</span>
                   <span className={`mt-1 self-start rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${stageTone[o.stage]}`}>{stageName[o.stage]}</span>
                 </span>
@@ -307,7 +315,7 @@ export function StudioView() {
                 <span className="grid size-9 shrink-0 place-items-center rounded-full bg-orange-100 font-serif text-[16px] text-amber-800">{t.name[0]}</span>
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="text-[15px] font-semibold">{nextStep(t)}</span>
-                  <span className="truncate text-[13px] text-stone-500">{t.piece.name} · {t.ago}</span>
+                  <span className="truncate text-[13px] text-stone-500">{pieceName(t)} · {t.ago}</span>
                 </span>
                 <span className="rounded-full bg-stone-900 px-3.5 py-2 text-[13px] font-semibold text-orange-50">Open</span>
               </button>
@@ -334,7 +342,7 @@ export function StudioView() {
               </span>
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="text-[15px] font-semibold">{o.name}</span>
-                <span className="truncate text-[14px] text-stone-500">{o.piece.name}{o.size ? ` · ${o.size}` : ""}</span>
+                <span className="truncate text-[14px] text-stone-500">{pieceName(o)}{o.size ? ` · ${o.size}` : ""}</span>
               </span>
               <span className={`text-right text-[13px] ${dueClass[o.dueTone]}`}>{o.due}</span>
             </button>
@@ -358,7 +366,7 @@ export function StudioView() {
                     <span className="relative h-[42px] w-8 shrink-0 overflow-hidden rounded-[6px] bg-orange-100">
                       {o.piece.image && <Image src={o.piece.image} alt="" fill sizes="32px" className="object-cover" unoptimized={o.piece.image.startsWith("data:")} />}
                     </span>
-                    {o.piece.name}{o.size ? ` · ${o.size}` : ""}
+                    {pieceName(o)}{o.size ? ` · ${o.size}` : ""}
                   </span>
                 </td>
                 <td className="px-5 py-3.5"><span className={`rounded-full px-2.5 py-1 text-[12px] font-semibold ${stageTone[o.stage]}`}>{stageName[o.stage]}</span></td>
