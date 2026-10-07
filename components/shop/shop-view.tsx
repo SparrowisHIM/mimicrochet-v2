@@ -9,6 +9,7 @@ import { ProductCard } from "@/components/product/product-card";
 import { Button, ButtonLink, buttonClass } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
+import { Hairline } from "@/components/ui/hairline";
 import { Toggle } from "@/components/ui/toggle";
 import { categories, colourGroups, type ColourGroup } from "@/lib/products";
 import { applyFilters, defaultFilters, priceBands, sorts, type ShopFilters } from "@/lib/shop-filter";
@@ -223,9 +224,7 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
             />
           </span>
           {visible.length < results.length && (
-            <Button variant="secondary" className="mt-1 max-sm:w-full" onClick={() => setShown((n) => n + PAGE + 1)}>
-              Show more
-            </Button>
+            <Hairline label="Show more" onClick={() => setShown((n) => n + PAGE + 1)} className="mt-1 w-full max-w-[440px]" />
           )}
         </div>
       )}
