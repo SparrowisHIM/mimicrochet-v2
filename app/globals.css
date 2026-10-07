@@ -75,6 +75,109 @@
   }
 }
 
+/* Voice note (components/custom-order/voice-note.tsx).
+   - live-ring: while the mic is on, a gradient ring turns slowly round the composer, with a soft glow
+     (the angle animates through a registered custom property, so the colours travel, not the box).
+   - voice-icon-bar: the voice button's little waveform ripples on hover, to hint that it listens.
+   - voice-bar: the kept note's waveform grows in from the middle, left to right. */
+@property --ring-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes ring-turn {
+  to {
+    --ring-angle: 360deg;
+  }
+}
+
+@keyframes voice-ripple {
+  50% {
+    transform: scaleY(0.4);
+  }
+}
+
+@keyframes voice-bar-in {
+  from {
+    transform: scaleY(0.15);
+    opacity: 0.3;
+  }
+}
+
+@layer components {
+  /* No stacking context here on purpose: the glow (z-index -1) must sit behind the composer's own
+     white background, so it only shows round the edge. */
+  .live-ring {
+    position: relative;
+  }
+  .live-ring::before,
+  .live-ring::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    padding: 2px;
+    border-radius: inherit;
+    background: conic-gradient(
+      from var(--ring-angle),
+      oklch(82.8% 0.189 84.429),
+      oklch(71.2% 0.194 13.428),
+      oklch(74% 0.238 322.16),
+      oklch(84.5% 0.143 164.978),
+      oklch(82.8% 0.189 84.429)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 300ms ease;
+    animation: ring-turn 3.2s linear infinite paused;
+  }
+  .live-ring::after {
+    z-index: -1;
+    inset: 2px;
+    -webkit-mask: none;
+    mask: none;
+    filter: blur(14px);
+  }
+  .live-ring[data-live]::before {
+    opacity: 1;
+    animation-play-state: running;
+  }
+  .live-ring[data-live]::after {
+    opacity: 0.45;
+    animation-play-state: running;
+  }
+
+  .voice-icon-bar {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .group:hover .voice-icon-bar {
+      animation: voice-ripple 0.9s ease-in-out infinite;
+    }
+  }
+
+  .voice-bar {
+    animation: voice-bar-in 420ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .live-ring::before,
+    .live-ring::after,
+    .group:hover .voice-icon-bar,
+    .voice-bar {
+      animation: none;
+    }
+  }
+}
+
 /* Fanned card stack (components/ui/card-stack.tsx). Cards tilt out from a shared base point;
    on hover (mouse only) the fan spreads wider with a strong ease-out. Reduced motion: no movement. */
 @layer components {

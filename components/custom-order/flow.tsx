@@ -351,6 +351,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
   const set = (patch: Partial<Draft>) => setD((cur) => ({ ...cur, ...patch }));
   const [today] = useState(() => Date.now());
   const [ideasOpen, setIdeasOpen] = useState(false);
+  const [voiceLive, setVoiceLive] = useState(false);
   const [morePieces, setMorePieces] = useState(false);
   const [measuring, setMeasuring] = useState<MeasureKey | null>(null);
   const [sending, setSending] = useState<{ order: Order; files: File[] } | null>(null);
@@ -763,8 +764,11 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                   )}
 
                   <div className="flex flex-col gap-2.5">
-                    <Label hint={hasVisual ? "Optional. Type it, or hold the mic for a voice note." : "Type it, or hold the mic for a voice note."}>Tell Mimi about it</Label>
-                    <div className={`flex flex-col gap-3 rounded-[22px] border bg-white p-4 transition-colors duration-150 focus-within:border-stone-900 ${tried && !hasSource ? "border-red-400" : "border-stone-300"}`}>
+                    <Label hint={hasVisual ? "Optional. Type it, or tap the voice button and talk." : "Type it, or tap the voice button and talk."}>Tell Mimi about it</Label>
+                    <div
+                      data-live={voiceLive || undefined}
+                      className={`live-ring flex flex-col gap-3 rounded-[22px] border bg-white p-4 transition-colors duration-150 ${voiceLive ? "border-transparent" : `has-[textarea:focus]:border-stone-900 ${tried && !hasSource ? "border-red-400" : "border-stone-300"}`}`}
+                    >
                       <label className="sr-only" htmlFor="describe">Tell Mimi about it</label>
                       <textarea
                         id="describe"
@@ -774,12 +778,16 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                         placeholder="The piece, the colours, the occasion…"
                         className="w-full resize-none bg-transparent text-[16px] leading-[1.5] outline-none placeholder:text-stone-400"
                       />
-                      <div className="flex items-center justify-between gap-3">
-                        <button type="button" onClick={() => fileInput.current?.click()} className="grid size-10 place-items-center rounded-full bg-orange-50 text-[22px] leading-none transition-colors duration-150 hover:bg-orange-100" aria-label="Add a photo">
-                          +
-                        </button>
-                        <VoiceNote value={d.voice} onChange={(voice) => set({ voice })} />
-                      </div>
+                      <VoiceNote
+                        value={d.voice}
+                        onChange={(voice) => set({ voice })}
+                        onLiveChange={setVoiceLive}
+                        leading={
+                          <button type="button" onClick={() => fileInput.current?.click()} className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full bg-orange-50 text-[22px] leading-none transition-colors duration-150 hover:bg-orange-100" aria-label="Add a photo">
+                            +
+                          </button>
+                        }
+                      />
                     </div>
                   </div>
                 </Spot>
