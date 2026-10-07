@@ -26,14 +26,15 @@ export const sorts: { key: Sort; label: string }[] = [
   { key: "price-desc", label: "Price: high to low" },
 ];
 
+/** Every typed word must start a word in the piece's details, so "red" finds red pieces, not "covered". */
 function matchesQuery(p: Product, q: string) {
   if (!q) return true;
-  const hay = `${p.name} ${p.category} ${p.colour} ${p.description}`.toLowerCase();
+  const words = `${p.name} ${p.category} ${p.colour} ${p.colours.join(" ")} ${p.description}`.toLowerCase().split(/[^\p{L}\p{N}]+/u);
   return q
     .toLowerCase()
-    .split(/\s+/)
+    .split(/[^\p{L}\p{N}]+/u)
     .filter(Boolean)
-    .every((w) => hay.includes(w));
+    .every((w) => words.some((h) => h.startsWith(w)));
 }
 
 /** Everything except `skip` applied: used for live counts on each chip. */

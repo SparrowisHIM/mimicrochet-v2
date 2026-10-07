@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { CloseIcon, SearchIcon } from "@/components/icons";
@@ -11,6 +12,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { Toggle } from "@/components/ui/toggle";
 import { categories, colourGroups, type ColourGroup } from "@/lib/products";
 import { applyFilters, defaultFilters, priceBands, sorts, type ShopFilters } from "@/lib/shop-filter";
+import { hasSizes } from "@/lib/sizes";
 
 const PAGE = 15;
 
@@ -51,6 +53,22 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
   const [shown, setShown] = useState(PAGE);
   const [sheet, setSheet] = useState(false);
   const [searching, setSearching] = useState(Boolean(initial.search || initial.query));
+  // The header's search icon links to /shop?search=1. Already on the shop, that only changes the
+  // query, so open the search when it arrives, and drop it again on close so the icon works twice.
+  const params = useSearchParams();
+  const wantSearch = params.get("search") === "1";
+  const [searchParam, setSearchParam] = useState(wantSearch);
+  if (searchParam !== wantSearch) {
+    setSearchParam(wantSearch);
+    if (wantSearch) setSearching(true);
+  }
+  const closeSearch = () => {
+    setSearching(false);
+    if (!wantSearch) return;
+    const next = new URLSearchParams(params.toString());
+    next.delete("search");
+    window.history.replaceState(null, "", next.size ? `?${next}` : window.location.pathname);
+  };
   const set = (patch: Partial<ShopFilters>) => {
     setF((cur) => ({ ...cur, ...patch }));
     setShown(PAGE);
@@ -75,9 +93,10 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
     </>
   );
 
-  // Grid with the "Have it made" tile after the fifth piece, like a product.
+  // Grid with the "Have it made" tile after the fifth piece, like a product. It asks "Not your size?",
+  // so it only shows when some of the pieces come in sizes (not a grid of earrings and beanies).
   const cells: ({ kind: "tile" } | { kind: "product"; i: number })[] = visible.map((_, i) => ({ kind: "product" as const, i }));
-  if (visible.length >= 5) cells.splice(5, 0, { kind: "tile" });
+  if (visible.length >= 5 && visible.some(hasSizes)) cells.splice(5, 0, { kind: "tile" });
 
   return (
     <>
@@ -105,9 +124,6 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
               ))}
             </select>
           </label>
-          <button type="button" onClick={() => setSearching((v) => !v)} className="grid size-10 place-items-center rounded-full hover:bg-orange-100" aria-label="Search the shop">
-            <SearchIcon />
-          </button>
         </div>
       </div>
 
@@ -125,11 +141,15 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
                   className="h-full flex-1 bg-transparent text-[16px] outline-none placeholder:text-stone-400"
                   aria-label="Search pieces"
                 />
-                {f.query && (
-                  <button type="button" onClick={() => set({ query: "" })} aria-label="Clear search">
-                    <CloseIcon size={18} />
-                  </button>
-                )}
+                {/* Clears the words first; with nothing typed it closes the search. */}
+                <button
+                  type="button"
+                  onClick={() => (f.query ? set({ query: "" }) : closeSearch())}
+                  aria-label={f.query ? "Clear search" : "Close search"}
+                  className="grid size-8 place-items-center rounded-full hover:bg-orange-100"
+                >
+                  <CloseIcon size={18} />
+                </button>
               </label>
             </div>
           </motion.div>

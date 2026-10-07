@@ -36,9 +36,20 @@ export function Header() {
   const saved = savedStore.useList();
   const bag = bagStore.useList();
   const [menuOpen, setMenuOpen] = useState(false);
+  // Any page change closes the menu, including the logo, the header icons and the back button.
+  const [menuPath, setMenuPath] = useState(pathname);
+  if (menuPath !== pathname) {
+    setMenuPath(pathname);
+    setMenuOpen(false);
+  }
+  const closeMenu = () => setMenuOpen(false);
 
   useEffect(() => {
     document.documentElement.style.overflow = menuOpen ? "hidden" : "";
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [menuOpen]);
 
   return (
@@ -47,6 +58,7 @@ export function Header() {
         <div className="flex items-center lg:w-[280px]">
           <Link
             href="/"
+            onClick={closeMenu}
             className="font-serif text-[19px] tracking-[-0.01em] text-stone-900 max-[380px]:text-[15px] lg:text-[22px]"
             aria-label={`${site.name}, home`}
           >
@@ -76,14 +88,22 @@ export function Header() {
         </nav>
 
         <div className="flex items-center justify-end lg:w-[280px] lg:gap-3">
-          <Link href="/shop?search=1" className={iconButton} aria-label="Search the shop">
+          <Link href="/shop?search=1" onClick={closeMenu} className={iconButton} aria-label="Search the shop">
             <SearchIcon />
           </Link>
-          <Link href="/saved" className={`${iconButton} max-[380px]:hidden`} aria-label={`Saved pieces, ${saved.length}`}>
+          <Link href="/saved" onClick={closeMenu} className={`${iconButton} max-[380px]:hidden`} aria-label={`Saved pieces, ${saved.length}`}>
             <HeartIcon />
             <CountBadge count={saved.length} />
           </Link>
-          <button type="button" onClick={() => bagUi.open()} className={iconButton} aria-label={`Your bag, ${bag.length} pieces`}>
+          <button
+            type="button"
+            onClick={() => {
+              closeMenu();
+              bagUi.open();
+            }}
+            className={iconButton}
+            aria-label={`Your bag, ${bag.length} pieces`}
+          >
             <BagIcon />
             <CountBadge count={bag.length} />
           </button>
