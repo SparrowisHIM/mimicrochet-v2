@@ -38,8 +38,8 @@ function CustomerPreview({ customer, open, onOpen }: { customer: Customer; open:
     <li ref={ref} className="w-[76vw] max-w-[320px] shrink-0 snap-start lg:w-auto lg:max-w-none"
       onPointerEnter={(e) => e.pointerType === "mouse" && setHovered(true)} onPointerLeave={() => setHovered(false)}
       onFocusCapture={(e) => (e.target as Element).matches(":focus-visible") && setFocused(true)} onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}>
-      <div className="relative aspect-[4/5] overflow-hidden rounded-[18px] bg-orange-100">
-        <button type="button" onClick={onOpen} className="absolute inset-0 size-full text-left" aria-label={`Open ${customer.name}’s photos`}>
+      <div className="group/photo relative aspect-[4/5] overflow-hidden rounded-[18px] bg-orange-100">
+        <button type="button" onClick={onOpen} className="absolute inset-0 size-full text-left transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/photo:scale-[1.03] motion-reduce:group-hover/photo:scale-100" aria-label={`Open ${customer.name}’s photos`}>
           <AnimatePresence initial={false}>
             <motion.span key={photo.src} className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduce ? 0 : 0.65 }}>
               <Image src={photo.src} alt={photo.alt} fill sizes="(min-width: 1024px) 416px, 76vw" className="object-cover" />
@@ -57,9 +57,9 @@ function CustomerPreview({ customer, open, onOpen }: { customer: Customer; open:
           </div>
         </>}
       </div>
-      <button type="button" onClick={onOpen} className="mt-4 flex w-full flex-col gap-3 text-left lg:mt-[18px]" aria-label={`Read ${customer.name}’s story`}>
+      <button type="button" onClick={onOpen} className="group/quote mt-4 flex w-full flex-col gap-3 text-left lg:mt-[18px]" aria-label={`Read ${customer.name}’s story`}>
         <span className="font-serif text-[19px] leading-[1.35] lg:text-[21px]">“{customer.quote}”</span>
-        <span className="text-[13px] font-medium text-stone-500 lg:text-[14px]">{customer.name}, {customer.city}</span>
+        <span className="text-[13px] font-medium text-stone-500 underline decoration-transparent decoration-[1.5px] underline-offset-4 transition-[text-decoration-color,color] duration-200 group-hover/quote:text-stone-900 group-hover/quote:decoration-stone-900/40 lg:text-[14px]">{customer.name}, {customer.city}</span>
       </button>
     </li>
   );

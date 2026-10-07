@@ -17,7 +17,7 @@ export function Toggle({
   hideLabel?: boolean;
 }) {
   return (
-    <label htmlFor={id} className="inline-flex cursor-pointer items-center gap-3 select-none">
+    <label htmlFor={id} className="group inline-flex cursor-pointer items-center gap-3 select-none">
       <span className={hideLabel ? "sr-only" : "text-[15px] font-medium whitespace-nowrap text-stone-900"}>{label}</span>
       <button
         id={id}
@@ -28,7 +28,7 @@ export function Toggle({
         className="relative h-8 w-14 shrink-0 rounded-full"
       >
         <span
-          className={`absolute inset-0 rounded-full shadow-[inset_0_1.5px_3px_rgb(0_0_0/0.18)] transition-colors duration-300 ${
+          className={`absolute inset-0 rounded-full shadow-[inset_0_1.5px_3px_rgb(0_0_0/0.18)] transition-[background-color,filter] duration-300 group-hover:brightness-95 ${
             checked ? "bg-linear-to-b from-emerald-600 to-emerald-400" : "bg-linear-to-b from-stone-300 to-stone-200"
           }`}
         />

@@ -73,6 +73,18 @@
   html[data-input="pointer"] :focus-visible {
     outline: none;
   }
+
+  /* Underlined text buttons and links (Change, Back, Show, Edit…): on a mouse, the underline is light
+     and darkens on hover, the same as the secondary links, so they read as things you can press. */
+  @media (hover: hover) and (pointer: fine) {
+    :where(a, button).underline {
+      text-decoration-color: color-mix(in oklab, currentColor 35%, transparent);
+      transition: text-decoration-color 200ms ease;
+    }
+    :where(a, button).underline:hover {
+      text-decoration-color: currentColor;
+    }
+  }
 }
 
 @utility container-page {

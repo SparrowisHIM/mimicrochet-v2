@@ -20,9 +20,9 @@ export function Faq() {
         const on = open === i;
         return (
           <li key={f.q} className="border-t border-stone-200">
-            <button type="button" aria-expanded={on} onClick={() => setOpen(on ? null : i)} className="flex w-full items-center justify-between gap-6 py-5 text-left text-[17px] font-medium lg:text-[18px]">
+            <button type="button" aria-expanded={on} onClick={() => setOpen(on ? null : i)} className="group flex w-full items-center justify-between gap-6 py-5 text-left text-[17px] font-medium transition-colors duration-200 hover:text-stone-600 lg:text-[18px]">
               {f.q}
-              <span className="relative size-4 shrink-0" aria-hidden>
+              <span className="relative size-4 shrink-0 transition-transform duration-300 ease-out group-hover:rotate-45" aria-hidden>
                 <span className="absolute top-1/2 left-0 h-[1.5px] w-4 -translate-y-1/2 bg-stone-900" />
                 <motion.span className="absolute top-1/2 left-0 h-[1.5px] w-4 -translate-y-1/2 bg-stone-900" animate={{ rotate: on ? 0 : 90 }} transition={{ duration: 0.3 }} />
               </span>
