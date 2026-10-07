@@ -530,6 +530,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       state: d.state,
       area: d.town ? `${d.town}, ${d.area}` : d.area,
       stage: 0,
+      sent: false,
       updates: [{ stage: 0, note: "Request prepared. Send the details to Mimi on WhatsApp to confirm.", at: "Today" }],
     };
     saveOrder(order);

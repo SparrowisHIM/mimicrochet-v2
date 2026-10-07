@@ -36,6 +36,8 @@ export type Order = {
   readyBy?: string;
   depositPaid?: boolean;
   sample?: boolean;
+  /** Custom requests: false until the customer taps Send on WhatsApp (Mimi only gets it then). */
+  sent?: boolean;
 };
 
 const KEY = "mimi:orders";

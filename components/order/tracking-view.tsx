@@ -29,6 +29,7 @@ function pieceWord(name: string) {
 function headline(o: Order) {
   const w = pieceWord(o.piece.name);
   const isAre = w === "earrings" ? "are" : "is";
+  if (o.stage === 0 && o.sent === false) return { title: "Not sent to Mimi yet", lead: "Send your request on WhatsApp so Mimi gets it. This page follows every step after that." };
   if (o.stage === 0) return { title: "Mimi has your idea", lead: "She’ll message you on WhatsApp to agree the price and the date." };
   if (o.stage === 1 && !o.depositPaid) return { title: "Your price is ready", lead: "Mimi starts as soon as your deposit arrives." };
   if (o.stage === 1) return { title: "Deposit received", lead: "Mimi is picking your yarn and starting soon." };

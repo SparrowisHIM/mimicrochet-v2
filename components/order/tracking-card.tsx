@@ -9,18 +9,21 @@ export function TrackingCard({
   stage,
   note,
   noteFrom = "Latest from Mimi",
+  status,
   className = "",
 }: {
   orderId: string;
   piece: string;
-  /** 0-based stage index */
+  /** 0-based stage index; -1 before Mimi has the request (nothing filled in yet). */
   stage: number;
+  /** Replaces the stage name in the pill, in a neutral colour (e.g. "Not sent yet"). */
+  status?: string;
   note: string;
   noteFrom?: string;
   className?: string;
 }) {
-  const s = stages[stage];
-  const emerald = s.tone === "emerald";
+  const s = stages[Math.max(0, stage)];
+  const emerald = !status && s.tone === "emerald";
 
   return (
     <div
@@ -30,16 +33,16 @@ export function TrackingCard({
         <span className="text-[13px] font-medium text-stone-500">Order {orderId}</span>
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
-            key={s.key}
+            key={status ?? s.key}
             initial={{ opacity: 0, y: 6, filter: "blur(4px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             exit={{ opacity: 0, y: -6, filter: "blur(4px)" }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className={`rounded-full px-3 py-1.5 text-[13px] leading-none font-semibold ${
-              emerald ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+              status ? "bg-stone-100 text-stone-700" : emerald ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
             }`}
           >
-            {s.label}
+            {status ?? s.label}
           </motion.span>
         </AnimatePresence>
       </div>
@@ -60,7 +63,7 @@ export function TrackingCard({
           ))}
         </div>
         <span className="text-[13px] font-medium text-stone-500">
-          Step {stage + 1} of {stages.length}
+          {stage < 0 ? "Starts when Mimi gets it" : `Step ${stage + 1} of ${stages.length}`}
         </span>
       </div>
 
