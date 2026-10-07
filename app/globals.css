@@ -304,9 +304,31 @@
       transform: translateX(calc(var(--i) * var(--fan-x-open))) translateY(-2px) rotate(calc(var(--i) * var(--fan-r-open)));
     }
   }
+  /* Phones can't hover, so the deck fans a little as it scrolls into view, then stays put: a tighter
+     fan at the bottom of the screen opening to a touch past its resting spread. */
+  @media (hover: none) {
+    @supports (animation-timeline: view()) {
+      .card-fan > * {
+        animation: fan-peek linear both;
+        animation-timeline: view();
+        animation-range: entry 10% cover 45%;
+      }
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     .card-fan > * {
       transition: none;
+      animation: none;
     }
+  }
+}
+
+@keyframes fan-peek {
+  from {
+    transform: translateX(calc(var(--i) * var(--fan-x) * 0.35)) rotate(calc(var(--i) * var(--fan-r) * 0.35));
+  }
+  to {
+    transform: translateX(calc(var(--i) * (var(--fan-x) + (var(--fan-x-open) - var(--fan-x)) * 0.45)))
+      rotate(calc(var(--i) * (var(--fan-r) + (var(--fan-r-open) - var(--fan-r)) * 0.45)));
   }
 }
