@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useRef, useState } from "react";
-import { ChevronIcon } from "@/components/icons";
+import { ChevronIcon, CloseIcon } from "@/components/icons";
 import { IdeasSheet } from "@/components/custom-order/ideas-sheet";
 import { formatMeasure, MeasureSheet, measureSteps, type MeasureKey, type Measures } from "@/components/custom-order/measure-sheet";
 import { SendingMoment } from "@/components/custom-order/sending";
@@ -62,7 +62,6 @@ const starter = ["sunflower-crop-cardigan", "noir-bloom-crochet-shirt", "heart-s
   .filter(Boolean) as Product[];
 
 const unsized = (p?: Piece) => p && !p.sized;
-const fmtBytes = (n: number) => (n > 1_000_000 ? `${(n / 1_000_000).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1000))} KB`);
 
 /* ----------------------------- small building blocks ----------------------------- */
 
@@ -666,41 +665,48 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                         <span className="text-[13px] text-stone-400 max-lg:hidden">or drop it here</span>
                       </motion.button>
                     ) : (
-                      <div className="flex flex-col gap-2.5">
-                        <AnimatePresence initial={false}>
+                      // The photos themselves, as tiles: the first one leads the request ("Main"), up to six.
+                      <ul className="grid grid-cols-3 gap-2.5 lg:grid-cols-4" aria-label="Your photos">
+                        <AnimatePresence initial={false} mode="popLayout">
                           {d.photos.map((p, i) => (
-                            <motion.div
+                            <motion.li
                               key={p.id}
                               layout
-                              initial={{ opacity: 0, scale: 0.96 }}
+                              initial={{ opacity: 0, scale: 0.92 }}
                               animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, transition: { duration: 0.15 } }}
-                              transition={{ duration: 0.3, ease: easeOutExpo }}
-                              className="flex items-center gap-3 rounded-[16px] bg-white p-2.5 pr-4"
+                              exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.15 } }}
+                              transition={{ duration: 0.35, ease: easeOutExpo }}
+                              className="relative aspect-[4/5] overflow-hidden rounded-[14px] bg-orange-100"
                             >
-                              <span className="relative size-12 shrink-0 overflow-hidden rounded-[10px]">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={p.preview} alt="" className="size-full object-cover" />
-                              </span>
-                              <span className="flex min-w-0 flex-1 flex-col">
-                                <span className="flex items-center gap-2">
-                                  <span className="truncate text-[15px] font-medium">{p.name}</span>
-                                  {i === 0 && <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-semibold text-amber-800">Main</span>}
-                                </span>
-                                <span className="text-[13px] text-stone-500">{fmtBytes(p.bytes)}</span>
-                              </span>
-                              <button type="button" onClick={() => set({ photos: d.photos.filter((x) => x.id !== p.id) })} className="text-[14px] underline underline-offset-2">
-                                Remove
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={p.preview} alt={`Your photo ${i + 1}`} className="size-full object-cover" />
+                              {i === 0 && <span className="absolute bottom-2 left-2 rounded-full bg-white/92 px-2 py-0.5 text-[12px] font-semibold text-stone-900">Main</span>}
+                              <button
+                                type="button"
+                                onClick={() => set({ photos: d.photos.filter((x) => x.id !== p.id) })}
+                                aria-label={`Remove photo ${i + 1}`}
+                                className="absolute top-1.5 right-1.5 grid size-8 place-items-center rounded-full bg-white/92 text-stone-900 shadow-[0_2px_8px_rgb(28_25_23/0.18)] transition-transform duration-150 active:scale-90"
+                              >
+                                <CloseIcon size={15} />
                               </button>
-                            </motion.div>
+                            </motion.li>
                           ))}
+                          {d.photos.length < 6 && (
+                            <motion.li key="add" layout transition={{ duration: 0.35, ease: easeOutExpo }}>
+                              <button
+                                type="button"
+                                onClick={() => fileInput.current?.click()}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
+                                className="group flex aspect-[4/5] w-full flex-col items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-dashed border-stone-300 bg-white/60 text-[14px] font-medium transition-colors duration-150 hover:border-stone-900"
+                              >
+                                <span className="grid size-9 place-items-center rounded-full bg-orange-100 text-[20px] leading-none text-amber-800 transition-colors duration-150 group-hover:bg-amber-200" aria-hidden>+</span>
+                                Add photo
+                              </button>
+                            </motion.li>
+                          )}
                         </AnimatePresence>
-                        {d.photos.length < 6 && (
-                          <button type="button" onClick={() => fileInput.current?.click()} className="flex h-12 items-center justify-center gap-2 rounded-[16px] border-[1.5px] border-dashed border-stone-300 text-[15px] font-medium transition-colors duration-150 hover:border-stone-900">
-                            + Add another photo
-                          </button>
-                        )}
-                      </div>
+                      </ul>
                     )}
                   </div>
 
