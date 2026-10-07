@@ -12,6 +12,17 @@ import { areaAliases, isNigerianState, lgasByState, nigerianStates, popularState
 type Option = { value: string; detail?: string; matched?: string };
 type Section = { label: string; items: Option[] };
 
+/** What a state search said about the area: "Lekki" picks Lagos, and Eti-Osa with Lekki as the town. */
+export type Place = { lga?: string; town?: string };
+
+function placeFor(state: NigerianState, matched?: string): Place {
+  if (!matched) return {};
+  if (lgasByState[state].includes(matched)) return { lga: matched };
+  const aliases = areaAliases[state] ?? {};
+  const lga = Object.keys(aliases).find((l) => aliases[l]?.includes(matched));
+  return lga ? { lga, town: matched } : {};
+}
+
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
 
 function Highlight({ text, query }: { text: string; query: string }) {
@@ -34,6 +45,7 @@ function Kbd({ children }: { children: React.ReactNode }) {
 function Combobox({
   id,
   value,
+  display,
   onChange,
   placeholder,
   searchPlaceholder,
@@ -46,7 +58,9 @@ function Combobox({
 }: {
   id: string;
   value: string;
-  onChange: (v: string) => void;
+  /** What the field shows when it differs from the value, like "Lekki, Eti-Osa". */
+  display?: string;
+  onChange: (v: string, picked: Option) => void;
   placeholder: string;
   searchPlaceholder: string;
   sections: (query: string) => Section[];
@@ -88,8 +102,8 @@ function Combobox({
     setOpen(false);
     if (refocus) trigger.current?.focus();
   };
-  const pick = (v: string) => {
-    onChange(v);
+  const pick = (o: Option) => {
+    onChange(o.value, o);
     close();
   };
   const move = (to: number) => {
@@ -116,14 +130,14 @@ function Combobox({
       >
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
-            key={value || "empty"}
+            key={display || value || "empty"}
             className={`truncate ${value ? "font-medium text-stone-900" : "text-stone-400"}`}
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: 10, filter: "blur(4px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: -10, filter: "blur(4px)" }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
-            {value || (disabled ? disabledText : placeholder)}
+            {display || value || (disabled ? disabledText : placeholder)}
           </motion.span>
         </AnimatePresence>
         <motion.svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0 text-stone-500" animate={{ rotate: open ? 180 : 0 }} aria-hidden>
@@ -165,7 +179,7 @@ function Combobox({
                   if (e.key === "ArrowDown") move(active + 1);
                   else if (e.key === "ArrowUp") move(active - 1);
                   else if (e.key === "Escape") close();
-                  else if (flat[active]) pick(flat[active].value);
+                  else if (flat[active]) pick(flat[active]);
                 }}
                 placeholder={searchPlaceholder}
                 className="h-[52px] w-full bg-transparent text-[16px] outline-none placeholder:text-stone-400"
@@ -178,7 +192,7 @@ function Combobox({
                   <motion.button
                     key={c}
                     type="button"
-                    onClick={() => pick(c)}
+                    onClick={() => pick({ value: c })}
                     whileTap={{ scale: 0.94 }}
                     initial={reduce ? false : { opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -212,7 +226,7 @@ function Combobox({
                             role="option"
                             aria-selected={on}
                             onPointerMove={() => i !== active && setActive(i)}
-                            onClick={() => pick(o.value)}
+                            onClick={() => pick(o)}
                             initial={reduce || i > 10 ? false : { opacity: 0, x: -6 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.015 * i, duration: 0.2 }}
@@ -279,12 +293,12 @@ function stateSections(query: string): Section[] {
   return items.length ? [{ label: "States", items }] : [];
 }
 
-export function StatePicker({ id, value, onChange, invalid }: { id: string; value: string; onChange: (v: NigerianState) => void; invalid?: boolean }) {
+export function StatePicker({ id, value, onChange, invalid }: { id: string; value: string; onChange: (v: NigerianState, place: Place) => void; invalid?: boolean }) {
   return (
     <Combobox
       id={id}
       value={value}
-      onChange={(v) => isNigerianState(v) && onChange(v)}
+      onChange={(v, o) => isNigerianState(v) && onChange(v, placeFor(v, o.matched))}
       placeholder="Choose your state"
       searchPlaceholder="Search a state or city"
       sections={stateSections}
@@ -320,12 +334,28 @@ function areaSections(state: string, query: string): Section[] {
   return items.length ? [{ label: "Local governments", items }] : [];
 }
 
-export function AreaPicker({ id, state, value, onChange, invalid }: { id: string; state: string; value: string; onChange: (v: string) => void; invalid?: boolean }) {
+/** town: the place they searched by ("Lekki"), kept beside the local government so the rider gets both. */
+export function AreaPicker({
+  id,
+  state,
+  value,
+  town,
+  onChange,
+  invalid,
+}: {
+  id: string;
+  state: string;
+  value: string;
+  town?: string;
+  onChange: (v: string, town?: string) => void;
+  invalid?: boolean;
+}) {
   return (
     <Combobox
       id={id}
       value={value}
-      onChange={onChange}
+      display={town && value ? `${town}, ${value}` : undefined}
+      onChange={(v, o) => onChange(v, o.matched)}
       placeholder="Choose your area"
       searchPlaceholder="Search your area or town"
       disabled={!isNigerianState(state)}

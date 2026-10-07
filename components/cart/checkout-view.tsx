@@ -29,7 +29,7 @@ export function CheckoutView() {
   const items = held ?? bagItems;
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const total = bagTotal(items);
-  const [f, setF] = useState({ name: "", phone: "", email: "", state: "", area: "", address: "", note: "" });
+  const [f, setF] = useState({ name: "", phone: "", email: "", state: "", area: "", town: "", address: "", note: "" });
   const [tried, setTried] = useState(0);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [nameNudge, nudgeName] = useNudge();
@@ -80,7 +80,7 @@ export function CheckoutView() {
       phone: fullPhone(phoneDigits(f.phone)),
       email: f.email.trim(),
       state: f.state,
-      area: `${f.address.trim()}, ${f.area}`,
+      area: `${f.address.trim()}, ${f.town ? `${f.town}, ` : ""}${f.area}`,
       notes: f.note.trim() || undefined,
       stage: 0,
       price: total,
@@ -196,10 +196,15 @@ export function CheckoutView() {
             Mimi passes your number to a rider. You pay the rider for delivery when it arrives.
           </div>
           <Field label="State" htmlFor="co-state" error={show("state") ? "Choose your state from the list." : null} shake={tried}>
-            <StatePicker id="co-state" value={f.state} onChange={(state) => put({ state, area: isLgaOf(state, f.area) ? f.area : "" })} invalid={show("state")} />
+            <StatePicker
+              id="co-state"
+              value={f.state}
+              onChange={(state, place) => put(place.lga ? { state, area: place.lga, town: place.town ?? "" } : isLgaOf(state, f.area) ? { state } : { state, area: "", town: "" })}
+              invalid={show("state")}
+            />
           </Field>
           <Field label="Area" htmlFor="co-area" hint="Your local government area. Search by town too, like Lekki or Rumuola." error={!bad.state && show("area") ? "Choose your area from the list." : null} shake={tried}>
-            <AreaPicker id="co-area" state={f.state} value={f.area} onChange={(area) => put({ area })} invalid={!bad.state && show("area")} />
+            <AreaPicker id="co-area" state={f.state} value={f.area} town={f.town} onChange={(area, town) => put({ area, town: town ?? "" })} invalid={!bad.state && show("area")} />
           </Field>
           <Field label="Street address" htmlFor="co-address" hint="House number, street and a landmark the rider can find." error={show("address") ? "Add your street address so the rider can find you." : null} shake={tried}>
             <input id="co-address" autoComplete="street-address" className={inputClass} placeholder="e.g. 12 Woji Road, by the filling station" value={f.address} onChange={(e) => put({ address: e.target.value.slice(0, 120) })} onBlur={blur("address")} aria-invalid={show("address")} />

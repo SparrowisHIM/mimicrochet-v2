@@ -51,6 +51,8 @@ export type Draft = {
   phone: string;
   state: string;
   area: string;
+  /** The town they searched by, like Lekki, kept beside the local government. */
+  town?: string;
   sizeOk: boolean;
 };
 
@@ -436,7 +438,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       key: "Delivery",
       step: 2,
       field: "f-place",
-      value: placeOk ? `${d.area}, ${d.state}` : d.state ? "Choose your area" : "",
+      value: placeOk ? `${d.town ? `${d.town}, ` : ""}${d.area}, ${d.state}` : d.state ? "Choose your area" : "",
       state: placeOk ? "done" : d.state ? "warn" : "todo",
     },
   ];
@@ -526,7 +528,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       name: d.name.trim(),
       phone: fullPhone(phoneDigits(d.phone)),
       state: d.state,
-      area: d.area,
+      area: d.town ? `${d.town}, ${d.area}` : d.area,
       stage: 0,
       updates: [{ stage: 0, note: "Request prepared. Send the details to Mimi on WhatsApp to confirm.", at: "Today" }],
     };
@@ -903,10 +905,15 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                   <Spot id="f-place" flash={flash} className="flex flex-col gap-4">
                     <Label hint="Mimi delivers anywhere in Nigeria. You pay the rider on arrival.">Delivery</Label>
                     <Field label="State" htmlFor="state" error={tried > 0 && !d.state ? "Choose your state from the list." : null} shake={tried}>
-                      <StatePicker id="state" value={d.state} onChange={(state) => set({ state, area: isLgaOf(state, d.area) ? d.area : "" })} invalid={tried > 0 && !d.state} />
+                      <StatePicker
+                        id="state"
+                        value={d.state}
+                        onChange={(state, place) => set(place.lga ? { state, area: place.lga, town: place.town } : isLgaOf(state, d.area) ? { state } : { state, area: "", town: undefined })}
+                        invalid={tried > 0 && !d.state}
+                      />
                     </Field>
                     <Field label="Area" htmlFor="area" hint="Your local government area. Search by town too, like Lekki or Rumuola." error={tried > 0 && d.state && !placeOk ? "Choose your area from the list." : null} shake={tried}>
-                      <AreaPicker id="area" state={d.state} value={d.area} onChange={(area) => set({ area })} invalid={tried > 0 && Boolean(d.state) && !placeOk} />
+                      <AreaPicker id="area" state={d.state} value={d.area} town={d.town} onChange={(area, town) => set({ area, town })} invalid={tried > 0 && Boolean(d.state) && !placeOk} />
                     </Field>
                   </Spot>
 
