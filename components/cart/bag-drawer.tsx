@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { ButtonLink } from "@/components/ui/button";
+import { ButtonChip, ButtonLink } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { bagTotal, bagUi, useBagItems } from "@/lib/bag";
 import { bagStore } from "@/lib/local-store";
@@ -28,8 +28,8 @@ export function BagDrawer() {
               <span className="text-[16px] font-semibold">{formatNaira(total)}</span>
             </div>
             <p className="-mt-1.5 text-[13px] text-stone-500">Delivery is paid to the rider when it arrives.</p>
-            <ButtonLink href="/checkout" onClick={bagUi.close} className="w-full">
-              Checkout · {formatNaira(total)}
+            <ButtonLink href="/checkout" onClick={bagUi.close} arrow={false} className="w-full">
+              Checkout <ButtonChip>{formatNaira(total)}</ButtonChip>
             </ButtonLink>
             <button type="button" onClick={bagUi.close} className="py-1 text-[15px] font-medium underline underline-offset-4">
               Keep shopping

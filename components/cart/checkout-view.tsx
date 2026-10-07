@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState, useSyncExternalStore } from "react";
 import { ShopOrderCard } from "@/components/cart/shop-order-card";
-import { Button, ButtonLink, linkClass } from "@/components/ui/button";
+import { Button, ButtonChip, ButtonLink, linkClass } from "@/components/ui/button";
 import { CardStack } from "@/components/ui/card-stack";
 import { Confetti } from "@/components/ui/confetti";
 import { bagTotal, useBagItems } from "@/lib/bag";
@@ -219,14 +219,16 @@ export function CheckoutView() {
             Test mode: payments aren’t switched on yet, so nothing is charged.
           </p>
           {/* Not `disabled` while paying: that would fade it to grey. pay() already ignores repeat taps. */}
-          <Button type="submit" aria-disabled={paying} arrow={!paying} className="w-full">
+          <Button type="submit" aria-disabled={paying} arrow={false} className="w-full">
             {paying ? (
               <span className="flex items-center gap-2.5">
                 <motion.span className="size-4 rounded-full border-2 border-orange-50/40 border-t-orange-50" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }} />
                 Opening Paystack…
               </span>
             ) : (
-              `Pay ${formatNaira(total)}`
+              <>
+                Pay <ButtonChip>{formatNaira(total)}</ButtonChip>
+              </>
             )}
           </Button>
           {tried > 0 && !ok && <p className="text-[14px] text-red-700" role="alert">Fill in the fields marked in red to continue.</p>}
