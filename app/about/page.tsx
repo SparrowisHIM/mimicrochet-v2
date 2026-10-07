@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { Parallax, ThreadRail, VelocityMarquee, Wipe, WordReveal } from "@/components/about/about-motion";
 import { FactCard } from "@/components/about/fact-card";
 import { WhatsAppIcon } from "@/components/icons";
-import { ButtonLink, ExternalButton } from "@/components/ui/button";
+import { ButtonLink, linkClass, linkLightClass } from "@/components/ui/button";
 import { whatsappLink } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -34,11 +35,11 @@ export default function AboutPage() {
           <p className="max-w-[560px] text-[17px] leading-[1.55] text-stone-600 lg:text-[19px]">
             Mimi crochets every piece herself, from playful sets to dresses that stop people mid-sentence. Some are ready to wear today. The rest she makes just for you.
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-7">
             <ButtonLink href="/shop">Shop her pieces</ButtonLink>
-            <ButtonLink href="/custom-order" variant="secondary">
+            <Link href="/custom-order" className={linkClass}>
               Start a custom order
-            </ButtonLink>
+            </Link>
           </div>
         </div>
         <div className="relative mx-auto w-full max-w-[420px] lg:mx-0 lg:w-[484px] lg:max-w-none">
@@ -110,13 +111,13 @@ export default function AboutPage() {
             </h2>
             <p className="text-[16px] text-stone-300 lg:text-[18px]">Shop what’s ready, or tell Mimi what you’re dreaming of.</p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-7">
             <ButtonLink href="/shop" variant="light">
               Shop the one-of-ones
             </ButtonLink>
-            <ExternalButton href={whatsappLink("Hi Mimi! I’d love to talk about a piece.")} variant="outlineLight">
+            <a href={whatsappLink("Hi Mimi! I’d love to talk about a piece.")} target="_blank" rel="noreferrer" className={linkLightClass}>
               <WhatsAppIcon size={18} /> Chat with Mimi
-            </ExternalButton>
+            </a>
           </div>
         </Wipe>
       </section>
