@@ -7,7 +7,8 @@ import { CustomerStory } from "@/components/customers/customer-story";
 import { RevealText } from "@/components/motion/reveal";
 import type { Customer } from "@/lib/customers";
 
-const SLIDE_MS = 4800;
+// Still photos don't need long: 2s each when there are several, a little longer when there are only two.
+const slideMs = (count: number) => (count >= 4 ? 2000 : count === 3 ? 2600 : 3400);
 const subscribeVisibility = (notify: () => void) => {
   document.addEventListener("visibilitychange", notify);
   return () => document.removeEventListener("visibilitychange", notify);
@@ -31,7 +32,7 @@ function CustomerPreview({ customer, open, onOpen }: { customer: Customer; open:
 
   useEffect(() => {
     if (!playing) return;
-    const timer = setTimeout(() => setIndex((i) => (i + 1) % count), SLIDE_MS);
+    const timer = setTimeout(() => setIndex((i) => (i + 1) % count), slideMs(count));
     return () => clearTimeout(timer);
   }, [playing, index, count]);
   return (
@@ -41,7 +42,7 @@ function CustomerPreview({ customer, open, onOpen }: { customer: Customer; open:
       <div className="group/photo relative aspect-[4/5] overflow-hidden rounded-[18px] bg-orange-100">
         <button type="button" onClick={onOpen} className="absolute inset-0 size-full text-left transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/photo:scale-[1.03] motion-reduce:group-hover/photo:scale-100" aria-label={`Open ${customer.name}’s photos`}>
           <AnimatePresence initial={false}>
-            <motion.span key={photo.src} className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduce ? 0 : 0.65 }}>
+            <motion.span key={photo.src} className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduce ? 0 : 0.45 }}>
               <Image src={photo.src} alt={photo.alt} fill sizes="(min-width: 1024px) 416px, 76vw" className="object-cover" />
             </motion.span>
           </AnimatePresence>
@@ -52,7 +53,7 @@ function CustomerPreview({ customer, open, onOpen }: { customer: Customer; open:
           <div className="pointer-events-none absolute inset-x-3 top-3 flex gap-1" aria-hidden>
             {customer.photos.map((p, i) => <span key={p.src} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/35">
               <span key={i === index ? String(playing) : "static"} className="block size-full origin-left bg-white"
-                style={{ transform: `scaleX(${i < index ? 1 : 0})`, animation: i === index && playing ? `customer-photo-progress ${SLIDE_MS}ms linear forwards` : undefined }} />
+                style={{ transform: `scaleX(${i < index ? 1 : 0})`, animation: i === index && playing ? `customer-photo-progress ${slideMs(count)}ms linear forwards` : undefined }} />
             </span>)}
           </div>
         </>}
