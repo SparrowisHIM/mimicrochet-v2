@@ -441,10 +441,15 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
     },
   ];
 
-  const focusField = (id: string) => {
+  /** afterErrors: error messages just opened. Their growth makes the browser re-anchor the page,
+   *  which cancels a smooth scroll started straight away, so wait for them first. */
+  const focusField = (id: string, afterErrors = false) => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+    // Step 1's options are taller than a phone screen, so land on their top, where the message is.
+    const scroll = () => el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: id === "f-source" ? "start" : "center" });
+    if (afterErrors) setTimeout(scroll, 240);
+    else scroll();
     const target =
       id === "f-place" && d.state
         ? document.getElementById("area")
@@ -471,7 +476,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
     const done = step === 0 ? hasSource : step2Done;
     if (!done) {
       setTried((t) => t + 1);
-      focusField(firstMissing(step));
+      focusField(firstMissing(step), true);
       return;
     }
     go(step + 1);
@@ -498,7 +503,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
     if (firstOpen < 3) {
       if (firstOpen < 2) return go(firstOpen, firstMissing(firstOpen));
       setTried((t) => t + 1);
-      return focusField(firstMissing(2));
+      return focusField(firstMissing(2), true);
     }
     const { id, code } = newOrderIds();
     const order: Order = {
@@ -604,7 +609,8 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
   );
 
   const flow = (
-    <div ref={top} className="scroll-mt-4">
+    // The offset clears the sticky site header, so "Step 2 of 3" stays visible after a step change.
+    <div ref={top} className="scroll-mt-[62px] lg:scroll-mt-[72px]">
       <StepBar step={step} />
 
       <div className="container-page flex justify-between gap-12 pt-7 pb-10 lg:pt-12 lg:pb-28 xl:gap-16">
@@ -633,6 +639,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
 
               {step === 0 && (
                 <Spot id="f-source" flash={flash} className="flex flex-col gap-9">
+                  {tried > 0 && !hasSource && <Problem>Add a photo, pick one of Mimi’s pieces, or describe your idea in a few words.</Problem>}
                   <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
 
                   <div className="flex flex-col gap-3.5">
@@ -762,7 +769,6 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                       </div>
                     </div>
                   </div>
-                  {tried > 0 && !hasSource && <Problem>Add a photo, pick one of Mimi’s pieces, or describe your idea in a few words.</Problem>}
                 </Spot>
               )}
 
@@ -806,7 +812,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                             );
                           })}
                         </div>
-                        <p className="text-[13px] text-stone-500">Tip: measure a top or dress that already fits you well, laid flat.</p>
+                        <p className="text-[13px] text-stone-500">Tip: measure your body over light clothing, with the tape snug but not tight.</p>
                       </div>
                       {tried > 0 && !sizeDone && <Problem>Pick a size, or add your measurements.</Problem>}
                     </Spot>

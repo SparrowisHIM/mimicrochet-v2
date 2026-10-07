@@ -10,28 +10,43 @@ export function VoiceNote({ value, onChange }: { value?: Voice; onChange: (v?: V
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [tip, setTip] = useState<string | null>(null);
   const rec = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
   const started = useRef(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  // True only while the button is held. The first press opens the microphone prompt, and the
+  // finger usually lifts before it's answered, so nothing may start recording after release.
+  const holding = useRef(false);
 
   useEffect(() => () => { if (timer.current) clearInterval(timer.current); }, []);
 
   const start = async () => {
+    if (holding.current) return;
+    holding.current = true;
     setError(null);
+    setTip(null);
     if (typeof window === "undefined" || !("MediaRecorder" in window) || !navigator.mediaDevices?.getUserMedia) {
       setError("Voice notes don’t work in this browser. Type it instead.");
       return;
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!holding.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        setTip("Microphone ready. Hold the button while you talk.");
+        return;
+      }
       const r = new MediaRecorder(stream);
       chunks.current = [];
       r.ondataavailable = (e) => e.data.size && chunks.current.push(e.data);
       r.onstop = () => {
         stream.getTracks().forEach((t) => t.stop());
         const secs = Math.round((Date.now() - started.current) / 1000);
-        if (secs < 1) return;
+        if (secs < 1) {
+          setTip("Hold the button while you talk, then let go.");
+          return;
+        }
         const type = r.mimeType || "audio/webm";
         const blob = new Blob(chunks.current, { type });
         const file = new File([blob], `voice-note.${type.includes("mp4") ? "m4a" : "webm"}`, { type });
@@ -44,11 +59,13 @@ export function VoiceNote({ value, onChange }: { value?: Voice; onChange: (v?: V
       setSeconds(0);
       timer.current = setInterval(() => setSeconds(Math.round((Date.now() - started.current) / 1000)), 250);
     } catch {
+      holding.current = false;
       setError("Allow the microphone to record a voice note.");
     }
   };
 
   const stop = () => {
+    holding.current = false;
     if (timer.current) clearInterval(timer.current);
     if (rec.current?.state === "recording") rec.current.stop();
     setRecording(false);
@@ -71,14 +88,14 @@ export function VoiceNote({ value, onChange }: { value?: Voice; onChange: (v?: V
     <div className="flex items-center gap-3">
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
-          key={recording ? "rec" : error ?? "idle"}
+          key={recording ? "rec" : error ?? tip ?? "idle"}
           initial={{ opacity: 0, x: 6 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -6 }}
-          className={`text-[13px] ${error ? "text-red-700" : recording ? "font-semibold text-red-700 tabular-nums" : "text-stone-500"}`}
+          className={`text-[13px] ${error ? "text-red-700" : recording ? "font-semibold text-red-700 tabular-nums" : tip ? "font-medium text-stone-700" : "text-stone-500"}`}
           aria-live="polite"
         >
-          {error ?? (recording ? `Recording ${t(seconds)}` : "Hold for a voice note")}
+          {error ?? (recording ? `Recording ${t(seconds)}` : tip ?? "Hold for a voice note")}
         </motion.span>
       </AnimatePresence>
       <motion.button

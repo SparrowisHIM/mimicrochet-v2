@@ -27,7 +27,7 @@ export function IdeasSheet({ open, onClose, onPick }: { open: boolean; onClose: 
         </Button>
       }
     >
-      <p className="-mt-2 text-[15px] text-stone-600">Concepts Mimi can make for you. Pick one to start.</p>
+      <p className="text-[15px] text-stone-600">Concepts Mimi can make for you. Pick one to start.</p>
       <div className="no-scrollbar -mx-5 mt-4 flex gap-2 overflow-x-auto px-5">
         {(["All", ...occasions] as const).map((o) => (
           <Chip key={o} on={occasion === o} onClick={() => setOccasion(o)}>

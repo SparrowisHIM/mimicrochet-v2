@@ -1,5 +1,6 @@
 import type { Idea } from "@/lib/ideas";
 import type { Product } from "@/lib/products";
+import { hasSizes } from "@/lib/sizes";
 
 /** The piece a custom order starts from: one of Mimi's pieces, or an idea. */
 export type Piece = {
@@ -9,12 +10,12 @@ export type Piece = {
   image: string;
   price: number | null;
   priceFrom?: boolean;
-  /** Chosen by S/M/L (hats, earrings and bags are sized with Mimi instead). */
+  /** Chosen by S/M/L (hats, earrings, bags and kids' pieces are sized with Mimi instead). */
   sized: boolean;
 };
 
 export function pieceFromProduct(p: Product): Piece {
-  return { source: "product", slug: p.slug, name: p.name, image: p.images[0], price: p.price, priceFrom: true, sized: !["Hats", "Earrings"].includes(p.category) };
+  return { source: "product", slug: p.slug, name: p.name, image: p.images[0], price: p.price, priceFrom: true, sized: hasSizes(p) };
 }
 
 export function pieceFromIdea(i: Idea): Piece {

@@ -70,7 +70,7 @@ export function MeasureSheet({
       }
     >
       <div className="flex flex-col gap-[18px]">
-        <div className="-mt-2 flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <AnimatePresence mode="wait" initial={false}>
             <motion.p key={s.key} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }} className="pr-6 text-[15px] leading-[1.5] text-stone-600">
               {s.help}
