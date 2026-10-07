@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { CloseIcon, SearchIcon } from "@/components/icons";
 import { ProductCard } from "@/components/product/product-card";
-import { Button, ButtonLink, buttonClass } from "@/components/ui/button";
+import { Button, ButtonLink, buttonClass, linkClass } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
 import { Hairline } from "@/components/ui/hairline";
@@ -178,11 +178,11 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
           <div className="flex flex-col items-start gap-4 rounded-[22px] bg-white p-8 lg:p-12">
             <p className="font-serif text-[28px] leading-tight">Nothing matches that yet.</p>
             <p className="max-w-[460px] text-[16px] text-stone-600">Clear a filter, or ask Mimi to make exactly what you have in mind.</p>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="secondary" onClick={() => set(defaultFilters)}>
-                Clear filters
-              </Button>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <ButtonLink href="/custom-order">Start a custom order</ButtonLink>
+              <button type="button" onClick={() => set(defaultFilters)} className={linkClass}>
+                Clear filters
+              </button>
             </div>
           </div>
         ) : (
@@ -235,9 +235,9 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
         title="Filters & sort"
         footer={
           <div className="flex items-center gap-3">
-            <Button variant="secondary" className="px-5" onClick={() => set({ ...defaultFilters, query: f.query })}>
+            <button type="button" className={`${linkClass} px-2`} onClick={() => set({ ...defaultFilters, query: f.query })}>
               Clear all
-            </Button>
+            </button>
             <Button className="flex-1" onClick={() => setSheet(false)}>
               Show {results.length} {results.length === 1 ? "piece" : "pieces"}
             </Button>
