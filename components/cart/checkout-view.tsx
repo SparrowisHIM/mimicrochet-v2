@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState, useSyncExternalStore } from "react";
 import { ShopOrderCard } from "@/components/cart/shop-order-card";
-import { Button, ButtonLink, buttonClass } from "@/components/ui/button";
+import { Button, ButtonLink, linkClass } from "@/components/ui/button";
 import { CardStack } from "@/components/ui/card-stack";
 import { Confetti } from "@/components/ui/confetti";
 import { bagTotal, useBagItems } from "@/lib/bag";
@@ -269,7 +269,7 @@ function Paid({ order }: { order: Order }) {
           <div className="flex justify-between"><span className="text-stone-600">Delivery</span><span>Paid to the rider</span></div>
           <div className="flex justify-between border-t border-stone-100 pt-2 font-semibold"><span>Paid with Paystack</span><span>{formatNaira(order.price!)}</span></div>
         </div>
-        <Link href="/shop" className={buttonClass("secondary")}>Back to the shop</Link>
+        <Link href="/shop" className={`${linkClass} self-center`}>Back to the shop</Link>
       </div>
     </div>
   );

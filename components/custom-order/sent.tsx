@@ -5,7 +5,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { useState, useSyncExternalStore } from "react";
 import { WhatsAppIcon } from "@/components/icons";
 import { TrackingCard } from "@/components/order/tracking-card";
-import { Button, buttonClass } from "@/components/ui/button";
+import { Button, linkClass } from "@/components/ui/button";
 import { Confetti } from "@/components/ui/confetti";
 import type { Order } from "@/lib/orders";
 import { whatsappLink } from "@/lib/site";
@@ -153,7 +153,7 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
             <WhatsAppIcon size={18} /> Send on WhatsApp
           </Button>
           {hint && <p className="text-center text-[14px] text-amber-800" role="status">{hint}</p>}
-          <Link href="/shop" className={buttonClass("secondary")}>
+          <Link href="/shop" className={`${linkClass} self-center`}>
             Back to the shop
           </Link>
         </motion.div>
