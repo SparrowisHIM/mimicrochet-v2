@@ -7,7 +7,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { WhatsAppIcon } from "@/components/icons";
 import { ShopOrderCard } from "@/components/cart/shop-order-card";
 import { StageIcon } from "@/components/order/stage-icons";
-import { Button, buttonClass } from "@/components/ui/button";
+import { Button, buttonClass, linkClass } from "@/components/ui/button";
 import { findOrder, updateOrder, useOrders, type Order } from "@/lib/orders";
 import { formatNaira, whatsappLink } from "@/lib/site";
 import { stages } from "@/lib/stages";
@@ -142,11 +142,11 @@ export function TrackingView({ code }: { code: string }) {
       <div className="container-page flex min-h-[60vh] flex-col items-start justify-center gap-4 py-16">
         <h1 className="font-serif text-[36px] leading-tight lg:text-[48px]">We can’t find that order on this phone</h1>
         <p className="max-w-[520px] text-[17px] text-stone-600">Open the tracking link Mimi sent you on WhatsApp, or ask her for it. Tracking links look like mimicrochet.ng/t/k7x2p9.</p>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-x-7 gap-y-2">
           <a href={whatsappLink("Hi Mimi! Could you send me my tracking link?")} target="_blank" rel="noreferrer" className={buttonClass("primary")}>
             <WhatsAppIcon size={18} /> Ask Mimi
           </a>
-          <Link href="/t/k7x2p9" className={buttonClass("secondary")}>
+          <Link href="/t/k7x2p9" className={linkClass}>
             See an example order
           </Link>
         </div>
