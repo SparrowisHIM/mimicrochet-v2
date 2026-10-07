@@ -780,7 +780,8 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                     <Label hint={hasVisual ? "Optional. Type it, or tap the voice button and talk." : "Type it, or tap the voice button and talk."}>Tell Mimi about it</Label>
                     <div
                       data-live={voiceLive || undefined}
-                      className={`live-ring flex flex-col gap-3 rounded-[22px] border bg-white p-4 transition-colors duration-150 ${voiceLive ? "border-transparent" : `has-[textarea:focus]:border-stone-900 ${tried && !hasSource ? "border-red-400" : "border-stone-300"}`}`}
+                      data-invalid={(tried > 0 && !hasSource && !voiceLive) || undefined}
+                      className="chat-ring flex flex-col gap-3 rounded-[22px] p-4"
                     >
                       <label className="sr-only" htmlFor="describe">Tell Mimi about it</label>
                       <textarea
