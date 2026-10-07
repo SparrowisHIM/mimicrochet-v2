@@ -7,7 +7,7 @@ import { useSyncExternalStore } from "react";
 import { HeartIcon, WhatsAppIcon } from "@/components/icons";
 import { SaveButton } from "@/components/product/save-button";
 import { Button, ButtonLink, buttonClass, linkClass } from "@/components/ui/button";
-import { addToBag } from "@/lib/bag";
+import { addToBag, bagUi } from "@/lib/bag";
 import { bagStore, savedStore } from "@/lib/local-store";
 import { getProduct, priceLabel, type Product } from "@/lib/products";
 import { whatsappLink } from "@/lib/site";
@@ -36,10 +36,16 @@ export function SavedView() {
           Have it made
         </Link>
       );
-    const inBag = bag.includes(r.p.slug);
+    // Already in the bag: the row says so, and the link opens the bag rather than adding it twice.
+    if (bag.includes(r.p.slug))
+      return (
+        <button type="button" className={linkClass} onClick={() => bagUi.open()}>
+          In your bag
+        </button>
+      );
     return (
-      <Button size="sm" variant={inBag ? "secondary" : "primary"} className={cls} onClick={() => addToBag(r.p.slug)}>
-        {inBag ? "In your bag" : "Add to bag"}
+      <Button size="sm" className={cls} onClick={() => addToBag(r.p.slug)}>
+        Add to bag
       </Button>
     );
   };
