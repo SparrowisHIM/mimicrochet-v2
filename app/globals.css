@@ -49,10 +49,29 @@
     @apply bg-amber-200 text-stone-900;
   }
 
+  /* Tailwind v4 leaves buttons with the arrow cursor. Anything you can click here shows the hand. */
+  button:not(:disabled, [aria-disabled="true"]),
+  [role="button"],
+  [role="option"],
+  [role="tab"],
+  [role="switch"],
+  [role="slider"],
+  select,
+  summary,
+  label:has(> input[type="checkbox"], > input[type="radio"]) {
+    cursor: pointer;
+  }
+
+  /* The focus ring is for keyboard users: a quiet grey ring, not a black one. After a click or a tap
+     (data-input="pointer", set by components/site/input-modality.tsx) it never shows, even when a
+     closing sheet or list hands focus back to its button. Pressing Tab or an arrow key brings it back. */
   :focus-visible {
-    outline: 2px solid var(--color-stone-900);
+    outline: 2px solid var(--color-stone-500);
     outline-offset: 3px;
     border-radius: 6px;
+  }
+  html[data-input="pointer"] :focus-visible {
+    outline: none;
   }
 }
 

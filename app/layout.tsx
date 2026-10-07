@@ -4,6 +4,7 @@ import { BagDrawer } from "@/components/cart/bag-drawer";
 import { Announcement } from "@/components/site/announcement";
 import { Footer } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
+import { InputModality } from "@/components/site/input-modality";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </main>
         <Footer />
         <BagDrawer />
+        <InputModality />
       </body>
     </html>
   );
