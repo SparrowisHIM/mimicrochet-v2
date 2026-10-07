@@ -6,8 +6,10 @@ import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { CloseIcon, SearchIcon } from "@/components/icons";
 import { ProductCard } from "@/components/product/product-card";
+import { FilterButton } from "@/components/shop/filter-button";
 import { Button, ButtonLink, buttonClass, linkClass } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
+import { SelectMenu } from "@/components/ui/select-menu";
 import { Sheet } from "@/components/ui/sheet";
 import { Hairline } from "@/components/ui/hairline";
 import { Toggle } from "@/components/ui/toggle";
@@ -94,7 +96,7 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
     </>
   );
 
-  // The filter buttons open a sheet, so they look like the chips beside them, not like actions.
+  // Filter opens the sheet with everything (on phones that includes Sort, so its count does too).
   // Grid with the "Have it made" tile after the fifth piece, like a product. It asks "Not your size?",
   // so it only shows when some of the pieces come in sizes (not a grid of earrings and beanies).
   const cells: ({ kind: "tile" } | { kind: "product"; i: number })[] = visible.map((_, i) => ({ kind: "product" as const, i }));
@@ -110,22 +112,9 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
             <span className="max-lg:hidden">One-of-one pieces ready to wear, and pieces Mimi makes for you in your size.</span>
           </p>
         </div>
-        <div className="hidden items-center gap-7 lg:flex">
+        <div className="hidden items-center gap-5 lg:flex">
           <Toggle id="shop-ready" label="Ready to wear only" checked={f.type === "ready"} onChange={(v) => set({ type: v ? "ready" : "all" })} />
-          <label className="flex items-center gap-1.5 text-[15px]">
-            <span className="text-stone-500">Sort:</span>
-            <select
-              value={f.sort}
-              onChange={(e) => set({ sort: e.target.value as ShopFilters["sort"] })}
-              className="cursor-pointer appearance-none bg-transparent pr-1 font-medium focus-visible:outline-2"
-            >
-              {sorts.map((s) => (
-                <option key={s.key} value={s.key}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SelectMenu label="Sort" value={f.sort} options={sorts} onChange={(sort) => set({ sort })} />
         </div>
       </div>
 
@@ -160,18 +149,12 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
 
       <div className="no-scrollbar flex gap-2 overflow-x-auto px-5 lg:container-page lg:items-center lg:justify-between lg:overflow-visible">
         <div className="flex gap-2">{categoryChips}</div>
-        <div className="hidden lg:block">
-          <button type="button" className="inline-flex shrink-0 items-center rounded-full border border-stone-300 bg-white font-medium whitespace-nowrap text-stone-900 transition-[border-color,transform] duration-200 hover:border-stone-900 active:scale-[0.97] h-11 px-[18px] text-[15px]" onClick={() => setSheet(true)}>
-            Price & colour{activeExtras ? ` (${activeExtras})` : ""}
-          </button>
-        </div>
+        <FilterButton count={(f.price ? 1 : 0) + f.colours.length} onClick={() => setSheet(true)} className="-mr-3.5 max-lg:hidden" />
       </div>
 
       <div className="container-page flex items-center justify-between py-4 lg:hidden">
         <Toggle id="shop-ready-m" label="Ready to wear only" checked={f.type === "ready"} onChange={(v) => set({ type: v ? "ready" : "all" })} />
-        <button type="button" className="inline-flex shrink-0 items-center rounded-full border border-stone-300 bg-white font-medium whitespace-nowrap text-stone-900 transition-[border-color,transform] duration-200 hover:border-stone-900 active:scale-[0.97] h-[38px] px-4 text-[14px]" onClick={() => setSheet(true)}>
-          Filters & sort{activeExtras ? ` (${activeExtras})` : ""}
-        </button>
+        <FilterButton count={activeExtras} onClick={() => setSheet(true)} className="-mr-3.5" />
       </div>
 
       <section className="container-page pt-2 pb-6 lg:pt-7" aria-label="Pieces">
