@@ -21,23 +21,19 @@ function CustomerPreview({ customer, open, onOpen }: { customer: Customer; open:
   const reduce = useReducedMotion();
   const visible = useSyncExternalStore(subscribeVisibility, pageVisible, serverVisible);
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const count = customer.photos.length;
   const photo = customer.photos[index];
-  // Phones count a tap as a hover and leave focus behind, so only a real mouse hover or keyboard focus pauses it.
-  const playing = count > 1 && inView && visible && !reduce && !paused && !hovered && !focused && !open;
+  // It plays by itself; the bars on top show where it is. A real mouse hover or keyboard focus pauses it
+  // (phones count a tap as a hover and leave focus behind), and it stops off screen and for reduced motion.
+  const playing = count > 1 && inView && visible && !reduce && !hovered && !focused && !open;
 
   useEffect(() => {
     if (!playing) return;
     const timer = setTimeout(() => setIndex((i) => (i + 1) % count), SLIDE_MS);
     return () => clearTimeout(timer);
   }, [playing, index, count]);
-  const move = (direction: number) => {
-    setPaused(true);
-    setIndex((i) => (i + direction + count) % count);
-  };
   return (
     <li ref={ref} className="w-[76vw] max-w-[320px] shrink-0 snap-start lg:w-auto lg:max-w-none"
       onPointerEnter={(e) => e.pointerType === "mouse" && setHovered(true)} onPointerLeave={() => setHovered(false)}
@@ -58,16 +54,6 @@ function CustomerPreview({ customer, open, onOpen }: { customer: Customer; open:
               <span key={i === index ? String(playing) : "static"} className="block size-full origin-left bg-white"
                 style={{ transform: `scaleX(${i < index ? 1 : 0})`, animation: i === index && playing ? `customer-photo-progress ${SLIDE_MS}ms linear forwards` : undefined }} />
             </span>)}
-          </div>
-          <div className="absolute inset-x-3 bottom-3 flex items-center justify-between gap-2">
-            <span className="rounded-full bg-stone-950/75 px-3 py-2 text-[12px] font-medium text-white tabular-nums" aria-label={`Photo ${index + 1} of ${count}`}>{index + 1} / {count}</span>
-            <div className="flex gap-1">
-              <button type="button" onClick={() => move(-1)} aria-label={`Previous photo of ${customer.name}`} className="grid size-10 place-items-center rounded-full bg-stone-950/75 text-white hover:bg-stone-950">←</button>
-              {!reduce && <button type="button" onClick={() => setPaused((p) => !p)} aria-label={`${paused ? "Play" : "Pause"} ${customer.name}’s slideshow`} className="grid size-10 place-items-center rounded-full bg-stone-950/75 text-white hover:bg-stone-950">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden>{paused ? <path d="M4 2 14 8 4 14Z" /> : <><rect x="3" y="2" width="3" height="12" rx="1" /><rect x="10" y="2" width="3" height="12" rx="1" /></>}</svg>
-              </button>}
-              <button type="button" onClick={() => move(1)} aria-label={`Next photo of ${customer.name}`} className="grid size-10 place-items-center rounded-full bg-stone-950/75 text-white hover:bg-stone-950">→</button>
-            </div>
           </div>
         </>}
       </div>

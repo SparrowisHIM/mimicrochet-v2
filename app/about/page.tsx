@@ -48,10 +48,6 @@ export default function AboutPage() {
               <Image src="/images/story/mimi-portrait.jpg" alt="Mimi, the maker behind Mimi Crochet" fill preload sizes="(min-width: 1024px) 484px, 90vw" className="object-cover object-top" />
             </Parallax>
           </div>
-          <div className="absolute bottom-5 left-5 flex flex-col rounded-[14px] bg-white/95 px-4 py-2.5 shadow-sm">
-            <span className="text-[12px] font-semibold text-amber-700">Mimi</span>
-            <span className="text-[14px] font-medium">Maker, Port Harcourt</span>
-          </div>
         </div>
       </section>
 
