@@ -1,10 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { motion, useInView, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useEffect, useRef } from "react";
-import { Magnetic } from "@/components/motion/magnetic";
 import { Reveal, RevealText } from "@/components/motion/reveal";
-import { ButtonLink } from "@/components/ui/button";
+import { linkClass } from "@/components/ui/button";
 
 // Mimi's own video of her hands crocheting the Ruby Dress. It only plays while it's on
 // screen, drifts inside its frame as you scroll, and shows the still for reduced motion.
@@ -54,12 +54,10 @@ export function MeetMimi() {
               rest she makes just for you.
             </p>
           </Reveal>
-          <Reveal delay={0.3} className="pt-1">
-            <Magnetic className="max-sm:w-full">
-              <ButtonLink href="/about" variant="secondary" className="max-sm:w-full">
-                Read her story
-              </ButtonLink>
-            </Magnetic>
+          <Reveal delay={0.3}>
+            <Link href="/about" className={linkClass}>
+              Read her story
+            </Link>
           </Reveal>
         </div>
       </div>
