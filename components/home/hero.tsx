@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useRef, useSyncExternalStore } from "react";
 import { Magnetic } from "@/components/motion/magnetic";
 import { RevealText } from "@/components/motion/reveal";
-import { ButtonLink } from "@/components/ui/button";
+import { ButtonLink, linkClass } from "@/components/ui/button";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const wide = "(min-width: 1024px)";
@@ -79,15 +80,13 @@ export function Hero() {
         <motion.p {...fade(0.6)} className="max-w-[600px] text-[17px] leading-[1.55] text-stone-600 lg:text-[20px] lg:leading-[1.5]">
           Every stitch is by Mimi’s hands in Port Harcourt. Grab a one-of-one piece today, or dream one up and she’ll make it yours.
         </motion.p>
-        <motion.div {...fade(0.72)} className="flex flex-col gap-3 pt-2 sm:flex-row">
+        <motion.div {...fade(0.72)} className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:gap-7">
           <Magnetic>
             <ButtonLink href="/shop" className="max-sm:w-full">Shop the collection</ButtonLink>
           </Magnetic>
-          <Magnetic>
-            <ButtonLink href="/custom-order" variant="secondary" className="max-sm:w-full">
-              Start a custom order
-            </ButtonLink>
-          </Magnetic>
+          <Link href="/custom-order" className={linkClass}>
+            Start a custom order
+          </Link>
         </motion.div>
         <motion.div {...fade(0.84)} className="flex gap-7 pt-3 text-[14px] font-medium text-stone-600 max-sm:hidden">
           <span>Handmade in Port Harcourt</span>
