@@ -579,10 +579,22 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
 
   const pieceTile = (p: Product, extra = "") => {
     const on = d.piece?.slug === p.slug;
+    const other = Boolean(d.piece) && !on;
     return (
-      <motion.button key={p.slug} type="button" whileTap={{ scale: 0.97 }} aria-pressed={on} onClick={() => set({ piece: on ? undefined : pieceFromProduct(p) })} className={`flex w-[120px] shrink-0 flex-col gap-2 text-left lg:w-auto ${extra}`}>
-        <span className={`relative block aspect-[3/4] overflow-hidden rounded-[14px] bg-orange-100 transition-shadow duration-150 ${on ? "ring-[2.5px] ring-stone-900 ring-offset-2 ring-offset-orange-50" : ""}`}>
-          <Image src={p.images[0]} alt="" fill sizes="(min-width: 1024px) 150px, 120px" className="object-cover" />
+      <motion.button
+        key={p.slug}
+        type="button"
+        whileTap={{ scale: 0.97 }}
+        aria-pressed={on}
+        onClick={() => set({ piece: on ? undefined : pieceFromProduct(p) })}
+        className={`group flex w-[120px] shrink-0 flex-col gap-2 text-left transition-opacity duration-200 lg:w-auto ${other ? "opacity-55 hover:opacity-100" : ""} ${extra}`}
+      >
+        <span
+          className={`relative block aspect-[3/4] overflow-hidden rounded-[14px] bg-orange-100 transition-[box-shadow,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-1 group-hover:shadow-[0_14px_28px_-16px_rgb(28_25_23/0.45)] motion-reduce:group-hover:translate-y-0 ${
+            on ? "ring-[2.5px] ring-stone-900 ring-offset-2 ring-offset-orange-50" : ""
+          }`}
+        >
+          <Image src={p.images[0]} alt="" fill sizes="(min-width: 1024px) 150px, 120px" className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.05] motion-reduce:group-hover:scale-100" />
           <AnimatePresence>
             {on && (
               <motion.span
@@ -597,7 +609,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
             )}
           </AnimatePresence>
         </span>
-        <span className="text-[14px] leading-tight font-medium lg:min-h-[2lh]">{p.name}</span>
+        <span className={`text-[14px] leading-tight font-medium transition-colors duration-200 lg:min-h-[2lh] ${on ? "text-stone-900" : "text-stone-700 group-hover:text-stone-900"}`}>{p.name}</span>
       </motion.button>
     );
   };
