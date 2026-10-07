@@ -275,6 +275,28 @@
   }
 }
 
+/* A photo being added (components/custom-order/photo-tile.tsx): a soft band of light passes down it,
+   again and again, until it's ready. */
+@keyframes tile-shimmer {
+  from {
+    transform: translateY(-110%);
+  }
+  to {
+    transform: translateY(260%);
+  }
+}
+
+@layer components {
+  .tile-shimmer > span {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 45%;
+    background: linear-gradient(to bottom, transparent, rgb(255 255 255 / 0.38) 50%, transparent);
+    animation: tile-shimmer 1.3s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  }
+}
+
 /* Fanned card stack (components/ui/card-stack.tsx). Cards tilt out from a shared base point;
    on hover (mouse only) the fan spreads wider with a strong ease-out. Reduced motion: no movement. */
 @layer components {

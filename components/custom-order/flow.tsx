@@ -4,8 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useRef, useState } from "react";
-import { ChevronIcon, CloseIcon } from "@/components/icons";
+import { ChevronIcon } from "@/components/icons";
 import { IdeasSheet } from "@/components/custom-order/ideas-sheet";
+import { PhotoTile } from "@/components/custom-order/photo-tile";
 import { formatMeasure, MeasureSheet, measureSteps, type MeasureKey, type Measures } from "@/components/custom-order/measure-sheet";
 import { SendingMoment } from "@/components/custom-order/sending";
 import { SentView } from "@/components/custom-order/sent";
@@ -30,7 +31,8 @@ import { formatPhone, fullPhone, hasWords, isName, phoneDigits, phoneProblem } f
 
 const easeOutExpo = [0.19, 1, 0.22, 1] as const;
 
-type Photo = { id: string; name: string; bytes: number; preview: string; file: File };
+// preview: a small copy that goes with the request; url: the full photo, shown on this page.
+type Photo = { id: string; name: string; bytes: number; preview: string; url: string; file: File };
 
 export type Draft = {
   photos: Photo[];
@@ -352,6 +354,8 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
   const [today] = useState(() => Date.now());
   const [ideasOpen, setIdeasOpen] = useState(false);
   const [voiceLive, setVoiceLive] = useState(false);
+  const [adding, setAdding] = useState<{ id: string; url: string }[]>([]);
+  const tiles = [...d.photos.map((p) => ({ id: p.id, src: p.url, ready: true })), ...adding.map((a) => ({ id: a.id, src: a.url, ready: false }))];
   const [morePieces, setMorePieces] = useState(false);
   const [measuring, setMeasuring] = useState<MeasureKey | null>(null);
   const [sending, setSending] = useState<{ order: Order; files: File[] } | null>(null);
@@ -484,15 +488,31 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
     go(step + 1);
   };
 
+  // A photo shows as a tile the moment it's picked, then joins the request once its small copy is made.
+  // Each one is held for a beat (staggered when several arrive) so the reveal reads as a moment.
   const addFiles = async (files: FileList | null) => {
     if (!files) return;
-    const list = await Promise.all(
-      [...files]
-        .filter((f) => f.type.startsWith("image/"))
-        .slice(0, 6)
-        .map(async (file) => ({ id: `${file.name}-${file.size}-${Math.random()}`, name: file.name, bytes: file.size, preview: await thumbnail(file), file })),
+    const room = 6 - d.photos.length - adding.length;
+    const picked = [...files].filter((f) => f.type.startsWith("image/")).slice(0, Math.max(0, room));
+    if (!picked.length) return;
+    const items = picked.map((file) => ({ id: `${file.name}-${file.size}-${Math.random()}`, file, url: URL.createObjectURL(file) }));
+    setAdding((cur) => [...cur, ...items.map(({ id, url }) => ({ id, url }))]);
+    await Promise.all(
+      items.map(async ({ id, file, url }, i) => {
+        try {
+          const [preview] = await Promise.all([thumbnail(file), new Promise((r) => setTimeout(r, reduce ? 0 : 650 + i * 180))]);
+          setD((cur) => ({ ...cur, photos: [...cur.photos, { id, name: file.name, bytes: file.size, preview, url, file }].slice(0, 6) }));
+        } catch {
+          URL.revokeObjectURL(url); // a photo the browser can't open is left out
+        }
+        setAdding((cur) => cur.filter((a) => a.id !== id));
+      }),
     );
-    setD((cur) => ({ ...cur, photos: [...cur.photos, ...list].slice(0, 6) }));
+  };
+  const removePhoto = (id: string) => {
+    const p = d.photos.find((x) => x.id === id);
+    if (p) URL.revokeObjectURL(p.url);
+    set({ photos: d.photos.filter((x) => x.id !== id) });
   };
 
   const send = () => {
@@ -664,7 +684,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
 
                   <div className="flex flex-col gap-3.5">
                     <Label>Show Mimi a photo</Label>
-                    {d.photos.length === 0 ? (
+                    {tiles.length === 0 ? (
                       <motion.button
                         type="button"
                         whileTap={{ scale: 0.985 }}
@@ -682,30 +702,21 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                       // The photos themselves, as tiles: the first one leads the request ("Main"), up to six.
                       <ul className="grid grid-cols-3 gap-2.5 lg:grid-cols-4" aria-label="Your photos">
                         <AnimatePresence initial={false} mode="popLayout">
-                          {d.photos.map((p, i) => (
+                          {tiles.map((t, i) => (
                             <motion.li
-                              key={p.id}
+                              key={t.id}
                               layout
                               initial={{ opacity: 0, scale: 0.92 }}
                               animate={{ opacity: 1, scale: 1 }}
                               exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.15 } }}
                               transition={{ duration: 0.35, ease: easeOutExpo }}
+                              aria-busy={!t.ready}
                               className="relative aspect-[4/5] overflow-hidden rounded-[14px] bg-orange-100"
                             >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={p.preview} alt={`Your photo ${i + 1}`} className="size-full object-cover" />
-                              {i === 0 && <span className="absolute bottom-2 left-2 rounded-full bg-white/92 px-2 py-0.5 text-[12px] font-semibold text-stone-900">Main</span>}
-                              <button
-                                type="button"
-                                onClick={() => set({ photos: d.photos.filter((x) => x.id !== p.id) })}
-                                aria-label={`Remove photo ${i + 1}`}
-                                className="absolute top-1.5 right-1.5 grid size-8 place-items-center rounded-full bg-white/92 text-stone-900 shadow-[0_2px_8px_rgb(28_25_23/0.18)] transition-transform duration-150 active:scale-90"
-                              >
-                                <CloseIcon size={15} />
-                              </button>
+                              <PhotoTile src={t.src} ready={t.ready} index={i} onRemove={() => removePhoto(t.id)} />
                             </motion.li>
                           ))}
-                          {d.photos.length < 6 && (
+                          {tiles.length < 6 && (
                             <motion.li key="add" layout transition={{ duration: 0.35, ease: easeOutExpo }}>
                               <button
                                 type="button"
@@ -724,7 +735,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                     )}
                   </div>
 
-                  {d.photos.length === 0 && (
+                  {tiles.length === 0 && (
                     <>
                       <div className="flex items-center gap-3.5 text-[14px] font-medium text-stone-500" aria-hidden>
                         <span className="h-px flex-1 bg-stone-200" />
