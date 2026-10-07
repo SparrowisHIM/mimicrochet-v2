@@ -15,6 +15,7 @@ import {
 } from "motion/react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { RevealText } from "@/components/motion/reveal";
+import { TrackingCard } from "@/components/order/tracking-card";
 import { ButtonLink } from "@/components/ui/button";
 import { demoOrder } from "@/lib/orders";
 import { formatNaira } from "@/lib/site";
@@ -74,13 +75,10 @@ const story: Stage[] = [
 const last = story.length - 1;
 // Phones play the story by themselves while it's on screen.
 const STAGE_MS = 4500;
-const deposit = Math.round((demoOrder.price ?? 0) * 0.6);
-const plan = [
-  ["Size", demoOrder.size ?? "L"],
-  ["Price", formatNaira(demoOrder.price ?? 0)],
-  ["Ready by", demoOrder.readyBy ?? ""],
-  ["Deposit (60%)", `${formatNaira(deposit)} paid`],
-] as const;
+// What Mimi's latest note says at each stage, on the same card customers see on their tracking page.
+const notes = story.map((s, i) =>
+  i === 1 ? `Price agreed: ${formatNaira(demoOrder.price ?? 0)}, ready by ${demoOrder.readyBy}. Deposit paid, so the yarn is picked.` : s.caption,
+);
 
 /* --------------------------------- the photo stack --------------------------------- */
 
@@ -112,43 +110,6 @@ function Layer({ i, pos, active, reduce }: { i: number; pos: MotionValue<number>
         )}
       </motion.div>
     </motion.div>
-  );
-}
-
-function Note({ active }: { active: number }) {
-  const reduce = useReducedMotion();
-  return (
-    <AnimatePresence mode="popLayout" initial={false}>
-      <motion.div
-        key={active}
-        className="absolute inset-x-3 bottom-3 rounded-[18px] bg-white/95 p-4 shadow-[0_18px_40px_-18px_rgb(28_25_23/0.45)] backdrop-blur-md lg:inset-x-4 lg:bottom-4 lg:p-5"
-        initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24, filter: "blur(6px)" }}
-        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-        exit={reduce ? { opacity: 0 } : { opacity: 0, y: -12, filter: "blur(6px)" }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      >
-        <div className="flex items-center gap-2.5">
-          <span className="grid size-7 shrink-0 place-items-center rounded-full bg-orange-100 font-serif text-[14px] text-amber-900" aria-hidden>
-            M
-          </span>
-          <span className={`rounded-full px-2.5 py-1 text-[12px] leading-none font-semibold ${active >= 3 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
-            {stages[active].label}
-          </span>
-        </div>
-        {active === 1 ? (
-          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5">
-            {plan.map(([k, v]) => (
-              <div key={k} className="flex flex-col">
-                <dt className="text-[12px] text-stone-500">{k}</dt>
-                <dd className={`text-[15px] font-semibold ${k.startsWith("Deposit") ? "text-emerald-800" : ""}`}>{v}</dd>
-              </div>
-            ))}
-          </dl>
-        ) : (
-          <p className="mt-2.5 text-[15px] leading-snug text-stone-800 lg:text-[16px]">{story[active].caption}</p>
-        )}
-      </motion.div>
-    </AnimatePresence>
   );
 }
 
@@ -271,7 +232,7 @@ export function OrderStory() {
             </div>
           </div>
 
-          {/* The photo, with the tag on top and Mimi's note over it */}
+          {/* The photo, with the tag on top and the order's tracking card tucked under its bottom edge */}
           <div className="lg:sticky lg:top-24">
             <div className="mb-4 flex justify-between gap-1.5 lg:hidden" role="group" aria-label="Choose an order stage">
               {stages.map((st, i) => (
@@ -297,7 +258,8 @@ export function OrderStory() {
               ))}
             </div>
 
-            <div className="mx-auto w-full rounded-[26px] border border-stone-200 bg-white p-2.5 shadow-[0_30px_70px_-40px_rgb(28_25_23/0.4)] lg:max-w-[min(100%,calc((100svh-210px)*0.75+20px))] lg:p-3">
+            {/* Desktop: the photo is sized so it and the card under it both fit the sticky column. */}
+            <div className="mx-auto w-full rounded-[26px] border border-stone-200 bg-white p-2.5 shadow-[0_30px_70px_-40px_rgb(28_25_23/0.4)] lg:max-w-[min(100%,calc((100svh-352px)*0.75+24px))] lg:p-3">
               <div className="flex items-center justify-between px-2 pt-1 pb-3 text-[13px] font-medium text-stone-500">
                 <AnimatePresence mode="popLayout" initial={false}>
                   <motion.span key={current.tag} className="font-semibold text-stone-900" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ type: "spring", duration: 0.3, bounce: 0 }}>
@@ -322,8 +284,10 @@ export function OrderStory() {
                 {story.map((s, i) => (
                   <Layer key={s.title} i={i} pos={pos} active={active} reduce={reduce} />
                 ))}
-                <Note active={active} />
               </motion.div>
+            </div>
+            <div className="relative z-10 mx-auto -mt-14 w-full px-4 lg:max-w-[min(100%,calc((100svh-352px)*0.75+24px))]">
+              <TrackingCard orderId={demoOrder.id} piece={demoOrder.piece.name} stage={active} note={notes[active]} />
             </div>
 
             <div className="mt-5 flex flex-col gap-3 lg:hidden" aria-live="polite">
