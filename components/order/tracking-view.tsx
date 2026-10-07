@@ -135,6 +135,17 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) {
   const reduce = useReducedMotion();
   const host = useSyncExternalStore(() => () => {}, () => window.location.host, () => "");
+  const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/t/${order.code}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopyFailed(true);
+    }
+  };
   // The paid moment plays once: drop ?paid=1 so a reload opens on the order as it stands.
   useEffect(() => {
     if (justPaid) window.history.replaceState(null, "", `/t/${order.code}`);
@@ -171,10 +182,17 @@ function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) 
         {justPaid && (
           <div className="flex flex-col gap-2 rounded-[22px] border border-stone-200 bg-white p-5">
             <span className="text-[15px] font-semibold">Your tracking link</span>
-            <span className="text-[16px] font-medium break-all">
-              {host}/t/{order.code}
+            <div className="flex items-center justify-between gap-3">
+              <span className="min-w-0 truncate text-[16px] font-medium">
+                {host}/t/{order.code}
+              </span>
+              <Button variant="secondary" size="sm" onClick={copy} className="shrink-0">
+                {copied ? "Copied" : "Copy"}
+              </Button>
+            </div>
+            <span className="text-[14px] text-stone-500" role={copyFailed ? "status" : undefined}>
+              {copyFailed ? "Couldn’t copy. Press and hold the link to copy it." : "You’re on it now. Save it: it shows every step, from today to your door."}
             </span>
-            <span className="text-[14px] text-stone-500">You’re on it now. Save it: it shows every step, from today to your door.</span>
           </div>
         )}
         <div className="flex flex-col gap-2 rounded-[22px] border border-stone-200 bg-white p-5 text-[15px]">
