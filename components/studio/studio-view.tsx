@@ -138,7 +138,7 @@ function PostUpdate({ o, onDone }: { o: Row; onDone: () => void }) {
       <div className="flex items-center justify-between rounded-[14px] bg-white p-4">
         <span className="flex flex-col">
           <span className="text-[15px] font-semibold">Also mark as ready</span>
-          <span className="text-[13px] text-stone-500">Moves her page to “Ready”</span>
+          <span className="text-[13px] text-stone-500">Moves their page to “Ready”</span>
         </span>
         <Toggle label="Also mark as ready" hideLabel checked={ready} onChange={setReady} />
       </div>

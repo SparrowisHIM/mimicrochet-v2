@@ -9,7 +9,7 @@ export const sampleOrders: (Order & { due: string; dueTone: "normal" | "soon" | 
     id: "MIMI-2411",
     code: "c4h9wq",
     createdAt: "2026-10-03",
-    piece: { name: "From her photo", image: "/images/ideas/daisy-ruffle-crochet-set.jpg", source: "photo" },
+    piece: { name: "From their photo", image: "/images/ideas/daisy-ruffle-crochet-set.jpg", source: "photo" },
     photos: ["/images/ideas/daisy-ruffle-crochet-set.jpg"],
     size: "M",
     name: "Chioma",
