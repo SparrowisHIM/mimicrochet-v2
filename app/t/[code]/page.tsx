@@ -6,7 +6,9 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default async function TrackingPage({ params }: PageProps<"/t/[code]">) {
+export default async function TrackingPage({ params, searchParams }: PageProps<"/t/[code]">) {
   const { code } = await params;
-  return <TrackingView code={code} />;
+  // Checkout lands here with ?paid=1 so the page opens on the paid moment once.
+  const { paid } = await searchParams;
+  return <TrackingView code={code} justPaid={paid === "1"} />;
 }

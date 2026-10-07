@@ -1,19 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "motion/react";
 import { useState, useSyncExternalStore } from "react";
-import { ShopOrderCard } from "@/components/cart/shop-order-card";
-import { Button, ButtonChip, ButtonLink, linkClass } from "@/components/ui/button";
+import { Button, ButtonChip, ButtonLink } from "@/components/ui/button";
 import { CardStack } from "@/components/ui/card-stack";
-import { Confetti } from "@/components/ui/confetti";
 import { bagTotal, useBagItems } from "@/lib/bag";
 import { bagStore } from "@/lib/local-store";
 import { Field, inputClass, NameInput, PhoneInput, useNudge } from "@/components/form/fields";
 import { AreaPicker, StatePicker } from "@/components/form/place-picker";
 import { isLgaOf, isNigerianState } from "@/lib/nigeria";
 import { newOrderIds, saveOrder, type Order } from "@/lib/orders";
+import type { Product } from "@/lib/products";
 import { formatNaira } from "@/lib/site";
 import { fullPhone, hasWords, isEmail, isName, phoneDigits, phoneProblem } from "@/lib/validate";
 
@@ -23,7 +22,11 @@ function Num({ n }: { n: number }) {
 }
 
 export function CheckoutView() {
-  const items = useBagItems();
+  const router = useRouter();
+  const bagItems = useBagItems();
+  // Once paid, the bag is emptied but the page keeps showing what was bought until the tracking page opens.
+  const [held, setHeld] = useState<Product[] | null>(null);
+  const items = held ?? bagItems;
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const total = bagTotal(items);
   const [f, setF] = useState({ name: "", phone: "", email: "", state: "", area: "", address: "", note: "" });
@@ -32,7 +35,6 @@ export function CheckoutView() {
   const [nameNudge, nudgeName] = useNudge();
   const [phoneNudge, nudgePhone] = useNudge();
   const [paying, setPaying] = useState(false);
-  const [paid, setPaid] = useState<Order | null>(null);
   const [showItems, setShowItems] = useState(false);
   const put = (patch: Partial<typeof f>) => setF((c) => ({ ...c, ...patch }));
   const blur = (k: string) => () => setTouched((t) => ({ ...t, [k]: true }));
@@ -85,14 +87,13 @@ export function CheckoutView() {
       updates: [{ stage: 0, note: "Paid. Mimi is packing your order.", at: "Today" }],
     };
     saveOrder(order);
+    setHeld(items);
     bagStore.clear();
-    setPaying(false);
-    setPaid(order);
-    window.scrollTo({ top: 0 });
+    // The receipt lives on the order's tracking page, so a reload or a saved link still shows it.
+    router.replace(`/t/${code}?paid=1`);
   };
 
   if (!hydrated) return <div className="min-h-[70vh]" />;
-  if (paid) return <Paid order={paid} />;
   if (items.length === 0)
     return (
       <div className="container-page flex min-h-[60vh] flex-col items-start justify-center gap-4 py-16 lg:items-center lg:text-center">
@@ -235,44 +236,6 @@ export function CheckoutView() {
           <p className="text-[13px] text-stone-500">By paying, you agree to Mimi’s returns policy: if your piece arrives damaged or isn’t what you ordered, she’ll make it right.</p>
         </fieldset>
       </motion.form>
-    </div>
-  );
-}
-
-function Paid({ order }: { order: Order }) {
-  const reduce = useReducedMotion();
-  const host = useSyncExternalStore(() => () => {}, () => window.location.host, () => "");
-  return (
-    <div className="container-page flex justify-center pt-8 pb-20 lg:pt-16">
-      <div className="flex w-full max-w-[560px] flex-col gap-6">
-        <motion.span className="relative grid size-14 place-items-center rounded-full bg-emerald-100 text-emerald-800" initial={reduce ? false : { scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 420, damping: 18 }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <motion.path d="M5 12.5 10 17.5 19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" initial={reduce ? false : { pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.5, delay: 0.15 }} />
-          </svg>
-          <Confetti />
-        </motion.span>
-        <div className="flex flex-col gap-3">
-          <h1 className="font-serif text-[36px] leading-[1.05] lg:text-[52px]">Paid! It’s all yours.</h1>
-          <p className="text-[16px] leading-[1.5] text-stone-600 lg:text-[18px]">Mimi is packing your order and will pass your number to a rider. Your order number is <span className="whitespace-nowrap">{order.id}</span>, and your receipt is below.</p>
-        </div>
-        <ShopOrderCard order={order} />
-        <div className="flex flex-col gap-2 rounded-[22px] border border-stone-200 bg-white p-5">
-          <span className="text-[15px] font-semibold">Your tracking link</span>
-          <Link href={`/t/${order.code}`} className="text-[16px] font-medium underline-offset-4 hover:underline">
-            {host}/t/{order.code}
-          </Link>
-          <span className="text-[14px] text-stone-500">Save it. It shows every step, from today to your door.</span>
-        </div>
-        <div className="flex flex-col gap-2 rounded-[22px] border border-stone-200 bg-white p-5 text-[15px]">
-          <span className="font-semibold">Receipt</span>
-          {order.items?.map((i) => (
-            <div key={i.slug} className="flex justify-between"><span className="text-stone-600">{i.name}</span><span>{formatNaira(i.price)}</span></div>
-          ))}
-          <div className="flex justify-between"><span className="text-stone-600">Delivery</span><span>Paid to the rider</span></div>
-          <div className="flex justify-between border-t border-stone-100 pt-2 font-semibold"><span>Paid with Paystack</span><span>{formatNaira(order.price!)}</span></div>
-        </div>
-        <Link href="/shop" className={`${linkClass} self-center`}>Back to the shop</Link>
-      </div>
     </div>
   );
 }

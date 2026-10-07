@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { WhatsAppIcon } from "@/components/icons";
 import { ShopOrderCard } from "@/components/cart/shop-order-card";
+import { Confetti } from "@/components/ui/confetti";
 import { StageIcon } from "@/components/order/stage-icons";
 import { Button, buttonClass, linkClass } from "@/components/ui/button";
 import { findOrder, updateOrder, useOrders, type Order } from "@/lib/orders";
@@ -129,7 +130,80 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
   return <section className={`rounded-[22px] bg-white p-5 lg:p-6 ${className}`}>{children}</section>;
 }
 
-export function TrackingView({ code }: { code: string }) {
+/* ------------------------------- shop orders ------------------------------- */
+
+function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) {
+  const reduce = useReducedMotion();
+  const host = useSyncExternalStore(() => () => {}, () => window.location.host, () => "");
+  // The paid moment plays once: drop ?paid=1 so a reload opens on the order as it stands.
+  useEffect(() => {
+    if (justPaid) window.history.replaceState(null, "", `/t/${order.code}`);
+  }, [justPaid, order.code]);
+
+  return (
+    <div className="container-page flex justify-center pt-8 pb-24 lg:pt-14">
+      <div className="flex w-full max-w-[560px] flex-col gap-5">
+        <div className="flex flex-col items-center gap-3 text-center">
+          {justPaid ? (
+            <motion.span className="relative mb-1 grid size-14 place-items-center rounded-full bg-emerald-100 text-emerald-800" initial={reduce ? false : { scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 420, damping: 18 }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <motion.path d="M5 12.5 10 17.5 19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" initial={reduce ? false : { pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.5, delay: 0.15 }} />
+              </svg>
+              <Confetti />
+            </motion.span>
+          ) : (
+            <span className="rounded-full border border-stone-200 bg-white px-3.5 py-1.5 text-[13px] font-medium">Order {order.id}</span>
+          )}
+          <h1 className="font-serif text-[36px] leading-[1.05] lg:text-[52px]">
+            {justPaid ? "Paid! It’s all yours." : ["Paid. Mimi is packing it.", "Packing your order", "It’s on its way", "It’s home. Wear it loud."][order.stage]}
+          </h1>
+          <p className="max-w-[460px] text-[16px] leading-[1.5] text-stone-600">
+            {justPaid ? (
+              <>
+                Mimi is packing your order and will pass your number to a rider. Your order number is <span className="whitespace-nowrap">{order.id}</span>, and your receipt is below.
+              </>
+            ) : (
+              "Mimi passes your number to a rider. You pay the rider for delivery when it arrives."
+            )}
+          </p>
+        </div>
+        <ShopOrderCard order={order} />
+        {justPaid && (
+          <div className="flex flex-col gap-2 rounded-[22px] border border-stone-200 bg-white p-5">
+            <span className="text-[15px] font-semibold">Your tracking link</span>
+            <span className="text-[16px] font-medium break-all">
+              {host}/t/{order.code}
+            </span>
+            <span className="text-[14px] text-stone-500">You’re on it now. Save it: it shows every step, from today to your door.</span>
+          </div>
+        )}
+        <div className="flex flex-col gap-2 rounded-[22px] border border-stone-200 bg-white p-5 text-[15px]">
+          <span className="font-semibold">Receipt</span>
+          {order.items?.map((i) => (
+            <div key={i.slug} className="flex justify-between gap-4"><span className="text-stone-600">{i.name}</span><span>{formatNaira(i.price)}</span></div>
+          ))}
+          <div className="flex justify-between"><span className="text-stone-600">Delivery</span><span>Paid to the rider</span></div>
+          {order.price !== undefined && (
+            <div className="flex justify-between border-t border-stone-100 pt-2 font-semibold"><span>Paid with Paystack</span><span>{formatNaira(order.price)}</span></div>
+          )}
+        </div>
+        <a href={whatsappLink(`Hi Mimi! It’s about my order ${order.id}.`)} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-[22px] bg-white p-4 hover:bg-orange-100/60">
+          <span className="grid size-10 place-items-center rounded-full bg-orange-100 font-serif text-[17px] text-amber-800">M</span>
+          <span className="flex flex-1 flex-col"><span className="text-[15px] font-semibold">Mimi</span><span className="text-[13px] text-stone-500">Usually replies the same day</span></span>
+          <WhatsAppIcon size={20} />
+        </a>
+        {justPaid && (
+          <Link href="/shop" className={`${linkClass} self-center`}>
+            Back to the shop
+          </Link>
+        )}
+        <p className="text-center text-[13px] text-stone-400">Only people with this link can see this page.</p>
+      </div>
+    </div>
+  );
+}
+
+export function TrackingView({ code, justPaid = false }: { code: string; justPaid?: boolean }) {
   const orders = useOrders();
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const order = findOrder(orders, code);
@@ -153,25 +227,7 @@ export function TrackingView({ code }: { code: string }) {
       </div>
     );
 
-  if (order.kind === "shop")
-    return (
-      <div className="container-page flex justify-center pt-8 pb-24 lg:pt-14">
-        <div className="flex w-full max-w-[560px] flex-col gap-5">
-          <div className="flex flex-col items-center gap-3 text-center">
-            <span className="rounded-full border border-stone-200 bg-white px-3.5 py-1.5 text-[13px] font-medium">Order {order.id}</span>
-            <h1 className="font-serif text-[36px] leading-[1.05] lg:text-[52px]">{["Paid. Mimi is packing it.", "Packing your order", "It’s on its way", "It’s home. Wear it loud."][order.stage]}</h1>
-            <p className="max-w-[460px] text-[16px] text-stone-600">Mimi passes your number to a rider. You pay the rider for delivery when it arrives.</p>
-          </div>
-          <ShopOrderCard order={order} />
-          <a href={whatsappLink(`Hi Mimi! It’s about my order ${order.id}.`)} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-[22px] bg-white p-4 hover:bg-orange-100/60">
-            <span className="grid size-10 place-items-center rounded-full bg-orange-100 font-serif text-[17px] text-amber-800">M</span>
-            <span className="flex flex-1 flex-col"><span className="text-[15px] font-semibold">Mimi</span><span className="text-[13px] text-stone-500">Usually replies the same day</span></span>
-            <WhatsAppIcon size={20} />
-          </a>
-          <p className="text-center text-[13px] text-stone-400">Only people with this link can see this page.</p>
-        </div>
-      </div>
-    );
+  if (order.kind === "shop") return <ShopTracking order={order} justPaid={justPaid} />;
 
   const h = headline(order);
   const latest = order.updates[order.updates.length - 1];
