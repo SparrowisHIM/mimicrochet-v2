@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { Curtain, RevealText } from "@/components/motion/reveal";
 import { ProductCard } from "@/components/product/product-card";
-import { ButtonLink } from "@/components/ui/button";
+import { Hairline } from "@/components/ui/hairline";
 import { Toggle } from "@/components/ui/toggle";
 import type { Product } from "@/lib/products";
 
@@ -37,11 +37,7 @@ export function FreshOffTheHook({ pieces }: { pieces: Product[] }) {
         </AnimatePresence>
       </motion.ul>
 
-      <div className="flex justify-center pt-2">
-        <ButtonLink href={readyOnly ? "/shop?type=ready" : "/shop"} variant="secondary" className="max-sm:w-full">
-          View more pieces
-        </ButtonLink>
-      </div>
+      <Hairline href={readyOnly ? "/shop?type=ready" : "/shop"} label="More pieces" className="pt-2" />
     </section>
   );
 }
