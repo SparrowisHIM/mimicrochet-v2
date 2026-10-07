@@ -6,7 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { WhatsAppIcon } from "@/components/icons";
 import { SaveButton } from "@/components/product/save-button";
-import { Button, ButtonLink, buttonClass } from "@/components/ui/button";
+import { Button, ButtonLink, buttonClass, linkClass } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { addToBag, bagUi } from "@/lib/bag";
 import { bagStore } from "@/lib/local-store";
@@ -99,7 +99,7 @@ export function ProductView({ product }: { product: Product }) {
 
   const primary = buyable ? (
     inBag ? (
-      <Button className="w-full" variant="secondary" onClick={() => bagUi.open()}>
+      <Button className="w-full" onClick={() => bagUi.open()}>
         In your bag · View bag
       </Button>
     ) : (
@@ -247,7 +247,7 @@ export function ProductView({ product }: { product: Product }) {
 
             <div ref={actionsRef} className="flex flex-col gap-3">
               {primary}
-              <a href={ask} target="_blank" rel="noreferrer" className={buttonClass("secondary", "md", "w-full")}>
+              <a href={ask} target="_blank" rel="noreferrer" className={`${linkClass} self-center`}>
                 <WhatsAppIcon size={18} /> Ask Mimi on WhatsApp
               </a>
             </div>

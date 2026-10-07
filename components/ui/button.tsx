@@ -30,6 +30,14 @@ export function buttonClass(variant: Variant = "primary", size: Size = "md", ext
   return `group/btn inline-flex items-center justify-center gap-2 rounded-full font-semibold leading-none whitespace-nowrap transition-[background-color,color,border-color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40 ${variants[variant]} ${sizes[size]} ${extra}`;
 }
 
+/** Secondary actions (Figma "Buttons · options", part 2): underlined text beside or under the one main
+ *  button, never a second pill. The underline darkens on hover. */
+export const linkClass =
+  "inline-flex min-h-11 items-center justify-center gap-2 text-[16px] font-semibold text-stone-900 underline decoration-stone-900/30 decoration-[1.5px] underline-offset-[6px] transition-[text-decoration-color] duration-200 ease-out hover:decoration-stone-900";
+/** The same link on a dark panel. */
+export const linkLightClass =
+  "inline-flex min-h-11 items-center justify-center gap-2 text-[16px] font-semibold text-orange-50 underline decoration-orange-50/40 decoration-[1.5px] underline-offset-[6px] transition-[text-decoration-color] duration-200 ease-out hover:decoration-orange-50";
+
 /** The main button's chevron, which slides out as an arrow slides in on hover or keyboard focus. */
 export function ArrowSwap() {
   const icon = "col-start-1 row-start-1 transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
