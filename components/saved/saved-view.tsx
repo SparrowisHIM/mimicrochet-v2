@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useSyncExternalStore } from "react";
 import { HeartIcon, WhatsAppIcon } from "@/components/icons";
 import { SaveButton } from "@/components/product/save-button";
-import { Button, ButtonLink, buttonClass } from "@/components/ui/button";
+import { Button, ButtonLink, buttonClass, linkClass } from "@/components/ui/button";
 import { addToBag } from "@/lib/bag";
 import { bagStore, savedStore } from "@/lib/local-store";
 import { getProduct, priceLabel, type Product } from "@/lib/products";
@@ -32,7 +32,7 @@ export function SavedView() {
     const cls = wide ? "w-full" : "";
     if (r.status === "sold" || r.p.checkout === "request")
       return (
-        <Link href={`/custom-order?piece=${r.p.slug}`} className={buttonClass("secondary", "sm", cls)}>
+        <Link href={`/custom-order?piece=${r.p.slug}`} className={linkClass}>
           Have it made
         </Link>
       );
