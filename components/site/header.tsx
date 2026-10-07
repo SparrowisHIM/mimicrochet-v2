@@ -29,7 +29,7 @@ function CountBadge({ count }: { count: number }) {
 }
 
 const iconButton =
-  "relative grid size-[38px] place-items-center rounded-full text-stone-900 transition-colors hover:bg-orange-100 lg:size-10";
+  "relative grid size-[38px] place-items-center rounded-full text-stone-900 transition-colors hover:bg-orange-100 max-[380px]:size-9 lg:size-10";
 
 export function Header() {
   const pathname = usePathname();
@@ -59,7 +59,7 @@ export function Header() {
           <Link
             href="/"
             onClick={closeMenu}
-            className="font-serif text-[19px] tracking-[-0.01em] text-stone-900 max-[380px]:text-[15px] lg:text-[22px]"
+            className="font-serif text-[19px] tracking-[-0.01em] text-stone-900 max-[380px]:text-[17px] max-[359px]:text-[13px] lg:text-[22px]"
             aria-label={`${site.name}, home`}
           >
             {site.name}
@@ -91,7 +91,7 @@ export function Header() {
           <Link href="/shop?search=1" onClick={closeMenu} className={iconButton} aria-label="Search the shop">
             <SearchIcon />
           </Link>
-          <Link href="/saved" onClick={closeMenu} className={`${iconButton} max-[380px]:hidden`} aria-label={`Saved pieces, ${saved.length}`}>
+          <Link href="/saved" onClick={closeMenu} className={iconButton} aria-label={`Saved pieces, ${saved.length}`}>
             <HeartIcon />
             <CountBadge count={saved.length} />
           </Link>
