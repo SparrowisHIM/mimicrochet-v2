@@ -81,7 +81,7 @@ export default function AboutPage() {
             <h2 className="font-serif text-[34px] leading-[1.08] tracking-[-0.02em] lg:text-[48px]">How a piece comes to life</h2>
             <p className="text-[16px] text-stone-600 lg:text-[17px]">No machines. Just Mimi, a hook and a lot of yarn.</p>
           </Wipe>
-          <ol className="no-scrollbar -mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-6 lg:px-0">
+          <ol className="no-scrollbar -mx-5 flex snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-6 lg:px-0">
             {steps.map((s) => (
               <li key={s.n} className="w-[72vw] max-w-[300px] shrink-0 snap-start lg:w-auto lg:max-w-none">
                 <Wipe className="flex flex-col gap-3.5">

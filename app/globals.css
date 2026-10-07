@@ -33,6 +33,18 @@
     @apply bg-orange-50 font-sans text-stone-900;
   }
 
+  /* Fieldsets default to min-content width, which pushes inputs past the gutter on small phones. */
+  fieldset {
+    min-width: 0;
+  }
+
+  /* Product pages on phones: room under the footer for the floating buy bar. */
+  @media (width < 64rem) {
+    body:has([data-floating-bar]) {
+      padding-bottom: 80px;
+    }
+  }
+
   ::selection {
     @apply bg-amber-200 text-stone-900;
   }

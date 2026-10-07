@@ -87,7 +87,7 @@ export function WornLoved({ customers }: { customers: Customer[] }) {
         <RevealText id="worn-title" text="Worn, loved, re-worn" className="font-serif text-[32px] leading-[1.08] tracking-[-0.02em] lg:text-[48px]" />
         <p className="text-[16px] leading-[1.5] text-stone-600 lg:text-[17px]">Photos from the people who wear them.</p>
       </div>
-      <ul className="no-scrollbar mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 lg:container-page lg:mt-12 lg:grid lg:grid-cols-3 lg:gap-8 lg:overflow-visible">
+      <ul className="no-scrollbar mt-8 flex snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 lg:container-page lg:mt-12 lg:grid lg:grid-cols-3 lg:gap-8 lg:overflow-visible">
         {customers.map((customer) => <CustomerPreview key={customer.slug} customer={customer} open={open !== null} onOpen={() => setOpen(customer.slug)} />)}
       </ul>
       <CustomerStory customers={customers} openSlug={open} onClose={() => setOpen(null)} onChange={setOpen} />

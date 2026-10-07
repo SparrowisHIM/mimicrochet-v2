@@ -48,7 +48,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </a>
         <Announcement />
         <Header />
-        <main id="main" className="flex-1">
+        {/* overflow-x-clip: stamps, tags and flashes that peek past a card must never widen the page
+            on a phone (that lets it pan sideways and lose the header). It sits on main, not body,
+            because phones pass body overflow up to the viewport and still pan; clip keeps sticky working. */}
+        <main id="main" className="flex-1 overflow-x-clip">
           {children}
         </main>
         <Footer />
