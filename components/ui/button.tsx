@@ -48,16 +48,15 @@ export function ButtonChip({ children }: { children: ReactNode }) {
   );
 }
 
-/** The main button's chevron, which slides out as an arrow slides in on hover or keyboard focus. */
+/** The main button's chevron, which slides out as an arrow slides in (motion in globals.css, .btn-arrow). */
 export function ArrowSwap() {
-  const icon = "col-start-1 row-start-1 transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
   return (
-    <span className="-mr-1 grid size-5 shrink-0 overflow-hidden" aria-hidden>
-      <svg width="20" height="20" viewBox="0 0 22 22" fill="none" className={`${icon} group-hover/btn:translate-x-2 group-hover/btn:opacity-0 group-focus-visible/btn:translate-x-2 group-focus-visible/btn:opacity-0`}>
-        <path d="M8.25 4.583 14.667 11l-6.417 6.417" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <span className="btn-arrow relative -mr-1.5 size-[22px] shrink-0 overflow-hidden" aria-hidden>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M9.343 6.343 15 12l-5.657 5.657" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className={`${icon} -translate-x-2 opacity-0 group-hover/btn:translate-x-0 group-hover/btn:opacity-100 group-focus-visible/btn:translate-x-0 group-focus-visible/btn:opacity-100`}>
-        <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M4 12h15m-5 5.657L19.657 12 14 6.343" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
   );

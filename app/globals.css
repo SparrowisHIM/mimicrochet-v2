@@ -232,6 +232,49 @@
   }
 }
 
+/* The main button's chevron becomes an arrow on hover (as in v1): the chevron slides 8px right and
+   fades while the arrow slides in from 8px left, both over 340ms on a soft ease-out (v1 used 260ms). Plain transforms,
+   so the slide and the fade always run together. Touch: it plays while the button is pressed. */
+@layer components {
+  .btn-arrow > svg {
+    position: absolute;
+    inset: 0;
+    transition:
+      opacity 340ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-arrow > svg:last-child {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  :focus-visible > .btn-arrow > svg:first-child,
+  :active > .btn-arrow > svg:first-child {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  :focus-visible > .btn-arrow > svg:last-child,
+  :active > .btn-arrow > svg:last-child {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    :hover > .btn-arrow > svg:first-child {
+      opacity: 0;
+      transform: translateX(8px);
+    }
+    :hover > .btn-arrow > svg:last-child {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .btn-arrow > svg {
+      transition: opacity 120ms ease;
+      transform: none !important;
+    }
+  }
+}
+
 /* Fanned card stack (components/ui/card-stack.tsx). Cards tilt out from a shared base point;
    on hover (mouse only) the fan spreads wider with a strong ease-out. Reduced motion: no movement. */
 @layer components {
