@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { ChevronIcon, WhatsAppIcon } from "@/components/icons";
-import { Button, buttonClass } from "@/components/ui/button";
+import { Button, linkClass } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
 import { Toggle } from "@/components/ui/toggle";
@@ -198,14 +198,14 @@ function OrderPanel({ o, onClose }: { o: Row; onClose: () => void }) {
               {(o.stage === 1 && o.depositPaid) || o.stage === 2 ? (
                 <div className="flex flex-col gap-2.5">
                   <Button onClick={() => setMode("update")}>Post an update</Button>
-                  <Button variant="secondary" onClick={() => patchOrder(o, { stage: 3, updates: [...o.updates, { stage: 3, note: "All done! Photos on WhatsApp.", at: "Today" }] })}>Or mark it as ready</Button>
+                  <button type="button" className={linkClass} onClick={() => patchOrder(o, { stage: 3, updates: [...o.updates, { stage: 3, note: "All done! Photos on WhatsApp.", at: "Today" }] })}>Or mark it as ready</button>
                 </div>
               ) : null}
               {o.stage === 3 && <Button onClick={() => patchOrder(o, { stage: 4, updates: [...o.updates, { stage: 4, note: "Delivered. Enjoy wearing it!", at: "Today" }] })}>Mark as delivered</Button>}
 
-              <div className="flex gap-2.5">
-                <a href={waTo(o.phone, `Hi ${o.name}! About your order ${o.id}…`)} target="_blank" rel="noreferrer" className={buttonClass("secondary", "sm", "flex-1")}><WhatsAppIcon size={16} /> Message</a>
-                <Link href={`/t/${o.code}`} className={buttonClass("secondary", "sm", "flex-1")}>Their tracking page</Link>
+              <div className="flex flex-wrap justify-center gap-x-7">
+                <a href={waTo(o.phone, `Hi ${o.name}! About your order ${o.id}…`)} target="_blank" rel="noreferrer" className={linkClass}><WhatsAppIcon size={16} /> Message {o.name}</a>
+                <Link href={`/t/${o.code}`} className={linkClass}>Their tracking page</Link>
               </div>
 
               {o.photos.length > 0 && (
