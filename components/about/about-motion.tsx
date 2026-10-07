@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useAnimationFrame, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform, useVelocity } from "motion/react";
+import { motion, useAnimationFrame, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform, useVelocity } from "motion/react";
 import { useRef, type ReactNode } from "react";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -55,9 +55,11 @@ export function VelocityMarquee({ items }: { items: string[] }) {
   const skew = useTransform(velocity, [-2000, 0, 2000], [4, 0, -4]);
   const dir = useRef(1);
   const track = useRef<HTMLDivElement>(null);
+  const band = useRef<HTMLDivElement>(null);
+  const onScreen = useInView(band);
 
   useAnimationFrame((_, delta) => {
-    if (reduce) return;
+    if (reduce || !onScreen) return;
     const f = factor.get();
     if (f < 0) dir.current = -1;
     else if (f > 0) dir.current = 1;
@@ -80,7 +82,7 @@ export function VelocityMarquee({ items }: { items: string[] }) {
   );
 
   return (
-    <div className="overflow-hidden border-y border-stone-200 bg-white py-4 lg:py-5">
+    <div ref={band} className="overflow-hidden border-y border-stone-200 bg-white py-4 lg:py-5">
       <motion.div ref={track} className="flex w-max" style={{ x, skewX: reduce ? 0 : skew }}>
         {row("a")}
         {row("b")}

@@ -33,7 +33,7 @@ export type Product = {
 
 const img = (slug: string, n = 1) => Array.from({ length: n }, (_, i) => `/images/products/${slug}-${i + 1}.jpg`);
 
-// Order = "Featured"; the shop's "Newest" sort uses the reverse of `added`.
+// List order is the shop's default sort, labelled "Newest" (there are no added dates yet).
 export const products: Product[] = [
   { slug: "candy-bloom-ruffle-set", name: "Sasha Ruffle Set", category: "Sets & shorts", kind: "ready", price: 40000, checkout: "bag", size: "M", colour: "Pink, orange, blue and yellow", colours: ["Pink", "Yellow", "Blue"], description: "Bright ruffle beach set in pink, orange, blue and yellow, with crochet flowers on the top.", images: img("candy-bloom-ruffle-set") },
   { slug: "red-fringe-beach-set", name: "Ruby Dress", category: "Dresses", kind: "ready", price: 40000, checkout: "bag", size: "M", colour: "Red", colours: ["Red"], description: "Red crochet top and wrap skirt with a long fringe that moves when you do.", images: img("red-fringe-beach-set", 2) },
