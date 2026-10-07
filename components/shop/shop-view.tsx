@@ -94,6 +94,7 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
     </>
   );
 
+  // The filter buttons open a sheet, so they look like the chips beside them, not like actions.
   // Grid with the "Have it made" tile after the fifth piece, like a product. It asks "Not your size?",
   // so it only shows when some of the pieces come in sizes (not a grid of earrings and beanies).
   const cells: ({ kind: "tile" } | { kind: "product"; i: number })[] = visible.map((_, i) => ({ kind: "product" as const, i }));
@@ -160,17 +161,17 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
       <div className="no-scrollbar flex gap-2 overflow-x-auto px-5 lg:container-page lg:items-center lg:justify-between lg:overflow-visible">
         <div className="flex gap-2">{categoryChips}</div>
         <div className="hidden lg:block">
-          <Button variant="secondary" size="sm" className="h-11 px-[18px] text-[15px]" onClick={() => setSheet(true)}>
+          <button type="button" className="inline-flex shrink-0 items-center rounded-full border border-stone-300 bg-white font-medium whitespace-nowrap text-stone-900 transition-[border-color,transform] duration-200 hover:border-stone-900 active:scale-[0.97] h-11 px-[18px] text-[15px]" onClick={() => setSheet(true)}>
             Price & colour{activeExtras ? ` (${activeExtras})` : ""}
-          </Button>
+          </button>
         </div>
       </div>
 
       <div className="container-page flex items-center justify-between py-4 lg:hidden">
         <Toggle id="shop-ready-m" label="Ready to wear only" checked={f.type === "ready"} onChange={(v) => set({ type: v ? "ready" : "all" })} />
-        <Button variant="secondary" size="sm" className="h-[38px] px-4" onClick={() => setSheet(true)}>
+        <button type="button" className="inline-flex shrink-0 items-center rounded-full border border-stone-300 bg-white font-medium whitespace-nowrap text-stone-900 transition-[border-color,transform] duration-200 hover:border-stone-900 active:scale-[0.97] h-[38px] px-4 text-[14px]" onClick={() => setSheet(true)}>
           Filters & sort{activeExtras ? ` (${activeExtras})` : ""}
-        </Button>
+        </button>
       </div>
 
       <section className="container-page pt-2 pb-6 lg:pt-7" aria-label="Pieces">
