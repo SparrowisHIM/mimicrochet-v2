@@ -62,7 +62,8 @@ const seenKey = (code: string) => `mimi:seen:${code}`;
 
 function useSpotlight(o: Order | undefined, target: RefObject<HTMLDivElement | null>) {
   const reduce = useReducedMotion();
-  const [phase, setPhase] = useState<"idle" | "lift" | "done">("idle");
+  // settle: the blur is fading out and the cards still sit above it, so they never sink under it.
+  const [phase, setPhase] = useState<"idle" | "lift" | "settle" | "done">("idle");
   useEffect(() => {
     if (!o) return;
     let seen = o.stage;
@@ -86,9 +87,10 @@ function useSpotlight(o: Order | undefined, target: RefObject<HTMLDivElement | n
       setPhase("lift");
       timers.push(
         setTimeout(() => {
-          setPhase("done");
+          setPhase("settle");
           markSeen();
         }, 2300),
+        setTimeout(() => setPhase("done"), 2900),
       );
     };
     timers.push(
@@ -265,13 +267,14 @@ export function TrackingView({ code, justPaid = false }: { code: string; justPai
   const h = headline(order);
   const latest = order.updates[order.updates.length - 1];
   const lifted = phase === "lift";
+  const raised = lifted || phase === "settle";
   const deposit = order.price ? Math.round(order.price * 0.6) : undefined;
   const balance = order.price && deposit ? order.price - deposit : undefined;
   const awaitingDeposit = order.stage === 1 && !order.depositPaid && order.price;
   const ask = whatsappLink(`Hi Mimi! It’s about my order ${order.id}.`);
 
   const latestCard = (
-    <div ref={latestRef} className={`relative scroll-mt-20 transition-[transform,box-shadow] duration-500 ${lifted ? "z-40 scale-[1.03] shadow-[0_30px_80px_-20px_rgb(28_25_23/0.35)]" : ""} rounded-[22px]`}>
+    <div ref={latestRef} className={`relative scroll-mt-20 transition-[transform,box-shadow] duration-500 ${raised ? "z-40" : ""} ${lifted ? "scale-[1.03] shadow-[0_30px_80px_-20px_rgb(28_25_23/0.35)]" : ""} rounded-[22px]`}>
       <SpotlightOutline show={lifted} />
       <Card className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
@@ -420,7 +423,7 @@ export function TrackingView({ code, justPaid = false }: { code: string; justPai
 
       <div className="container-page flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-8">
         <div className="flex flex-col gap-4 lg:flex-1">
-          <div className={`relative rounded-[22px] transition-transform duration-500 ${lifted ? "z-40" : ""}`}>
+          <div className={`relative rounded-[22px] transition-transform duration-500 ${raised ? "z-40" : ""}`}>
             <Card className="flex flex-col gap-5">
               <Stepper stage={order.stage} lifted={lifted} />
               {order.readyBy && (
