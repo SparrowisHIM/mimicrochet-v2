@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { Ruler } from "@/components/custom-order/ruler";
-import { Button } from "@/components/ui/button";
+import { Button, linkClass } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 
 export type Measures = { bust?: number; waist?: number; hips?: number; length?: number };
@@ -59,10 +59,10 @@ export function MeasureSheet({
       side="bottom"
       title={s.label}
       footer={
-        <div className="flex gap-2.5">
-          <Button variant="secondary" className="px-6" onClick={() => moveTo(i + 1)}>
+        <div className="flex items-center gap-4">
+          <button type="button" className={`${linkClass} px-3`} onClick={() => moveTo(i + 1)}>
             Skip
-          </Button>
+          </button>
           <Button className="flex-1" onClick={() => go(i + 1)}>
             {i + 1 < measureSteps.length ? `Next: ${measureSteps[i + 1].label}` : "Done"}
           </Button>
