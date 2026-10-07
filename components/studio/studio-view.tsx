@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { WhatsAppIcon } from "@/components/icons";
+import { ChevronIcon, WhatsAppIcon } from "@/components/icons";
 import { Button, buttonClass } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
@@ -317,7 +317,7 @@ export function StudioView() {
                   <span className="text-[15px] font-semibold">{nextStep(t)}</span>
                   <span className="truncate text-[13px] text-stone-500">{pieceName(t)} · {t.ago}</span>
                 </span>
-                <span className="rounded-full bg-stone-900 px-3.5 py-2 text-[13px] font-semibold text-orange-50">Open</span>
+                <ChevronIcon size={18} className="shrink-0 text-stone-400" />
               </button>
             </li>
           ))}
