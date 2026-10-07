@@ -187,12 +187,17 @@ export function PhoneInput({
             onNudge("Numbers only, like 0801 234 5678.");
             return;
           }
-          if (phoneDigits(raw).length > 10 || (raw.includes("+") && !/^\+234[\d\s()-]*$/.test(raw))) {
-            onNudge("Check your number: use 11 digits starting with 0, or +234 and 10 digits.");
+          const compact = raw.replace(/[\s()-]/g, "");
+          // A foreign code stays as typed, so the field can say it isn't a Nigerian number.
+          if (compact.startsWith("+") && !compact.startsWith("+234") && !"+234".startsWith(compact)) {
             onChange(raw);
             return;
           }
-          onChange(formatTyped(raw));
+          // Digits past a full number never go in: 11 with a leading 0, otherwise 10 after +234.
+          const next = formatTyped(raw);
+          const country = /^\+?234/.test(compact) ? 3 : 0;
+          if (raw.replace(/\D/g, "").length > next.replace(/\D/g, "").length + country) onNudge("That’s the full number: 11 digits, starting with 0.");
+          onChange(next);
         }}
         className="h-full min-w-0 flex-1 bg-transparent px-3 text-[16px] tracking-[0.02em] outline-none placeholder:text-stone-400"
         aria-invalid={invalid}

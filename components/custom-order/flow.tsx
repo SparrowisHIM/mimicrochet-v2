@@ -196,7 +196,7 @@ function PieceSlot({ draft, onChange }: { draft: Draft; onChange: () => void }) 
       : "Add a photo or pick a piece, and it shows up here.";
   return (
     <div className="flex items-center gap-4">
-      <span className="relative h-32 w-24 shrink-0 overflow-hidden rounded-[12px] xl:h-40 xl:w-[120px]">
+      <span className="relative h-32 w-24 shrink-0 overflow-hidden rounded-[12px] xl:h-40 xl:w-[120px] [@media(max-height:860px)]:h-20 [@media(max-height:860px)]:w-[60px]">
         {p ? (
           <Image src={p.image} alt="" fill sizes="120px" className="object-cover" />
         ) : photo ? (
@@ -300,7 +300,7 @@ function Summary({ draft, rows, step, onJump, compact }: { draft: Draft; rows: R
       )}
 
       {!compact && (
-        <p className="rounded-[12px] bg-orange-50 px-4 py-3.5 text-[14px] leading-snug text-stone-600">No payment now. Mimi confirms the price on WhatsApp before she starts.</p>
+        <p className="rounded-[12px] bg-orange-50 px-4 py-3.5 text-[14px] leading-snug text-stone-600 [@media(max-height:860px)]:hidden">No payment now. Mimi confirms the price on WhatsApp before she starts.</p>
       )}
 
       <AnimatePresence>
@@ -542,6 +542,9 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       x: 0,
       filter: "blur(0px)",
       transition: reduce ? { duration: 0.15 } : { type: "spring" as const, duration: 0.28, bounce: 0 },
+      // A leftover filter makes the step its own layer, which traps the state and area lists
+      // under the phone's sticky Send bar. Clear it once the step has landed.
+      transitionEnd: { filter: "none" },
     },
     exit: (dr: number) =>
       reduce
@@ -614,7 +617,9 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       <StepBar step={step} />
 
       <div className="container-page flex justify-between gap-12 pt-7 pb-10 lg:pt-12 lg:pb-28 xl:gap-16">
-        <div className="relative min-w-0 flex-1 lg:max-w-[640px]">
+        {/* lg:pb: room under the form, so the request summary beside it stays pinned in view
+            while you reach the Send button, instead of scrolling away before the footer. */}
+        <div className="relative min-w-0 flex-1 lg:max-w-[640px] lg:pb-[45vh]">
           <AnimatePresence mode="popLayout" custom={dir} initial={false}>
             <motion.div key={step} custom={dir} variants={stepMotion} initial="enter" animate="center" exit="exit" className="flex flex-col gap-8">
               {step === 1 && d.piece && (
@@ -939,7 +944,9 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
         </div>
 
         <aside className="hidden shrink-0 lg:block lg:w-[360px] xl:w-[460px] min-[87.5rem]:w-[560px]" aria-label="Your request">
-          <div className="sticky top-28">
+          {/* On laptop-height screens the summary compacts (smaller photo, no payment note) so the
+              whole card, Ready to send stamp included, stays in view while you finish the form. */}
+          <div className="sticky top-24">
             <Summary draft={d} rows={rows} step={step} onJump={jump} />
           </div>
         </aside>
