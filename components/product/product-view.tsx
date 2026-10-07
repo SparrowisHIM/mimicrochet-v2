@@ -8,7 +8,7 @@ import { WhatsAppIcon } from "@/components/icons";
 import { SaveButton } from "@/components/product/save-button";
 import { Button, buttonClass } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
-import { addToBag } from "@/lib/bag";
+import { addToBag, bagUi } from "@/lib/bag";
 import { bagStore } from "@/lib/local-store";
 import { priceLabel, tagLabel, type Product } from "@/lib/products";
 import { hasSizes, sizeChart, sizeLabels, stockLine } from "@/lib/sizes";
@@ -84,7 +84,8 @@ export function ProductView({ product }: { product: Product }) {
   useEffect(() => {
     const el = actionsRef.current;
     if (!el) return;
-    const io = new IntersectionObserver(([e]) => setBarVisible(!e.isIntersecting && e.boundingClientRect.top < 0), { threshold: 0 });
+    // The top margin is the sticky header, so the bar arrives as the buttons slide under it.
+    const io = new IntersectionObserver(([e]) => setBarVisible(!e.isIntersecting && e.boundingClientRect.top < 62), { threshold: 0, rootMargin: "-62px 0px 0px 0px" });
     io.observe(el);
     return () => io.disconnect();
   }, []);
@@ -98,7 +99,7 @@ export function ProductView({ product }: { product: Product }) {
 
   const primary = buyable ? (
     inBag ? (
-      <Button className="w-full" variant="secondary" onClick={() => addToBag(product.slug)}>
+      <Button className="w-full" variant="secondary" onClick={() => bagUi.open()}>
         In your bag · View bag
       </Button>
     ) : (
@@ -114,7 +115,8 @@ export function ProductView({ product }: { product: Product }) {
 
   return (
     <>
-      <div className="lg:container-page lg:pt-7">
+      {/* data-floating-bar: globals.css leaves room under the footer for the phone buy bar. */}
+      <div className="lg:container-page lg:pt-7" data-floating-bar>
         <nav aria-label="Breadcrumb" className="hidden text-[14px] text-stone-500 lg:block">
           <Link href="/shop" className="hover:text-stone-900">
             Shop
@@ -307,7 +309,7 @@ export function ProductView({ product }: { product: Product }) {
               </span>
             </span>
             {buyable ? (
-              <Button size="sm" className="h-11 px-5" onClick={() => addToBag(product.slug)}>
+              <Button size="sm" className="h-11 px-5" onClick={() => (inBag ? bagUi.open() : addToBag(product.slug))}>
                 {inBag ? "View bag" : "Add to bag"}
               </Button>
             ) : (

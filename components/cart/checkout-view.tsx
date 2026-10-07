@@ -55,8 +55,10 @@ export function CheckoutView() {
       setTried((n) => n + 1);
       const first = (Object.keys(bad) as (keyof typeof bad)[]).find((k) => bad[k]);
       const el = first ? document.getElementById(`co-${first}`) : null;
-      el?.scrollIntoView({ behavior: "smooth", block: "center" });
       el?.focus({ preventScroll: true });
+      // Scroll once the error messages have opened: their growth above the Pay button makes the
+      // browser re-anchor the page, which cancels a smooth scroll started straight away.
+      setTimeout(() => el?.scrollIntoView({ behavior: "smooth", block: "center" }), 240);
       return;
     }
     setPaying(true);
@@ -218,7 +220,8 @@ export function CheckoutView() {
           <p className="rounded-[12px] border border-dashed border-stone-300 px-3.5 py-2.5 text-[13px] text-stone-600">
             Test mode: payments aren’t switched on yet, so nothing is charged.
           </p>
-          <Button type="submit" disabled={paying} className="w-full">
+          {/* Not `disabled` while paying: that would fade it to grey. pay() already ignores repeat taps. */}
+          <Button type="submit" aria-disabled={paying} className="w-full">
             {paying ? (
               <span className="flex items-center gap-2.5">
                 <motion.span className="size-4 rounded-full border-2 border-orange-50/40 border-t-orange-50" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }} />
