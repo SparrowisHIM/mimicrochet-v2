@@ -27,7 +27,7 @@ export const sampleOrders: (Order & { due: string; dueTone: "normal" | "soon" | 
     id: "MIMI-2410",
     code: "t7b2kx",
     createdAt: "2026-10-02",
-    piece: { name: "Royal Wave Crochet Shirt", image: "/images/products/royal-wave-crochet-shirt-1.jpg", slug: "royal-wave-crochet-shirt", source: "product", price: 70000 },
+    piece: { name: "Royal Wave Crochet Shirt", image: "/images/products/royal-wave-crochet-shirt-1.jpg", slug: "royal-wave-crochet-shirt", source: "product", price: 80000 },
     size: "XL",
     name: "Tobi",
     phone: "+234 803 000 0002",
