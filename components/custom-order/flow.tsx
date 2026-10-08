@@ -19,7 +19,7 @@ import { CardStack } from "@/components/ui/card-stack";
 import { Chip } from "@/components/ui/chip";
 import { isLgaOf } from "@/lib/nigeria";
 import { isRequestDate } from "@/lib/request-date";
-import { newOrderIds, saveOrder, thumbnail, type Order } from "@/lib/orders";
+import { isImageFile, newOrderIds, saveOrder, thumbnail, toJpeg, type Order } from "@/lib/orders";
 import { pieceFromIdea, pieceFromProduct, type Piece } from "@/lib/pieces";
 import { getProduct, type Product } from "@/lib/products";
 import { sizeLabels } from "@/lib/sizes";
@@ -187,9 +187,10 @@ function RowIcon({ state }: { state: RowState }) {
 
 function PieceSlot({ draft, onChange }: { draft: Draft; onChange: () => void }) {
   const p = draft.piece;
-  const photo = draft.photos[0];
-  const chosen = Boolean(p || photo || hasWords(draft.words, 4) || draft.voice);
-  const name = p ? p.name : photo ? "Your photo" : chosen ? "Your idea" : "Your piece";
+  // The first photo that can be shown here (one the browser can't preview still counts as a photo).
+  const photo = draft.photos.find((x) => x.preview);
+  const chosen = Boolean(p || draft.photos.length || hasWords(draft.words, 4) || draft.voice);
+  const name = p ? p.name : draft.photos.length ? "Your photo" : chosen ? "Your idea" : "Your piece";
   const meta = p
     ? p.price
       ? `From ₦${p.price.toLocaleString("en-NG")}, made to order`
@@ -355,7 +356,8 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
   const [ideasOpen, setIdeasOpen] = useState(false);
   const [voiceLive, setVoiceLive] = useState(false);
   const [adding, setAdding] = useState<{ id: string; url: string }[]>([]);
-  const tiles = [...d.photos.map((p) => ({ id: p.id, src: p.url, ready: true })), ...adding.map((a) => ({ id: a.id, src: a.url, ready: false }))];
+  const [uploadNote, setUploadNote] = useState<string | null>(null);
+  const tiles = [...d.photos.map((p) => ({ id: p.id, src: p.url, name: p.name, ready: true })), ...adding.map((a) => ({ id: a.id, src: a.url, name: "", ready: false }))];
   const [morePieces, setMorePieces] = useState(false);
   const [measuring, setMeasuring] = useState<MeasureKey | null>(null);
   const [sending, setSending] = useState<{ order: Order; files: File[] } | null>(null);
@@ -490,28 +492,51 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
 
   // A photo shows as a tile the moment it's picked, then joins the request once its small copy is made.
   // Each one is held for a beat (staggered when several arrive) so the reveal reads as a moment.
+  // Every image counts: iPhone HEIC photos are converted, and a photo this browser can't show at all
+  // still goes to Mimi (its tile just says it can't be previewed). Nothing is dropped quietly.
   const addFiles = async (files: FileList | null) => {
     if (!files) return;
     const room = 6 - d.photos.length - adding.length;
-    const picked = [...files].filter((f) => f.type.startsWith("image/")).slice(0, Math.max(0, room));
+    // Files with no type at all are tried too: Windows sometimes reports a photo that way.
+    const picked = [...files].filter((f) => isImageFile(f) || !f.type).slice(0, Math.max(0, room));
+    setUploadNote(picked.length < files.length && room >= files.length ? "Only photos can be added here." : null);
     if (!picked.length) return;
     const items = picked.map((file) => ({ id: `${file.name}-${file.size}-${Math.random()}`, file, url: URL.createObjectURL(file) }));
     setAdding((cur) => [...cur, ...items.map(({ id, url }) => ({ id, url }))]);
     await Promise.all(
       items.map(async ({ id, file, url }, i) => {
-        try {
-          const [preview] = await Promise.all([thumbnail(file), new Promise((r) => setTimeout(r, reduce ? 0 : 650 + i * 180))]);
-          setD((cur) => ({ ...cur, photos: [...cur.photos, { id, name: file.name, bytes: file.size, preview, url, file }].slice(0, 6) }));
-        } catch {
-          URL.revokeObjectURL(url); // a photo the browser can't open is left out
+        const hold = new Promise((r) => setTimeout(r, reduce ? 0 : 1000 + i * 300));
+        let shown = file;
+        let src = url;
+        let preview = await thumbnail(file).catch(() => "");
+        if (!preview) {
+          const jpeg = await toJpeg(file);
+          if (jpeg) {
+            shown = jpeg;
+            URL.revokeObjectURL(url);
+            src = URL.createObjectURL(jpeg);
+            preview = await thumbnail(jpeg).catch(() => "");
+          }
         }
+        if (!preview) {
+          URL.revokeObjectURL(src);
+          src = "";
+          if (!isImageFile(file)) {
+            // Not a photo after all.
+            setAdding((cur) => cur.filter((a) => a.id !== id));
+            setUploadNote(`“${file.name}” isn’t a photo, so it wasn’t added.`);
+            return;
+          }
+        }
+        await hold;
+        setD((cur) => ({ ...cur, photos: [...cur.photos, { id, name: file.name, bytes: file.size, preview, url: src, file: shown }].slice(0, 6) }));
         setAdding((cur) => cur.filter((a) => a.id !== id));
       }),
     );
   };
   const removePhoto = (id: string) => {
     const p = d.photos.find((x) => x.id === id);
-    if (p) URL.revokeObjectURL(p.url);
+    if (p?.url) URL.revokeObjectURL(p.url);
     set({ photos: d.photos.filter((x) => x.id !== id) });
   };
 
@@ -534,8 +559,8 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       createdAt: new Date().toISOString(),
       piece: d.piece
         ? { name: d.piece.name, image: d.piece.image, slug: d.piece.slug, source: d.piece.source, price: d.piece.price }
-        : { name: d.photos.length ? "From your photo" : "Your own idea", image: d.photos[0]?.preview, source: d.photos.length ? "photo" : "words" },
-      photos: d.photos.map((p) => p.preview),
+        : { name: d.photos.length ? "From your photo" : "Your own idea", image: d.photos.find((p) => p.preview)?.preview, source: d.photos.length ? "photo" : "words" },
+      photos: d.photos.map((p) => p.preview).filter(Boolean),
       hasVoiceNote: Boolean(d.voice),
       description: d.words.trim() || undefined,
       size: d.size,
@@ -680,7 +705,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
               {step === 0 && (
                 <Spot id="f-source" flash={flash} className="flex flex-col gap-9">
                   {tried > 0 && !hasSource && <Problem>Add a photo, pick one of Mimi’s pieces, or describe your idea in a few words.</Problem>}
-                  <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
+                  <input ref={fileInput} type="file" accept="image/*,.heic,.heif,.avif,.webp,.jfif" multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
 
                   <div className="flex flex-col gap-3.5">
                     <Label>Show Mimi a photo</Label>
@@ -713,7 +738,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                               aria-busy={!t.ready}
                               className="relative aspect-[4/5] overflow-hidden rounded-[14px] bg-orange-100"
                             >
-                              <PhotoTile src={t.src} ready={t.ready} index={i} onRemove={() => removePhoto(t.id)} />
+                              <PhotoTile src={t.src} name={t.name} ready={t.ready} index={i} onRemove={() => removePhoto(t.id)} />
                             </motion.li>
                           ))}
                           {tiles.length < 6 && (
@@ -733,6 +758,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                         </AnimatePresence>
                       </ul>
                     )}
+                    {uploadNote && <p className="text-[13px] text-amber-800" role="status">{uploadNote}</p>}
                   </div>
 
                   {tiles.length === 0 && (

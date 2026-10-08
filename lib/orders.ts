@@ -149,3 +149,20 @@ export async function thumbnail(file: File, max = 360): Promise<string> {
 }
 
 export { nigerianStates } from "@/lib/nigeria";
+
+// Any photo a customer picks counts, whatever the browser reports its type as.
+const IMAGE_NAME = /\.(heic|heif|avif|webp|jfif|pjpeg|pjp|jpe?g|png|gif|bmp|tiff?|svg|ico)$/i;
+export const isImageFile = (f: File) => f.type.startsWith("image/") || IMAGE_NAME.test(f.name);
+
+/** iPhone photos (HEIC/HEIF) can't be shown by most desktop browsers: convert them to JPEG. The
+ *  converter only loads when such a photo is picked. Returns null if the file still can't be read. */
+export async function toJpeg(file: File): Promise<File | null> {
+  try {
+    const { default: heic2any } = await import("heic2any");
+    const out = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
+    const blob = Array.isArray(out) ? out[0] : out;
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.jpg`, { type: "image/jpeg" });
+  } catch {
+    return null;
+  }
+}
