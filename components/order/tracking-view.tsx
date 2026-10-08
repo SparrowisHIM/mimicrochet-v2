@@ -400,7 +400,8 @@ export function TrackingView({ code, justPaid = false }: { code: string; justPai
           ) : (
             <div className="flex justify-between"><dt className="text-stone-500">Deposit paid (60%)</dt><dd>−{formatNaira(deposit!)}</dd></div>
           )}
-          <div className="flex justify-between font-semibold"><dt>{order.paidInFull ? "Left to pay" : "Balance (40%)"}</dt><dd>{formatNaira(order.paidInFull ? 0 : balance!)}</dd></div>
+          {order.stage >= 4 && !order.paidInFull && <div className="flex justify-between"><dt className="text-stone-500">Balance paid (40%)</dt><dd>−{formatNaira(balance!)}</dd></div>}
+          <div className="flex justify-between font-semibold"><dt>{settled ? "Left to pay" : "Balance (40%)"}</dt><dd>{formatNaira(settled ? 0 : balance!)}</dd></div>
         </dl>
         <p className="text-[13px] text-stone-500">{settled ? "Nothing more to pay." : "Mimi confirms how to pay on WhatsApp."} Delivery is paid to the rider on arrival.</p>
       </Card>
