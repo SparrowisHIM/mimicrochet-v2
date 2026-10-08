@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { ArrowUpRightIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import { CardStack } from "@/components/ui/card-stack";
 import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
 import { ideas, occasions, pinterestSearch, type Idea } from "@/lib/ideas";
@@ -54,14 +55,8 @@ export function IdeasSheet({ open, onClose, onPick }: { open: boolean; onClose: 
 
       <div className="mt-6 flex flex-col gap-2.5 rounded-[18px] bg-white p-4">
         <p className="text-[15px] font-semibold">More ideas on Pinterest</p>
-        <a href={site.socials.pinterest} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-[14px] border border-stone-200 p-2.5 pr-3.5 hover:border-stone-900">
-          <span className="relative h-12 w-16 shrink-0">
-            {["/images/products/lilac-ruffle-tube-dress-1.jpg", "/images/products/red-fringe-beach-set-1.jpg", "/images/products/blossin-loom-earrings-1.jpg"].map((src, i) => (
-              <span key={src} className="absolute top-0 h-12 w-9 overflow-hidden rounded-[8px] border-2 border-white" style={{ left: i * 14 }}>
-                <Image src={src} alt="" fill sizes="36px" className="object-cover" />
-              </span>
-            ))}
-          </span>
+        <a href={site.socials.pinterest} target="_blank" rel="noreferrer" className="group flex items-center gap-3 rounded-[14px] border border-stone-200 p-2.5 pr-3.5 transition-colors duration-150 hover:border-stone-900">
+          <CardStack images={["/images/products/lilac-ruffle-tube-dress-1.jpg", "/images/products/red-fringe-beach-set-1.jpg", "/images/products/blossin-loom-earrings-1.jpg"]} />
           <span className="flex flex-1 flex-col">
             <span className="text-[15px] font-semibold">Mimi’s Pinterest</span>
             <span className="text-[13px] text-stone-500">57 pins of her own crochet work</span>

@@ -1,9 +1,12 @@
+"use client";
+
 import Image from "next/image";
-import type { CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 // A fanned stack of photo cards: each card tilts out from a shared base point with a thin white
 // edge, and the fan spreads wider when you hover the stack or the control that holds it
-// (any ancestor with the `group` class). Motion and sizes live in globals.css (.card-fan).
+// (any ancestor with the `group` class). Phones can't hover: there the deck fans out as it comes
+// on screen, and again every few seconds while it stays in view. Motion lives in globals.css (.card-fan).
 
 const sizes = {
   sm: { w: 32, h: 42, x: 12, r: 12, xOpen: 20, rOpen: 19 },
@@ -12,6 +15,15 @@ const sizes = {
 
 export function CardStack({ images, size = "sm", className = "" }: { images: string[]; size?: keyof typeof sizes; className?: string }) {
   const s = sizes[size];
+  const ref = useRef<HTMLSpanElement>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: 0.6 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const cards = images.slice(0, 3);
   const mid = (cards.length - 1) / 2;
   const style = {
@@ -26,7 +38,7 @@ export function CardStack({ images, size = "sm", className = "" }: { images: str
   } as CSSProperties;
 
   return (
-    <span className={`card-fan shrink-0 ${className}`} style={style} aria-hidden>
+    <span ref={ref} data-inview={inView || undefined} className={`card-fan shrink-0 ${className}`} style={style} aria-hidden>
       {cards.map((src, i) => {
         const k = i - mid;
         return (

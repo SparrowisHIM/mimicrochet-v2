@@ -326,15 +326,11 @@
       transform: translateX(calc(var(--i) * var(--fan-x-open))) translateY(-2px) rotate(calc(var(--i) * var(--fan-r-open)));
     }
   }
-  /* Phones can't hover, so the deck fans a little as it scrolls into view, then stays put: a tighter
-     fan at the bottom of the screen opening to a touch past its resting spread. */
+  /* Phones can't hover: the deck fans out as it comes on screen, settles, and fans again every few
+     seconds while it stays in view (data-inview, set by components/ui/card-stack.tsx). */
   @media (hover: none) {
-    @supports (animation-timeline: view()) {
-      .card-fan > * {
-        animation: fan-peek linear both;
-        animation-timeline: view();
-        animation-range: entry 10% cover 45%;
-      }
+    .card-fan[data-inview] > * {
+      animation: fan-breathe 5s cubic-bezier(0.22, 1, 0.36, 1) infinite;
     }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -345,12 +341,14 @@
   }
 }
 
-@keyframes fan-peek {
-  from {
-    transform: translateX(calc(var(--i) * var(--fan-x) * 0.35)) rotate(calc(var(--i) * var(--fan-r) * 0.35));
+@keyframes fan-breathe {
+  0%,
+  44%,
+  100% {
+    transform: translateX(calc(var(--i) * var(--fan-x))) rotate(calc(var(--i) * var(--fan-r)));
   }
-  to {
-    transform: translateX(calc(var(--i) * (var(--fan-x) + (var(--fan-x-open) - var(--fan-x)) * 0.45)))
-      rotate(calc(var(--i) * (var(--fan-r) + (var(--fan-r-open) - var(--fan-r)) * 0.45)));
+  12%,
+  26% {
+    transform: translateX(calc(var(--i) * var(--fan-x-open))) translateY(-2px) rotate(calc(var(--i) * var(--fan-r-open)));
   }
 }
