@@ -947,7 +947,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                     <label htmlFor="notes" className="text-[15px] font-semibold">
                       Anything else? <span className="font-normal text-stone-500">(optional)</span>
                     </label>
-                    <textarea id="notes" rows={3} value={d.notes} onChange={(e) => set({ notes: e.target.value.slice(0, 500) })} placeholder="Length, neckline, the occasion…" className={`${inputClass} h-auto py-3.5 leading-[1.5]`} />
+                    <textarea id="notes" rows={3} value={d.notes} onChange={(e) => set({ notes: e.target.value.slice(0, 500) })} placeholder="Length, neckline, the occasion…" className={`${inputClass} h-auto min-h-[104px] resize-none py-3.5 leading-[1.5] field-sizing-content`} />
                   </div>
                 </>
               )}
