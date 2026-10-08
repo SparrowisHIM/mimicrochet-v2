@@ -1036,8 +1036,10 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
         open={ideasOpen}
         onClose={() => setIdeasOpen(false)}
         onPick={(idea) => {
+          // An idea is the piece: go straight on to sizes and colours.
           set({ piece: pieceFromIdea(idea) });
           setIdeasOpen(false);
+          go(1);
         }}
       />
       {measuring && (
