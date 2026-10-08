@@ -153,7 +153,7 @@ export function ProductView({ product }: { product: Product }) {
               <div className="relative hidden aspect-[3/4] overflow-hidden rounded-[24px] bg-orange-100 lg:block">
                 <AnimatePresence initial={false}>
                   <motion.div key={product.images[index]} className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
-                    <Image src={product.images[index]} alt={`${product.name}, ${product.colour.toLowerCase()}`} fill preload sizes="600px" className="object-cover" />
+                    <Image src={product.images[index]} alt={`${product.name}, ${product.colour.toLowerCase()}`} fill preload sizes="(min-width: 1024px) 704px, 100vw" className="object-cover" />
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -161,7 +161,7 @@ export function ProductView({ product }: { product: Product }) {
               <div ref={strip} onScroll={onStripScroll} className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto lg:hidden">
                 {product.images.map((src, i) => (
                   <div key={src} className="relative aspect-[3/4] max-h-[78svh] w-full shrink-0 snap-center bg-orange-100">
-                    <Image src={src} alt={i === 0 ? `${product.name}, ${product.colour.toLowerCase()}` : ""} fill preload={i === 0} sizes="100vw" className="object-cover" />
+                    <Image src={src} alt={i === 0 ? `${product.name}, ${product.colour.toLowerCase()}` : ""} fill preload={i === 0} sizes="(min-width: 1024px) 704px, 100vw" className="object-cover" />
                   </div>
                 ))}
               </div>
