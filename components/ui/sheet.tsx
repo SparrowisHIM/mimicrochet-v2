@@ -15,6 +15,7 @@ export function Sheet({
   title,
   children,
   footer,
+  aside,
   side = "right",
 }: {
   open: boolean;
@@ -22,6 +23,8 @@ export function Sheet({
   title: string;
   children: ReactNode;
   footer?: ReactNode;
+  /** Small text beside the title, e.g. a step count. */
+  aside?: ReactNode;
   side?: "right" | "bottom";
 }) {
   const reduce = useReducedMotion();
@@ -74,6 +77,7 @@ export function Sheet({
         onPointerDown={handle ? (e) => { if (!(e.target as HTMLElement).closest("button")) drag.start(e); } : undefined}
       >
         <h2 className="font-serif text-[24px] leading-tight lg:text-[28px]">{title}</h2>
+        {aside && <span className="mr-2 ml-auto text-[14px] font-medium text-stone-500 tabular-nums">{aside}</span>}
         <button type="button" onClick={onClose} className="grid size-9 place-items-center rounded-full hover:bg-orange-100" aria-label="Close">
           <CloseIcon size={20} />
         </button>

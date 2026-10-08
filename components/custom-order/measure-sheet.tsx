@@ -59,6 +59,7 @@ export function MeasureSheet({
       onClose={onClose}
       side="bottom"
       title={s.label}
+      aside={`${i + 1} of ${measureSteps.length}`}
       footer={
         <div className="flex items-center gap-4">
           <button type="button" className={`${linkClass} px-3`} onClick={() => moveTo(i + 1)}>
@@ -71,16 +72,11 @@ export function MeasureSheet({
       }
     >
       <div className="flex flex-col gap-[18px]">
-        <div className="flex items-center justify-between">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.p key={s.key} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }} className="pr-6 text-[15px] leading-[1.5] text-stone-600">
-              {s.help}
-            </motion.p>
-          </AnimatePresence>
-          <span className="shrink-0 text-[14px] font-medium text-stone-500">
-            {i + 1} of {measureSteps.length}
-          </span>
-        </div>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.p key={s.key} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }} className="text-[15px] leading-[1.5] text-stone-600">
+            {s.help}
+          </motion.p>
+        </AnimatePresence>
         <Ruler key={s.key + unit} label={`${s.label} in ${unit}`} value={cm} min={s.min} max={s.max} onChange={setCm} />
         <p className="flex items-baseline justify-center gap-1.5" aria-live="polite">
           <CountingNumber value={shown} countOn={unit} className="font-serif text-[64px] leading-none" />
