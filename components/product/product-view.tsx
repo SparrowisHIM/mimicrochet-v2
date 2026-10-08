@@ -266,7 +266,7 @@ export function ProductView({ product }: { product: Product }) {
 
             <div className="border-b border-stone-200">
               <Accordion title="Details" defaultOpen>
-                Colour: {product.colour.toLowerCase()}. {product.description} Crocheted by hand in soft cotton yarn.
+                Colour: {product.colour.toLowerCase()}. {product.kind === "made" ? "Made to order in your size and colours. " : ""}Crocheted by hand in soft cotton yarn.
               </Accordion>
               {sized && (
                 <Accordion title="Size & fit">
