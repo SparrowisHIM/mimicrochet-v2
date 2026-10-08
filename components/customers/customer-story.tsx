@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronIcon, CloseIcon } from "@/components/icons";
 import { ButtonLink, linkClass } from "@/components/ui/button";
 import type { Customer } from "@/lib/customers";
+import { lockScroll } from "@/lib/scroll-lock";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -262,11 +263,7 @@ export function CustomerStory({
 
   useEffect(() => {
     if (!customer) return;
-    const prev = document.documentElement.style.overflow;
-    document.documentElement.style.overflow = "hidden";
-    return () => {
-      document.documentElement.style.overflow = prev;
-    };
+    return lockScroll();
   }, [customer]);
 
   return (

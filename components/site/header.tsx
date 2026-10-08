@@ -8,6 +8,7 @@ import { BagIcon, CloseIcon, HeartIcon, MenuIcon, SearchIcon } from "@/component
 import { bagUi } from "@/lib/bag";
 import { bagStore, savedStore } from "@/lib/local-store";
 import { navLinks, site } from "@/lib/site";
+import { lockScroll } from "@/lib/scroll-lock";
 
 function CountBadge({ count }: { count: number }) {
   return (
@@ -45,11 +46,14 @@ export function Header() {
   const closeMenu = () => setMenuOpen(false);
 
   useEffect(() => {
-    document.documentElement.style.overflow = menuOpen ? "hidden" : "";
     if (!menuOpen) return;
+    const unlock = lockScroll();
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      unlock();
+      window.removeEventListener("keydown", onKey);
+    };
   }, [menuOpen]);
 
   return (

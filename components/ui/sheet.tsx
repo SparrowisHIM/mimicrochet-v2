@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useDragControls, useReducedMotion, type PanInfo } from "motion/react";
 import { useEffect, useRef, type ReactNode } from "react";
 import { CloseIcon } from "@/components/icons";
+import { lockScroll } from "@/lib/scroll-lock";
 
 /**
  * Bottom sheet on phones, side panel on desktop (or a centred bottom sheet with side="bottom").
@@ -30,8 +31,7 @@ export function Sheet({
   useEffect(() => {
     if (!open) return;
     const opener = document.activeElement as HTMLElement | null;
-    const prev = document.documentElement.style.overflow;
-    document.documentElement.style.overflow = "hidden";
+    const unlock = lockScroll();
     const visiblePanel = () => [...(root.current?.querySelectorAll<HTMLElement>("[data-panel]") ?? [])].find((p) => p.offsetParent !== null);
     const focusables = () =>
       [...(visiblePanel()?.querySelectorAll<HTMLElement>("button, a[href], input, textarea, select") ?? [])].filter((el) => !el.hasAttribute("disabled"));
@@ -50,7 +50,7 @@ export function Sheet({
     return () => {
       clearTimeout(t);
       window.removeEventListener("keydown", onKey);
-      document.documentElement.style.overflow = prev;
+      unlock();
       opener?.focus?.();
     };
   }, [open, onClose]);
