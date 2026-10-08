@@ -81,7 +81,7 @@ export function Hero() {
           Every stitch is by Mimi’s hands in Port Harcourt. Grab a one-of-one piece today, or dream one up and she’ll make it yours.
         </motion.p>
         <motion.div {...fade(0.72)} className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:gap-7">
-          <Magnetic>
+          <Magnetic strength={0.15}>
             <ButtonLink href="/shop" className="max-sm:w-full">Shop the collection</ButtonLink>
           </Magnetic>
           <Link href="/custom-order" className={linkClass}>
