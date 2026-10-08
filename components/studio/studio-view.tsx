@@ -3,13 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { ChevronIcon, WhatsAppIcon } from "@/components/icons";
 import { Button, linkClass } from "@/components/ui/button";
 import { DatePicker, shortDate } from "@/components/form/date-picker";
 import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
 import { Toggle } from "@/components/ui/toggle";
+import { Stepper } from "@/components/order/tracking-view";
 import { depositOf, patchOrder, useOrders, type Order } from "@/lib/orders";
 import { checkPhoto } from "@/lib/upload-safety";
 import { formatNaira } from "@/lib/site";
@@ -25,7 +26,7 @@ const waTo = (phone: string, text: string) => `https://wa.me/${phone.replace(/\D
 
 function nextStep(o: Row) {
   if (o.stage === 0) return o.price ? "Agree the price" : o.piece.source === "photo" ? "Reply on WhatsApp" : "Agree the price";
-  if (o.stage === 1) return o.depositPaid ? "Start making" : "Check the deposit";
+  if (o.stage === 1) return o.depositPaid ? "Start making" : o.paymentSent ? "Check the payment" : "Waiting for payment";
   if (o.stage === 2) return o.dueTone === "late" ? `Tell ${o.name} about the delay` : "Send a progress photo";
   if (o.stage === 3) return "Book delivery";
   return "Done";
@@ -95,7 +96,7 @@ function SetPrice({ o, onDone }: { o: Row; onDone: () => void }) {
       <Button arrow={false}
         disabled={!ok}
         onClick={() => {
-          patchOrder(o, { stage: 1, price: total, readyBy: ready, depositPaid: false, updates: [...o.updates, { stage: 1, note: `${formatNaira(total)}, ready by ${ready}. Deposit ${formatNaira(deposit)}, or pay it all now.`, at: "Today" }] });
+          patchOrder(o, { stage: 1, price: total, readyBy: ready, depositPaid: false, paymentSent: undefined, updates: [...o.updates, { stage: 1, note: `${formatNaira(total)}, ready by ${ready}. Deposit ${formatNaira(deposit)}, or pay it all now.`, at: "Today" }] });
           window.open(waTo(o.phone, msg), "_blank", "noopener");
           onDone();
         }}
@@ -162,105 +163,193 @@ function PostUpdate({ o, onDone }: { o: Row; onDone: () => void }) {
 
 /* ------------------------------- order panel ------------------------------- */
 
+/** What Mimi sees when she opens an order: where it stands, the one thing to do next, what was asked for, and the money. */
+function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; onUpdate: () => void }) {
+  const deposit = o.price ? depositOf(o.price) : 0;
+  const late = o.dueTone === "late";
+  const message = (text: string) => waTo(o.phone, text);
+  const confirm = (full: boolean) =>
+    patchOrder(o, { depositPaid: true, paidInFull: full, stage: 2, updates: [...o.updates, { stage: 2, note: full ? "Paid in full. Mimi is starting." : "Deposit received. Mimi is starting.", at: "Today" }] });
+  const markReady = () => patchOrder(o, { stage: 3, updates: [...o.updates, { stage: 3, note: "All done! Photos on WhatsApp.", at: "Today" }] });
+
+  const next =
+    o.stage === 0
+      ? {
+          title: `Agree ${o.name}’s price`,
+          text: o.piece.source === "photo" ? "They sent a photo. Agree the price and date on WhatsApp, then set it here so their page updates." : "Agree the price and date on WhatsApp, then set it here so their page updates.",
+          action: <Button onClick={onPrice} className="w-full">Set price</Button>,
+        }
+      : o.stage === 1 && !o.depositPaid
+        ? {
+            title: o.paymentSent ? `${o.name} says they’ve paid` : `Waiting for ${o.name}’s payment`,
+            text: o.paymentSent
+              ? `Check your bank app for ${formatNaira(o.paymentSent === "full" ? (o.price ?? 0) : deposit)} (${o.paymentSent === "full" ? "the full price" : "the 60% deposit"}). Once it’s there, confirm it and their page moves to “In progress”.`
+              : `When ${formatNaira(deposit)} (the 60% deposit) or ${formatNaira(o.price ?? 0)} (the full price) shows in your bank app, confirm it here and their page moves to “In progress”.`,
+            action: (
+              <div className="flex flex-col gap-2.5">
+                {o.paymentSent === "full" ? (
+                  <Button className="w-full" onClick={() => confirm(true)}>Payment received</Button>
+                ) : (
+                  <Button className="w-full" onClick={() => confirm(false)}>Deposit received</Button>
+                )}
+                <div className="flex flex-wrap justify-center gap-x-6 gap-y-1">
+                  <button type="button" className={linkClass} onClick={() => confirm(o.paymentSent !== "full")}>
+                    {o.paymentSent === "full" ? "It was the deposit" : "They paid in full"}
+                  </button>
+                  {o.paymentSent && (
+                    <a href={message(`Hi ${o.name}! I haven’t seen your payment for ${o.id} yet. Could you check?`)} target="_blank" rel="noreferrer" className={linkClass}>
+                      Not there yet?
+                    </a>
+                  )}
+                </div>
+              </div>
+            ),
+          }
+        : o.stage <= 2
+          ? {
+              title: late ? `Tell ${o.name} about the delay` : `Send ${o.name} a progress photo`,
+              text: late ? "It’s running late. A quick note and a photo of where it’s at keep them on side." : "One photo of the work saves an “any news?” message, and it shows on their page straight away.",
+              action: (
+                <div className="flex flex-col gap-2.5">
+                  <Button onClick={onUpdate}>Post an update</Button>
+                  <button type="button" className={linkClass} onClick={markReady}>Or mark it as ready</button>
+                </div>
+              ),
+            }
+          : {
+              title: `Book ${o.name}’s delivery`,
+              text: "It’s ready. Pass their number to a rider, then mark it delivered.",
+              action: <Button className="w-full" onClick={() => patchOrder(o, { stage: 4, updates: [...o.updates, { stage: 4, note: "Delivered. Enjoy wearing it!", at: "Today" }] })}>Mark as delivered</Button>,
+            };
+  const urgent = late || (o.stage === 1 && !o.depositPaid && Boolean(o.paymentSent)) || o.dueTone === "soon";
+
+  const rows: [string, string][] = [
+    ["Size", o.size ?? (o.measurements ? "Their measurements" : "—")],
+    ["Colours", o.colours === "photo" ? "As in the photo" : o.colourNote || "To agree"],
+    ["When", o.when],
+    ["Delivery", `${o.area}, ${o.state}`],
+  ];
+
+  return (
+    <div className="flex flex-col gap-4">
+      <section className="flex flex-col gap-4 rounded-[20px] bg-white p-4">
+        <Stepper stage={o.stage} />
+        <div className="flex items-center justify-between gap-3 border-t border-stone-100 pt-3 text-[14px]">
+          <span className="text-stone-500">{o.name} sees “{stages[o.stage].label}”</span>
+          <Link href={`/t/${o.code}`} className={`${linkClass} shrink-0 whitespace-nowrap`}>View their page</Link>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-[20px] border border-amber-200 bg-amber-50 p-5">
+        <span className={`self-start rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${urgent ? "bg-amber-200 text-amber-900" : "bg-white text-amber-800"}`}>{urgent ? "Needs you" : "Suggested"}</span>
+        <h3 className="font-serif text-[24px] leading-[1.15] text-balance">{next.title}</h3>
+        <p className="text-[15px] leading-[1.5] text-stone-600">{next.text}</p>
+        <div className="pt-1">{next.action}</div>
+      </section>
+
+      <a href={message(`Hi ${o.name}! About your order ${o.id}…`)} target="_blank" rel="noreferrer" className={`${linkClass} self-center`}>
+        <WhatsAppIcon size={16} /> Message {o.name}
+      </a>
+
+      <section className="flex flex-col gap-4 rounded-[20px] bg-white p-4">
+        <h3 className="text-[15px] font-semibold">What they asked for</h3>
+        <div className="flex items-center gap-3">
+          {o.piece.image && (
+            <span className="relative h-[75px] w-14 shrink-0 overflow-hidden rounded-[10px] bg-orange-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={o.piece.image} alt="" className="size-full object-cover" />
+            </span>
+          )}
+          <span className="flex flex-col">
+            <span className="text-[15px] font-semibold">{pieceName(o)}</span>
+            <span className="text-[14px] text-stone-500">Requested {o.updates[0]?.at ?? o.createdAt}</span>
+          </span>
+        </div>
+        {o.description && <p className="border-l-2 border-stone-200 pl-3 text-[14px] leading-[1.5] text-stone-600">“{o.description}”</p>}
+        {o.photos.length > 0 && (
+          <div className="flex gap-2">
+            {o.photos.slice(0, 4).map((src, i) => (
+              <span key={i} className="relative h-20 w-[60px] overflow-hidden rounded-[10px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={src} alt={`Their photo ${i + 1}`} className="size-full object-cover" />
+              </span>
+            ))}
+          </div>
+        )}
+        <dl className="flex flex-col gap-2 border-t border-stone-100 pt-3 text-[15px]">
+          {rows.map(([k, v]) => (
+            <div key={k} className="flex justify-between gap-4"><dt className="text-stone-500">{k}</dt><dd className="text-right">{v}</dd></div>
+          ))}
+        </dl>
+        {o.notes && (
+          <div className="flex flex-col gap-1 border-t border-stone-100 pt-3">
+            <span className="text-[14px] text-stone-500">Notes</span>
+            <p className="text-[15px] leading-[1.5]">{o.notes}</p>
+          </div>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-2 rounded-[20px] bg-white p-4 text-[15px]">
+        <h3 className="pb-1 text-[15px] font-semibold">Money</h3>
+        {o.price ? (
+          <>
+            <div className="flex justify-between"><span className="text-stone-500">Price</span><span>{formatNaira(o.price)}</span></div>
+            {o.paidInFull ? (
+              <div className="flex justify-between"><span className="text-stone-500">Paid in full</span><span>{formatNaira(o.price)} · received</span></div>
+            ) : (
+              <>
+                <div className="flex justify-between"><span className="text-stone-500">Deposit (60%)</span><span>{formatNaira(deposit)} {o.depositPaid ? "· received" : "· not yet"}</span></div>
+                <div className="flex justify-between border-t border-stone-100 pt-2"><span className="text-stone-500">Balance (40%), due when ready</span><span className="font-semibold">{formatNaira(o.price - deposit)}</span></div>
+              </>
+            )}
+            {o.readyBy && <div className="flex justify-between"><span className="text-stone-500">Ready by</span><span>{o.readyBy}</span></div>}
+          </>
+        ) : (
+          <div className="flex justify-between"><span className="text-stone-500">Price</span><span>Not set yet</span></div>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-1">
+        <h3 className="text-[15px] font-semibold">Updates they can see · {o.updates.length}</h3>
+        <ol className="flex flex-col">
+          {o.updates.map((u, i) => (
+            <li key={i} className="relative flex gap-3 pt-3">
+              <span className="flex flex-col items-center">
+                <span className={`mt-1 size-3 rounded-full ${i === o.updates.length - 1 ? "bg-amber-700 shadow-[0_0_0_4px_#fde68a]" : "bg-stone-900"}`} />
+                {i < o.updates.length - 1 && <span className="mt-1 w-px flex-1 bg-stone-900" />}
+              </span>
+              <span className="flex flex-col pb-1">
+                <span className="text-[15px] font-semibold">{stages[u.stage].label}</span>
+                <span className="text-[13px] text-stone-500">{u.at}</span>
+                <span className="text-[14px] text-stone-600">{u.note}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </div>
+  );
+}
+
 function OrderPanel({ o, onClose }: { o: Row; onClose: () => void }) {
   const [mode, setMode] = useState<"detail" | "price" | "update">("detail");
-  const deposit = o.price ? depositOf(o.price) : 0;
   const title = mode === "price" ? `Set ${o.name}’s price` : mode === "update" ? "Post an update" : `${o.name} · ${o.id}`;
+  // Each view starts at its top, not wherever the last one was scrolled to.
+  const body = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    body.current?.closest("[data-sheet-body]")?.scrollTo({ top: 0 });
+  }, [mode]);
 
   return (
     <Sheet open onClose={onClose} title={title}>
       <AnimatePresence mode="wait" initial={false}>
-        <motion.div key={mode} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}>
+        <motion.div ref={body} key={mode} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}>
           {mode === "price" ? (
             <SetPrice o={o} onDone={() => setMode("detail")} />
           ) : mode === "update" ? (
             <PostUpdate o={o} onDone={() => setMode("detail")} />
           ) : (
-            <div className="flex flex-col gap-5">
-              <div className="flex items-center gap-3">
-                {o.piece.image && (
-                  <span className="relative h-[75px] w-14 shrink-0 overflow-hidden rounded-[10px] bg-orange-100">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={o.piece.image} alt="" className="size-full object-cover" />
-                  </span>
-                )}
-                <span className="flex flex-col">
-                  <span className="text-[16px] font-semibold">{pieceName(o)}</span>
-                  <span className="text-[14px] text-stone-500">{[o.size && `Size ${o.size}`, o.colours === "photo" ? "Colours as in the photo" : o.colourNote, o.when].filter(Boolean).join(" · ")}</span>
-                  <span className={`mt-1 self-start rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${stageTone[o.stage]}`}>{stageName[o.stage]}</span>
-                </span>
-              </div>
-
-              {o.stage === 0 && <Button onClick={() => setMode("price")}>Set price</Button>}
-              {o.stage === 1 && !o.depositPaid && (
-                <div className="flex flex-col gap-3 rounded-[16px] bg-amber-50 p-4">
-                  <p className="text-[15px]"><b>{o.name} says they’ve paid.</b> Check your bank app for {formatNaira(deposit)} (the 60% deposit) or {formatNaira(o.price ?? 0)} (the full price). Once it’s there, confirm and their page moves to “In progress”.</p>
-                  <Button onClick={() => patchOrder(o, { depositPaid: true, paidInFull: false, stage: 2, updates: [...o.updates, { stage: 2, note: "Deposit received. Mimi is starting.", at: "Today" }] })}>Deposit received</Button>
-                  <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-                    <button type="button" className={linkClass} onClick={() => patchOrder(o, { depositPaid: true, paidInFull: true, stage: 2, updates: [...o.updates, { stage: 2, note: "Paid in full. Mimi is starting.", at: "Today" }] })}>They paid in full</button>
-                    <a href={waTo(o.phone, `Hi ${o.name}! I haven’t seen your payment for ${o.id} yet. Could you check?`)} target="_blank" rel="noreferrer" className={linkClass}>Not there yet? Message {o.name}</a>
-                  </div>
-                </div>
-              )}
-              {(o.stage === 1 && o.depositPaid) || o.stage === 2 ? (
-                <div className="flex flex-col gap-2.5">
-                  <Button onClick={() => setMode("update")}>Post an update</Button>
-                  <button type="button" className={linkClass} onClick={() => patchOrder(o, { stage: 3, updates: [...o.updates, { stage: 3, note: "All done! Photos on WhatsApp.", at: "Today" }] })}>Or mark it as ready</button>
-                </div>
-              ) : null}
-              {o.stage === 3 && <Button onClick={() => patchOrder(o, { stage: 4, updates: [...o.updates, { stage: 4, note: "Delivered. Enjoy wearing it!", at: "Today" }] })}>Mark as delivered</Button>}
-
-              <div className="flex flex-wrap justify-center gap-x-7">
-                <a href={waTo(o.phone, `Hi ${o.name}! About your order ${o.id}…`)} target="_blank" rel="noreferrer" className={linkClass}><WhatsAppIcon size={16} /> Message {o.name}</a>
-                <Link href={`/t/${o.code}`} className={linkClass}>Their tracking page</Link>
-              </div>
-
-              {o.photos.length > 0 && (
-                <div className="flex flex-col gap-2">
-                  <span className="text-[14px] font-semibold">Their photos</span>
-                  <div className="flex gap-2">
-                    {o.photos.slice(0, 4).map((src, i) => (
-                      <span key={i} className="relative h-20 w-[60px] overflow-hidden rounded-[10px]">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={src} alt="" className="size-full object-cover" />
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <dl className="flex flex-col gap-2 rounded-[16px] bg-white p-4 text-[15px]">
-                <div className="flex justify-between gap-4"><dt className="text-stone-500">Delivery</dt><dd className="text-right">{o.area}, {o.state}</dd></div>
-                {o.price ? (
-                  <>
-                    <div className="flex justify-between"><dt className="text-stone-500">Price</dt><dd>{formatNaira(o.price)}</dd></div>
-                    {o.paidInFull ? (
-                      <div className="flex justify-between"><dt className="text-stone-500">Paid in full</dt><dd>{formatNaira(o.price)} · received</dd></div>
-                    ) : (
-                      <>
-                        <div className="flex justify-between"><dt className="text-stone-500">Deposit (60%)</dt><dd>{formatNaira(deposit)} {o.depositPaid ? "· received" : "· not yet"}</dd></div>
-                        <div className="flex justify-between"><dt className="text-stone-500">Balance (40%)</dt><dd>{formatNaira(o.price - deposit)}</dd></div>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex justify-between"><dt className="text-stone-500">Price</dt><dd>Not set yet</dd></div>
-                )}
-                {o.readyBy && <div className="flex justify-between"><dt className="text-stone-500">Ready by</dt><dd>{o.readyBy}</dd></div>}
-              </dl>
-
-              <div className="flex flex-col gap-1">
-                <span className="text-[14px] font-semibold">Updates they can see</span>
-                <ol className="flex flex-col">
-                  {o.updates.map((u, i) => (
-                    <li key={i} className="flex gap-3 border-t border-stone-100 py-2.5 first:border-t-0">
-                      <span className="mt-1.5 size-2 shrink-0 rounded-full bg-stone-900" />
-                      <span className="flex flex-col"><span className="text-[14px] font-medium">{stages[u.stage].label} · <span className="font-normal text-stone-500">{u.at}</span></span><span className="text-[14px] text-stone-600">{u.note}</span></span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            </div>
+            <OrderDetail o={o} onPrice={() => setMode("price")} onUpdate={() => setMode("update")} />
           )}
         </motion.div>
       </AnimatePresence>
@@ -283,7 +372,7 @@ export function StudioView() {
     return [...mine, ...samples].filter((o) => o.stage < 4);
   }, [device]);
 
-  const tasks = rows.filter((r) => r.stage <= 3 && (r.stage === 0 || r.dueTone !== "normal" || (r.stage === 1 && !r.depositPaid)) ).slice(0, 4);
+  const tasks = rows.filter((r) => r.stage <= 3 && (r.stage === 0 || r.dueTone !== "normal" || (r.stage === 1 && !r.depositPaid && r.paymentSent)) ).slice(0, 4);
   const shown = rows.filter((r) => (filter === "all" ? true : filter === "late" ? r.dueTone === "late" : r.stage === filter));
   const late = rows.filter((r) => r.dueTone === "late").length;
   const toCollect = rows.reduce((s, r) => s + (r.price && r.depositPaid && !r.paidInFull ? r.price - depositOf(r.price) : 0), 0);
@@ -384,7 +473,7 @@ export function StudioView() {
                 </td>
                 <td className="px-5 py-3.5"><span className={`rounded-full px-2.5 py-1 text-[12px] font-semibold ${stageTone[o.stage]}`}>{stageName[o.stage]}</span></td>
                 <td className={`px-5 py-3.5 ${dueClass[o.dueTone]}`}>{o.due}</td>
-                <td className="px-5 py-3.5 text-stone-500">{o.stage === 0 ? "—" : o.paidInFull ? "In full" : o.stage >= 3 || o.depositPaid ? "Deposit" : "Waiting"}</td>
+                <td className="px-5 py-3.5 text-stone-500">{o.stage === 0 ? "—" : o.depositPaid ? (o.paidInFull ? "In full" : "Deposit") : o.paymentSent ? "To check" : "Waiting"}</td>
                 <td className="px-5 py-3.5">
                   <button type="button" className="font-semibold underline-offset-4 hover:underline">{nextStep(o)}</button>
                 </td>

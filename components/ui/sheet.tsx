@@ -87,7 +87,7 @@ export function Sheet({
 
   const body = (
     <>
-      <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6 lg:px-7">{children}</div>
+      <div data-sheet-body className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6 lg:px-7">{children}</div>
       {footer && <div className="border-t border-stone-200/70 px-5 pt-4 pb-[max(20px,env(safe-area-inset-bottom))] lg:px-7 lg:pb-7">{footer}</div>}
     </>
   );
