@@ -9,7 +9,7 @@ import { Button, linkClass } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
 import { Toggle } from "@/components/ui/toggle";
-import { patchOrder, useOrders, type Order } from "@/lib/orders";
+import { depositOf, patchOrder, useOrders, type Order } from "@/lib/orders";
 import { checkPhoto } from "@/lib/upload-safety";
 import { formatNaira } from "@/lib/site";
 import { stages } from "@/lib/stages";
@@ -50,10 +50,10 @@ function SetPrice({ o, onDone }: { o: Row; onDone: () => void }) {
   const [rush, setRush] = useState(0);
   const [riderPays, setRiderPays] = useState(true);
   const total = (Number(price.replace(/\D/g, "")) || 0) + rush;
-  const deposit = Math.round(total * 0.6);
+  const deposit = depositOf(total);
   const ready = date ? new Date(date + "T12:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }) : "";
   const what = o.piece.source === "photo" || o.piece.source === "words" ? "custom piece" : o.piece.name;
-  const msg = `Hi ${o.name}! Your ${what}${o.size ? ` in ${o.size}` : ""} is ${total ? formatNaira(total) : "₦…"}${ready ? `, ready by ${ready}` : ""}. To start, please pay the 60% deposit (${total ? formatNaira(deposit) : "₦…"}). ${riderPays ? "Delivery is paid to the rider on arrival." : "Delivery is included."} Your order page: ${typeof window !== "undefined" ? window.location.origin : ""}/t/${o.code}`;
+  const msg = `Hi ${o.name}! Your ${what}${o.size ? ` in ${o.size}` : ""} is ${total ? formatNaira(total) : "₦…"}${ready ? `, ready by ${ready}` : ""}. To start, please pay the 60% deposit (${total ? formatNaira(deposit) : "₦…"}), or the full ${total ? formatNaira(total) : "price"} if you prefer. ${riderPays ? "Delivery is paid to the rider on arrival." : "Delivery is included."} Your order page: ${typeof window !== "undefined" ? window.location.origin : ""}/t/${o.code}`;
   const ok = total > 0 && Boolean(date);
 
   return (
@@ -86,6 +86,7 @@ function SetPrice({ o, onDone }: { o: Row; onDone: () => void }) {
       <dl className="flex flex-col gap-1.5 rounded-[14px] bg-amber-100 px-4 py-3 text-[15px] text-amber-900">
         <div className="flex justify-between"><dt>Deposit now (60%)</dt><dd className="font-semibold">{formatNaira(deposit)}</dd></div>
         <div className="flex justify-between"><dt>Balance when ready (40%)</dt><dd className="font-semibold">{formatNaira(total - deposit)}</dd></div>
+        <div className="flex justify-between border-t border-amber-200 pt-1.5"><dt>Or in full now</dt><dd className="font-semibold">{formatNaira(total)}</dd></div>
       </dl>
       <div className="flex flex-col gap-2 rounded-[14px] bg-white p-4">
         <span className="flex items-center gap-2 text-[14px] font-semibold"><WhatsAppIcon size={16} /> Message to {o.name} <span className="font-normal text-stone-400">draft</span></span>
@@ -94,7 +95,7 @@ function SetPrice({ o, onDone }: { o: Row; onDone: () => void }) {
       <Button arrow={false}
         disabled={!ok}
         onClick={() => {
-          patchOrder(o, { stage: 1, price: total, readyBy: ready, depositPaid: false, updates: [...o.updates, { stage: 1, note: `${formatNaira(total)}, ready by ${ready}. Deposit ${formatNaira(deposit)}.`, at: "Today" }] });
+          patchOrder(o, { stage: 1, price: total, readyBy: ready, depositPaid: false, updates: [...o.updates, { stage: 1, note: `${formatNaira(total)}, ready by ${ready}. Deposit ${formatNaira(deposit)}, or pay it all now.`, at: "Today" }] });
           window.open(waTo(o.phone, msg), "_blank", "noopener");
           onDone();
         }}
@@ -163,7 +164,7 @@ function PostUpdate({ o, onDone }: { o: Row; onDone: () => void }) {
 
 function OrderPanel({ o, onClose }: { o: Row; onClose: () => void }) {
   const [mode, setMode] = useState<"detail" | "price" | "update">("detail");
-  const deposit = o.price ? Math.round(o.price * 0.6) : 0;
+  const deposit = o.price ? depositOf(o.price) : 0;
   const title = mode === "price" ? `Set ${o.name}’s price` : mode === "update" ? "Post an update" : `${o.name} · ${o.id}`;
 
   return (
@@ -193,9 +194,12 @@ function OrderPanel({ o, onClose }: { o: Row; onClose: () => void }) {
               {o.stage === 0 && <Button onClick={() => setMode("price")}>Set price</Button>}
               {o.stage === 1 && !o.depositPaid && (
                 <div className="flex flex-col gap-3 rounded-[16px] bg-amber-50 p-4">
-                  <p className="text-[15px]"><b>{o.name} says they’ve paid {formatNaira(deposit)}.</b> Check your bank app. Once it’s there, confirm and their page moves to “In progress”.</p>
-                  <Button onClick={() => patchOrder(o, { depositPaid: true, stage: 2, updates: [...o.updates, { stage: 2, note: "Deposit received. Mimi is starting.", at: "Today" }] })}>Deposit received</Button>
-                  <a href={waTo(o.phone, `Hi ${o.name}! I haven’t seen the deposit for ${o.id} yet. Could you check?`)} target="_blank" rel="noreferrer" className="text-center text-[14px] underline underline-offset-4">Not there yet? Message {o.name}</a>
+                  <p className="text-[15px]"><b>{o.name} says they’ve paid.</b> Check your bank app for {formatNaira(deposit)} (the 60% deposit) or {formatNaira(o.price ?? 0)} (the full price). Once it’s there, confirm and their page moves to “In progress”.</p>
+                  <Button onClick={() => patchOrder(o, { depositPaid: true, paidInFull: false, stage: 2, updates: [...o.updates, { stage: 2, note: "Deposit received. Mimi is starting.", at: "Today" }] })}>Deposit received</Button>
+                  <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+                    <button type="button" className={linkClass} onClick={() => patchOrder(o, { depositPaid: true, paidInFull: true, stage: 2, updates: [...o.updates, { stage: 2, note: "Paid in full. Mimi is starting.", at: "Today" }] })}>They paid in full</button>
+                    <a href={waTo(o.phone, `Hi ${o.name}! I haven’t seen your payment for ${o.id} yet. Could you check?`)} target="_blank" rel="noreferrer" className={linkClass}>Not there yet? Message {o.name}</a>
+                  </div>
                 </div>
               )}
               {(o.stage === 1 && o.depositPaid) || o.stage === 2 ? (
@@ -230,8 +234,14 @@ function OrderPanel({ o, onClose }: { o: Row; onClose: () => void }) {
                 {o.price ? (
                   <>
                     <div className="flex justify-between"><dt className="text-stone-500">Price</dt><dd>{formatNaira(o.price)}</dd></div>
-                    <div className="flex justify-between"><dt className="text-stone-500">Deposit (60%)</dt><dd>{formatNaira(deposit)} {o.depositPaid ? "· received" : "· not yet"}</dd></div>
-                    <div className="flex justify-between"><dt className="text-stone-500">Balance (40%)</dt><dd>{formatNaira(o.price - deposit)}</dd></div>
+                    {o.paidInFull ? (
+                      <div className="flex justify-between"><dt className="text-stone-500">Paid in full</dt><dd>{formatNaira(o.price)} · received</dd></div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between"><dt className="text-stone-500">Deposit (60%)</dt><dd>{formatNaira(deposit)} {o.depositPaid ? "· received" : "· not yet"}</dd></div>
+                        <div className="flex justify-between"><dt className="text-stone-500">Balance (40%)</dt><dd>{formatNaira(o.price - deposit)}</dd></div>
+                      </>
+                    )}
                   </>
                 ) : (
                   <div className="flex justify-between"><dt className="text-stone-500">Price</dt><dd>Not set yet</dd></div>
@@ -276,7 +286,7 @@ export function StudioView() {
   const tasks = rows.filter((r) => r.stage <= 3 && (r.stage === 0 || r.dueTone !== "normal" || (r.stage === 1 && !r.depositPaid)) ).slice(0, 4);
   const shown = rows.filter((r) => (filter === "all" ? true : filter === "late" ? r.dueTone === "late" : r.stage === filter));
   const late = rows.filter((r) => r.dueTone === "late").length;
-  const toCollect = rows.reduce((s, r) => s + (r.price && r.depositPaid ? r.price - Math.round(r.price * 0.6) : 0), 0);
+  const toCollect = rows.reduce((s, r) => s + (r.price && r.depositPaid && !r.paidInFull ? r.price - depositOf(r.price) : 0), 0);
   const current = rows.find((r) => r.id === open);
 
   if (!hydrated) return <div className="min-h-[70vh]" />;
@@ -374,7 +384,7 @@ export function StudioView() {
                 </td>
                 <td className="px-5 py-3.5"><span className={`rounded-full px-2.5 py-1 text-[12px] font-semibold ${stageTone[o.stage]}`}>{stageName[o.stage]}</span></td>
                 <td className={`px-5 py-3.5 ${dueClass[o.dueTone]}`}>{o.due}</td>
-                <td className="px-5 py-3.5 text-stone-500">{o.stage === 0 ? "—" : o.stage >= 3 ? "Deposit" : o.depositPaid ? "Deposit" : "Waiting"}</td>
+                <td className="px-5 py-3.5 text-stone-500">{o.stage === 0 ? "—" : o.paidInFull ? "In full" : o.stage >= 3 || o.depositPaid ? "Deposit" : "Waiting"}</td>
                 <td className="px-5 py-3.5">
                   <button type="button" className="font-semibold underline-offset-4 hover:underline">{nextStep(o)}</button>
                 </td>

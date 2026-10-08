@@ -35,10 +35,15 @@ export type Order = {
   price?: number;
   readyBy?: string;
   depositPaid?: boolean;
+  /** Paid the whole price up front instead of the 60% deposit, so nothing is left when it's ready. */
+  paidInFull?: boolean;
   sample?: boolean;
   /** Custom requests: false until the customer taps Send on WhatsApp (Mimi only gets it then). */
   sent?: boolean;
 };
+
+/** Custom orders start with a 60% deposit and the other 40% when it's ready, or the full price up front. */
+export const depositOf = (price: number) => Math.round(price * 0.6);
 
 const KEY = "mimi:orders";
 const listeners = new Set<() => void>();

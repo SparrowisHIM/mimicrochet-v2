@@ -9,7 +9,8 @@ import { ShopOrderCard } from "@/components/cart/shop-order-card";
 import { Confetti } from "@/components/ui/confetti";
 import { StageIcon } from "@/components/order/stage-icons";
 import { Button, buttonClass, linkClass } from "@/components/ui/button";
-import { findOrder, updateOrder, useOrders, type Order } from "@/lib/orders";
+import { Chip } from "@/components/ui/chip";
+import { depositOf, findOrder, updateOrder, useOrders, type Order } from "@/lib/orders";
 import { formatNaira, whatsappLink } from "@/lib/site";
 import { stages } from "@/lib/stages";
 
@@ -31,8 +32,8 @@ function headline(o: Order) {
   const isAre = w === "earrings" ? "are" : "is";
   if (o.stage === 0 && o.sent === false) return { title: "Not sent to Mimi yet", lead: "Send your request on WhatsApp so Mimi gets it. This page follows every step after that." };
   if (o.stage === 0) return { title: "Mimi has your idea", lead: "She’ll message you on WhatsApp to agree the price and the date." };
-  if (o.stage === 1 && !o.depositPaid) return { title: "Your price is ready", lead: "Mimi starts as soon as your deposit arrives." };
-  if (o.stage === 1) return { title: "Deposit received", lead: "Mimi is picking your yarn and starting soon." };
+  if (o.stage === 1 && !o.depositPaid) return { title: "Your price is ready", lead: "Mimi starts as soon as your payment arrives: the deposit or the full price." };
+  if (o.stage === 1) return { title: o.paidInFull ? "Paid in full" : "Deposit received", lead: "Mimi is picking your yarn and starting soon." };
   if (o.stage === 2) return { title: `Your ${w} ${isAre} being made`, lead: `Mimi started on it. She’ll update this page when it’s ready to send.` };
   if (o.stage === 3) return { title: `Your ${w} ${isAre} ready`, lead: "Mimi is passing your number to a rider. You pay the rider when it arrives." };
   return { title: "It’s home. Wear it loud.", lead: "Thank you for ordering from Mimi." };
@@ -140,6 +141,46 @@ function Stepper({ stage, lifted }: { stage: number; lifted: boolean }) {
         );
       })}
     </ol>
+  );
+}
+
+/** The price is agreed: pay the 60% deposit (40% when it's ready) or the whole price now, by bank transfer. */
+function PayCard({ order, price }: { order: Order; price: number }) {
+  const reduce = useReducedMotion();
+  const [full, setFull] = useState(false);
+  const deposit = depositOf(price);
+  const now = full ? price : deposit;
+  return (
+    <Card className="flex flex-col gap-4 border border-amber-200 bg-amber-50">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="How much to pay now">
+        <Chip on={!full} onClick={() => setFull(false)}>60% deposit</Chip>
+        <Chip on={full} onClick={() => setFull(true)}>Pay in full</Chip>
+      </div>
+      <div className="flex flex-col gap-1">
+        <span className="text-[14px] font-semibold text-amber-800">{full ? "Pay in full now" : "Deposit to pay now (60%)"}</span>
+        <span className="relative h-[34px] overflow-hidden" aria-live="polite">
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.span
+              key={now}
+              className="block font-sans text-[34px] leading-none font-semibold tracking-[-0.01em]"
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, y: -14 }}
+              transition={{ type: "spring", duration: 0.35, bounce: 0 }}
+            >
+              {formatNaira(now)}
+            </motion.span>
+          </AnimatePresence>
+        </span>
+      </div>
+      <p className="text-[15px] leading-[1.5] text-stone-700">Pay by bank transfer to the account Mimi sent with your price on WhatsApp, then tap below. She checks her bank and starts.</p>
+      <Button onClick={() => updateOrder(order.id, { depositPaid: true, paidInFull: full })} disabled={order.sample}>
+        {full ? "I’ve paid in full" : "I’ve paid the deposit"}
+      </Button>
+      <p className="text-[13px] text-amber-800">
+        {full ? "Nothing more to pay when it’s ready." : `Balance when it’s ready (40%): ${formatNaira(price - deposit)}.`} Delivery is paid to the rider on arrival.
+      </p>
+    </Card>
   );
 }
 
@@ -269,9 +310,10 @@ export function TrackingView({ code, justPaid = false }: { code: string; justPai
   const latest = order.updates[order.updates.length - 1];
   const lifted = phase === "lift";
   const raised = lifted || phase === "settle";
-  const deposit = order.price ? Math.round(order.price * 0.6) : undefined;
+  const deposit = order.price ? depositOf(order.price) : undefined;
   const balance = order.price && deposit ? order.price - deposit : undefined;
   const awaitingDeposit = order.stage === 1 && !order.depositPaid && order.price;
+  const settled = order.paidInFull || order.stage >= 4;
   const ask = whatsappLink(`Hi Mimi! It’s about my order ${order.id}.`);
 
   const latestCard = (
@@ -344,29 +386,23 @@ export function TrackingView({ code, justPaid = false }: { code: string; justPai
 
   const money = order.price ? (
     awaitingDeposit ? (
-      <Card className="flex flex-col gap-4 border border-amber-200 bg-amber-50">
-        <div className="flex flex-col gap-1">
-          <span className="text-[14px] font-semibold text-amber-800">Deposit to pay now (60%)</span>
-          <span className="font-sans text-[34px] leading-none font-semibold tracking-[-0.01em]">{formatNaira(deposit!)}</span>
-        </div>
-        <p className="text-[15px] leading-[1.5] text-stone-700">Pay by bank transfer to the account Mimi sent with your price on WhatsApp, then tap below. She checks her bank and starts.</p>
-        <Button onClick={() => updateOrder(order.id, { depositPaid: true })} disabled={order.sample}>
-          I’ve paid the deposit
-        </Button>
-        <p className="text-[13px] text-amber-800">Balance when ready (40%): {formatNaira(balance!)}. Delivery is paid to the rider on arrival.</p>
-      </Card>
+      <PayCard order={order} price={order.price} />
     ) : (
       <Card className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <span className="text-[14px] text-stone-500">{order.stage >= 4 ? "Paid in full" : "Left to pay when it’s ready (40%)"}</span>
-          <span className="text-[34px] leading-none font-semibold tracking-[-0.01em]">{formatNaira(order.stage >= 4 ? order.price : balance!)}</span>
+          <span className="text-[14px] text-stone-500">{settled ? "Paid in full" : "Left to pay when it’s ready (40%)"}</span>
+          <span className="text-[34px] leading-none font-semibold tracking-[-0.01em]">{formatNaira(settled ? order.price : balance!)}</span>
         </div>
         <dl className="flex flex-col gap-2 border-t border-stone-100 pt-4 text-[15px]">
           <div className="flex justify-between"><dt className="text-stone-500">Price</dt><dd>{formatNaira(order.price)}</dd></div>
-          <div className="flex justify-between"><dt className="text-stone-500">Deposit paid (60%)</dt><dd>−{formatNaira(deposit!)}</dd></div>
-          <div className="flex justify-between font-semibold"><dt>Balance (40%)</dt><dd>{formatNaira(balance!)}</dd></div>
+          {order.paidInFull ? (
+            <div className="flex justify-between"><dt className="text-stone-500">Paid up front</dt><dd>−{formatNaira(order.price)}</dd></div>
+          ) : (
+            <div className="flex justify-between"><dt className="text-stone-500">Deposit paid (60%)</dt><dd>−{formatNaira(deposit!)}</dd></div>
+          )}
+          <div className="flex justify-between font-semibold"><dt>{order.paidInFull ? "Left to pay" : "Balance (40%)"}</dt><dd>{formatNaira(order.paidInFull ? 0 : balance!)}</dd></div>
         </dl>
-        <p className="text-[13px] text-stone-500">Mimi confirms how to pay on WhatsApp. Delivery is paid to the rider on arrival.</p>
+        <p className="text-[13px] text-stone-500">{settled ? "Nothing more to pay." : "Mimi confirms how to pay on WhatsApp."} Delivery is paid to the rider on arrival.</p>
       </Card>
     )
   ) : null;

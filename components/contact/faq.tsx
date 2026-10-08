@@ -5,11 +5,11 @@ import { useState } from "react";
 
 const faqs = [
   { q: "Do you deliver to my state?", a: "Yes, anywhere in Nigeria. You pay the rider for delivery when your order arrives." },
-  { q: "How do custom orders work?", a: "Send your idea, agree the price and date with Mimi on WhatsApp, then pay a 60% deposit and she starts. The other 40% is paid when it’s ready. You follow every step with your own tracking link." },
+  { q: "How do custom orders work?", a: "Send your idea, agree the price and date with Mimi on WhatsApp, then pay a 60% deposit and she starts. The other 40% is paid when it’s ready, or you can pay the full price up front. You follow every step with your own tracking link." },
   { q: "How long does a custom piece take?", a: "Usually about three weeks, depending on the piece and size. Shirts take about five days and earrings about three. Need it sooner? That’s a rush order, and rush work costs extra (about ₦20–30k)." },
   { q: "How do I pick my size?", a: "Choose XS to XL from the size guide, or add your own measurements. Mimi makes it to what you give her, so check them before you send." },
   { q: "Can I return something?", a: "If your piece isn’t what you agreed, or something’s wrong with the work, Mimi will make it right. Pieces made to measurements you gave can’t be remade for free if the measurements were wrong." },
-  { q: "How do I pay?", a: "Ready-to-wear pieces are paid online with Paystack. Custom deposits are paid by bank transfer to the account Mimi sends you on WhatsApp." },
+  { q: "How do I pay?", a: "Ready-to-wear pieces are paid online with Paystack. Custom orders, the deposit or the full price, are paid by bank transfer to the account Mimi sends you on WhatsApp." },
 ];
 
 export function Faq() {

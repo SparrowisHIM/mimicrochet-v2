@@ -43,7 +43,7 @@ const story: Stage[] = [
     media: { kind: "image", src: "/images/story/ruby-plan.jpg" },
     alt: "The red yarn picked for the Ruby Dress beside the first panel",
     title: "Make a plan together.",
-    detail: "Agree your measurements, price and timing on WhatsApp. Your 60% deposit gets things moving.",
+    detail: "Agree your measurements, price and timing on WhatsApp. A 60% deposit, or the full price, gets things moving.",
     caption: "",
   },
   {
@@ -59,7 +59,7 @@ const story: Stage[] = [
     media: { kind: "image", src: "/images/products/red-fringe-beach-set-1.jpg" },
     alt: "The complete Ruby Dress with its fringe, on Mimi’s mannequin",
     title: "Every last detail, finished.",
-    detail: "See the finished piece, settle the remaining 40%, and agree delivery with Mimi.",
+    detail: "See the finished piece, settle the 40% if you paid a deposit, and agree delivery with Mimi.",
     caption: "Finished. Every fringe in place.",
   },
   {
