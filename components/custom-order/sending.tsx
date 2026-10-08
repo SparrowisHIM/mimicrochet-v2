@@ -13,7 +13,7 @@ import { Confetti } from "@/components/ui/confetti";
 
 export type SendingRow = { key: string; value: string };
 
-const captions = ["Stitching your request together", "Adding your request number", "Preparing your message", "Ready for Mimi"];
+const captions = ["Stitching your request together", "Adding your request number", "Drafting your WhatsApp message", "Ready for Mimi"];
 const W = 304; // card width (fits a 344px phone with the page gutter)
 const H = 348;
 
