@@ -2,12 +2,14 @@
 
 import { animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useSpring, useTransform, useVelocity, type AnimationPlaybackControls } from "motion/react";
 import { useCallback, useEffect, useRef } from "react";
+import { primeTick, tick } from "@/lib/tick-sound";
 
 // A measuring tape you drag, flick, scroll or step with the arrow keys. It follows the SparrowisHIM
 // "measuring-component" tape, made calmer for a shop: the tape trails the finger through a stiff,
 // light spring; at speed the ticks lean into the direction of travel; a flick keeps it spooling and
 // it lands on a whole number; past either end it stretches like rubber and wobbles back. The ticks
-// are drawn on a canvas, so nothing re-renders while it moves. Phones get a tiny haptic tick per step.
+// are drawn on a canvas, so nothing re-renders while it moves. Each step gives a soft tick sound (a
+// little firmer every 5) and, on phones, a tiny haptic tick.
 
 const GAP = 13.5; // px per step
 const GIVE = 2.5; // steps of rubbery give past either end
@@ -103,6 +105,7 @@ export function Ruler({
       animate(click, 0, { duration: 0.16, ease: "easeOut" });
     }
     if ("vibrate" in navigator) navigator.vibrate?.(4);
+    tick(Math.round(next / step) % 5 === 0 ? 1.5 : 1);
     onChange(next);
   });
 
@@ -121,6 +124,7 @@ export function Ruler({
   const drag = useRef<{ x: number; start: number; trail: { v: number; t: number }[] } | null>(null);
 
   const onPointerDown = (e: React.PointerEvent) => {
+    primeTick();
     motionRef.current?.stop();
     e.currentTarget.setPointerCapture(e.pointerId);
     const start = raw.get();
@@ -189,6 +193,7 @@ export function Ruler({
   }, [raw, clamp, snap, step]);
 
   const onKey = (e: React.KeyboardEvent) => {
+    primeTick();
     const big = e.shiftKey ? 5 : 1;
     const to =
       e.key === "ArrowRight" || e.key === "ArrowUp" ? value + step * big : e.key === "ArrowLeft" || e.key === "ArrowDown" ? value - step * big : e.key === "Home" ? min : e.key === "End" ? max : null;
