@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { ChevronIcon, WhatsAppIcon } from "@/components/icons";
 import { Button, linkClass } from "@/components/ui/button";
+import { DatePicker, shortDate } from "@/components/form/date-picker";
 import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
 import { Toggle } from "@/components/ui/toggle";
@@ -47,26 +48,25 @@ function greeting() {
 function SetPrice({ o, onDone }: { o: Row; onDone: () => void }) {
   const [price, setPrice] = useState(o.piece.price ? String(o.piece.price + 5000) : "");
   const [date, setDate] = useState("");
+  const [today] = useState(() => Date.now());
   const [rush, setRush] = useState(0);
   const [riderPays, setRiderPays] = useState(true);
   const total = (Number(price.replace(/\D/g, "")) || 0) + rush;
   const deposit = depositOf(total);
-  const ready = date ? new Date(date + "T12:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }) : "";
+  const ready = date ? shortDate(date) : "";
   const what = o.piece.source === "photo" || o.piece.source === "words" ? "custom piece" : o.piece.name;
   const msg = `Hi ${o.name}! Your ${what}${o.size ? ` in ${o.size}` : ""} is ${total ? formatNaira(total) : "₦…"}${ready ? `, ready by ${ready}` : ""}. To start, please pay the 60% deposit (${total ? formatNaira(deposit) : "₦…"}), or the full ${total ? formatNaira(total) : "price"} if you prefer. ${riderPays ? "Delivery is paid to the rider on arrival." : "Delivery is included."} Your order page: ${typeof window !== "undefined" ? window.location.origin : ""}/t/${o.code}`;
   const ok = total > 0 && Boolean(date);
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-2">
-          <span className="text-[14px] font-semibold">Price</span>
-          <input inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="₦" className="h-12 rounded-[12px] border border-stone-300 bg-white px-3.5 text-[16px] outline-none focus:border-stone-900" />
-        </label>
-        <label className="flex flex-col gap-2">
-          <span className="text-[14px] font-semibold">Ready by</span>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-12 rounded-[12px] border border-stone-300 bg-white px-3 text-[16px] outline-none focus:border-stone-900" />
-        </label>
+      <label className="flex flex-col gap-2">
+        <span className="text-[14px] font-semibold">Price</span>
+        <input inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="₦" className="h-12 rounded-[12px] border border-stone-300 bg-white px-3.5 text-[16px] outline-none focus:border-stone-900" />
+      </label>
+      <div className="flex flex-col gap-2.5">
+        <span className="text-[14px] font-semibold">Ready by</span>
+        <DatePicker id="ready-by" value={date || undefined} onChange={setDate} now={today} forMimi />
       </div>
       <div className="flex flex-col gap-2.5">
         <span className="text-[14px] font-semibold">Rush extra (optional)</span>

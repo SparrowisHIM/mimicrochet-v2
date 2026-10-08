@@ -57,6 +57,7 @@ export function DatePicker({
   minDays = 1,
   rushDays = 21,
   maxDays = 183,
+  forMimi = false,
 }: {
   id?: string;
   value?: string;
@@ -66,6 +67,8 @@ export function DatePicker({
   minDays?: number;
   rushDays?: number;
   maxDays?: number;
+  /** Mimi setting a ready-by date on her orders page: the same calendar, worded from her side. */
+  forMimi?: boolean;
 }) {
   const reduce = useReducedMotion();
   const today = startOfDay(now);
@@ -128,6 +131,9 @@ export function DatePicker({
   const rush = selected ? selected < rushEnd : false;
   const rows = monthGrid(view);
   const monthLabel = view.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  const copy = forMimi
+    ? { picked: "Ready by", empty: "Pick the day it’ll be ready.", band: "Making time", rushKey: "Rush (under 3 weeks)" }
+    : { picked: "Your requested date", empty: "Pick the day you’d like it. Mimi confirms the timing with you on WhatsApp.", band: "Time until your date", rushKey: "Rush, costs extra (under 3 weeks)" };
 
   return (
     <div className="flex flex-col gap-3">
@@ -267,7 +273,7 @@ export function DatePicker({
                 transition={{ duration: 0.22 }}
               >
                 <span className="flex flex-col">
-                  <span className="text-[13px] font-medium text-stone-500">Your requested date</span>
+                  <span className="text-[13px] font-medium text-stone-500">{copy.picked}</span>
                   <span className="text-[17px] font-semibold">{longDate(value!)}</span>
                 </span>
                 <span className="flex items-baseline gap-1.5 text-right">
@@ -287,16 +293,16 @@ export function DatePicker({
               </motion.div>
             ) : (
               <motion.p key="empty" className="text-[14px] text-stone-500" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                Pick the day you’d like it. Mimi confirms the timing with you on WhatsApp.
+                {copy.empty}
               </motion.p>
             )}
           </AnimatePresence>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] font-medium text-stone-500">
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-5 rounded-full bg-amber-100" aria-hidden /> Time until your date
+              <span className="h-2.5 w-5 rounded-full bg-amber-100" aria-hidden /> {copy.band}
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-amber-600" aria-hidden /> Rush, costs extra (under 3 weeks)
+              <span className="size-1.5 rounded-full bg-amber-600" aria-hidden /> {copy.rushKey}
             </span>
             <span className="ml-auto hidden items-center gap-1 lg:flex">
               <kbd className="rounded-[5px] border border-stone-200 bg-white px-1 text-[11px]">←</kbd>
@@ -314,7 +320,15 @@ export function DatePicker({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
           >
-            <span className="font-semibold">This is a rush order, so it costs extra.</span> Mimi normally needs three weeks. She’ll check she can meet this date and tell you the rush fee on WhatsApp before you pay anything.
+            {forMimi ? (
+              <>
+                <span className="font-semibold">That’s a rush: under three weeks.</span> Add the rush extra below if you’re charging for it.
+              </>
+            ) : (
+              <>
+                <span className="font-semibold">This is a rush order, so it costs extra.</span> Mimi normally needs three weeks. She’ll check she can meet this date and tell you the rush fee on WhatsApp before you pay anything.
+              </>
+            )}
           </motion.p>
         )}
       </AnimatePresence>
