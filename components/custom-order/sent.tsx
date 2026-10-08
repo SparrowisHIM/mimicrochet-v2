@@ -46,7 +46,6 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
   const reduce = useReducedMotion();
   const base = useOrigin();
   const link = `${base}/t/${order.code}`;
-  const pretty = link.replace(/^https?:\/\//, "");
   const [message, setMessage] = useState(() => orderMessage(order));
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -164,17 +163,18 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
           )}
         </AnimatePresence>
 
-        <motion.div {...rise(0.3)} className="flex flex-col gap-2.5 rounded-[22px] border border-stone-200 bg-white p-5">
-          <span className="text-[15px] font-semibold">Preview your order</span>
-          <div className="flex items-center justify-between gap-3">
-            <Link href={`/t/${order.code}`} className="truncate text-[16px] font-medium underline-offset-4 hover:underline">
-              {pretty || `/t/${order.code}`}
+        {/* The tracking page, named rather than shown as a raw web address. */}
+        <motion.div {...rise(0.3)} className="flex flex-col gap-1.5 rounded-[22px] border border-stone-200 bg-white p-5">
+          <span className="text-[15px] font-semibold">Your tracking page</span>
+          <span className="text-[14px] text-stone-500">Every step, from Mimi’s first reply to your door. It’s in your WhatsApp message too.</span>
+          <div className="mt-1.5 flex items-center justify-between gap-3">
+            <Link href={`/t/${order.code}`} className={linkClass}>
+              Track this order
             </Link>
             <Button variant="secondary" size="sm" onClick={copy} className="shrink-0">
-              {copied ? "Copied" : "Copy"}
+              {copied ? "Copied" : "Copy link"}
             </Button>
           </div>
-          <span className="text-[14px] text-stone-500">This preview is saved on this browser only. Live tracking across devices is not connected yet.</span>
         </motion.div>
 
         <motion.div {...rise(0.4)} className="flex flex-col gap-3 rounded-[22px] border border-stone-200 bg-white p-5">
