@@ -13,7 +13,7 @@ import {
   useTransform,
   type MotionValue,
 } from "motion/react";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState, type RefObject } from "react";
 import { RevealText } from "@/components/motion/reveal";
 import { StageIcon } from "@/components/home/stage-icons";
 import { ButtonLink } from "@/components/ui/button";
@@ -73,8 +73,11 @@ const story: Stage[] = [
 ];
 
 const last = story.length - 1;
-// Phones play the story by themselves while it's on screen.
-const STAGE_MS = 4500;
+// Phones play the story by themselves while it's on screen: 3s per photo (time to read Mimi's line),
+// and the video stage lasts exactly as long as the video, so it always plays to the end.
+const IMAGE_MS = 3000;
+// If the video can't play at all, the story still moves on after this long.
+const VIDEO_STALL_MS = 15000;
 // What Mimi's latest note says at each stage, on the same card customers see on their tracking page.
 const notes = story.map((s, i) =>
   i === 1 ? `Price agreed: ${formatNaira(demoOrder.price ?? 0)}, ready by ${demoOrder.readyBy}. Deposit paid, so the yarn is picked.` : s.caption,
@@ -85,19 +88,30 @@ const notes = story.map((s, i) =>
 // Each layer sits above the one before it and wipes up into view as the scroll position
 // reaches its stage, so the change is exact in both directions and never cross-fades two photos.
 // The wipe runs between i-0.8 and i-0.2, so each photo holds still while its stage is centred.
-function Layer({ i, pos, active, reduce }: { i: number; pos: MotionValue<number>; active: number; reduce: boolean }) {
+type LayerProps = {
+  i: number;
+  pos: MotionValue<number>;
+  active: number;
+  reduce: boolean;
+  /** Desktop loops the video; phones play it once and move on when it ends. */
+  loop: boolean;
+  /** The section is close, so the video starts downloading before its stage comes up. */
+  near: boolean;
+  videoRef: RefObject<HTMLVideoElement | null>;
+};
+
+function Layer({ i, pos, active, reduce, loop, near, videoRef: video }: LayerProps) {
   const s = story[i];
   const clip = useTransform(pos, [i - 0.8, i - 0.2], ["inset(100% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]);
   const zoom = useTransform(pos, [i - 0.8, i - 0.2], [1.18, 1]);
-  const video = useRef<HTMLVideoElement>(null);
   const showing = active === i;
 
   useEffect(() => {
     const v = video.current;
-    if (!v) return;
+    if (!v || s.media.kind !== "video") return;
     if (showing && !reduce) v.play().catch(() => {});
     else v.pause();
-  }, [showing, reduce]);
+  }, [showing, reduce, video, s.media.kind]);
 
   const style = reduce ? { opacity: i <= active ? 1 : 0 } : i === 0 ? undefined : { clipPath: clip };
   return (
@@ -106,7 +120,7 @@ function Layer({ i, pos, active, reduce }: { i: number; pos: MotionValue<number>
         {s.media.kind === "image" ? (
           <Image src={s.media.src} alt={s.alt} fill sizes="(min-width: 1024px) 520px, 92vw" className="object-cover" style={{ objectPosition: s.media.position }} preload={i === 0} />
         ) : (
-          <video ref={video} className="size-full object-cover" src={s.media.src} poster={s.media.poster} muted loop playsInline preload="none" aria-label={s.alt} />
+          <video ref={video} className="size-full object-cover" src={s.media.src} poster={s.media.poster} muted loop={loop} playsInline preload={near ? "auto" : "none"} aria-label={s.alt} />
         )}
       </motion.div>
     </motion.div>
@@ -176,20 +190,46 @@ export function OrderStory() {
   };
 
   // Phones: advance on a timer while the photo is on screen. Tapping or swiping restarts the clock.
+  const section = useRef<HTMLElement>(null);
   const frame = useRef<HTMLDivElement>(null);
+  const clip = useRef<HTMLVideoElement>(null);
+  const near = useInView(section, { margin: "100% 0px", once: true });
   const onScreen = useInView(frame, { amount: 0.5 });
   const autoplay = !desktop && !reduce && onScreen;
+  const onVideo = story[active].media.kind === "video";
+  const clipProgress = useMotionValue(0);
   const advance = useEffectEvent(() => go(active === last ? 0 : active + 1, active === last));
   useEffect(() => {
     if (!autoplay) return;
-    const t = setTimeout(() => advance(), STAGE_MS);
-    return () => clearTimeout(t);
-  }, [autoplay, active]);
+    if (!onVideo) {
+      const t = setTimeout(() => advance(), IMAGE_MS);
+      return () => clearTimeout(t);
+    }
+    // The video stage: play from the top, fill the bar with the real playback (it waits if the video
+    // buffers), and move on when the video ends.
+    const v = clip.current;
+    if (!v) return;
+    clipProgress.set(0);
+    v.currentTime = 0;
+    v.play().catch(() => {});
+    let raf = requestAnimationFrame(function tick() {
+      if (v.duration) clipProgress.set(v.currentTime / v.duration);
+      raf = requestAnimationFrame(tick);
+    });
+    const done = () => advance();
+    v.addEventListener("ended", done);
+    const stall = setTimeout(() => advance(), VIDEO_STALL_MS);
+    return () => {
+      cancelAnimationFrame(raf);
+      v.removeEventListener("ended", done);
+      clearTimeout(stall);
+    };
+  }, [autoplay, active, onVideo, clipProgress]);
 
   const current = story[active];
 
   return (
-    <section className="border-y border-stone-200/70 bg-orange-50 py-16 lg:py-24" aria-labelledby="order-story-heading">
+    <section ref={section} className="border-y border-stone-200/70 bg-orange-50 py-16 lg:py-24" aria-labelledby="order-story-heading">
       <div className="container-page">
         <div className="mb-9 flex flex-col gap-5 lg:mb-6 lg:flex-row lg:items-end lg:justify-between lg:gap-16">
           <RevealText id="order-story-heading" text={"From idea\nto doorstep."} className="max-w-[680px] font-serif text-[38px] leading-[1.08] tracking-[-0.025em] lg:text-[60px]" />
@@ -251,7 +291,11 @@ export function OrderStory() {
                   {/* While it plays, a thin bar fills under the current stage. */}
                   {i === active && autoplay && (
                     <span className="absolute inset-x-2 bottom-1.5 h-[2px] overflow-hidden rounded-full bg-white/25" aria-hidden>
-                      <span key={active} className="block size-full origin-left bg-orange-50" style={{ animation: `customer-photo-progress ${STAGE_MS}ms linear forwards` }} />
+                      {onVideo ? (
+                        <motion.span className="block size-full origin-left bg-orange-50" style={{ scaleX: clipProgress }} />
+                      ) : (
+                        <span key={active} className="block size-full origin-left bg-orange-50" style={{ animation: `customer-photo-progress ${IMAGE_MS}ms linear forwards` }} />
+                      )}
                     </span>
                   )}
                 </button>
@@ -282,7 +326,7 @@ export function OrderStory() {
                 }}
               >
                 {story.map((s, i) => (
-                  <Layer key={s.title} i={i} pos={pos} active={active} reduce={reduce} />
+                  <Layer key={s.title} i={i} pos={pos} active={active} reduce={reduce} loop={desktop} near={near} videoRef={clip} />
                 ))}
               </motion.div>
               {/* Mimi's line for this stage, under the photo (never over it), like a caption, led by the stage's own animated icon. */}
