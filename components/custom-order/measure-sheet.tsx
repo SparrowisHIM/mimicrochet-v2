@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Ruler } from "@/components/custom-order/ruler";
 import { Button, linkClass } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
+import { CountingNumber, UnitSwitch } from "@/components/ui/unit-switch";
 
 export type Measures = { bust?: number; waist?: number; hips?: number; length?: number };
 export type MeasureKey = keyof Measures;
@@ -16,7 +17,7 @@ export const measureSteps: { key: MeasureKey; label: string; help: string; start
   { key: "length", label: "Length", help: "From the top of the shoulder down to where you want the piece to end.", start: 80, min: 20, max: 160 },
 ];
 
-const toIn = (cm: number) => Math.round((cm / 2.54) * 2) / 2;
+export const toIn = (cm: number) => Math.round((cm / 2.54) * 2) / 2;
 
 export function MeasureSheet({
   open,
@@ -82,24 +83,15 @@ export function MeasureSheet({
         </div>
         <Ruler key={s.key + unit} label={`${s.label} in ${unit}`} value={cm} min={s.min} max={s.max} onChange={setCm} />
         <p className="flex items-baseline justify-center gap-1.5" aria-live="polite">
-          <span className="font-serif text-[64px] leading-none tabular-nums">{shown}</span>
-          <span className="text-[18px] font-medium text-stone-500">{unit}</span>
+          <CountingNumber value={shown} countOn={unit} className="font-serif text-[64px] leading-none" />
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.span key={unit} className="text-[18px] font-medium text-stone-500" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ type: "spring", duration: 0.3, bounce: 0 }}>
+              {unit}
+            </motion.span>
+          </AnimatePresence>
         </p>
         <div className="flex justify-center">
-          <div className="flex gap-0.5 rounded-full bg-orange-100 p-[3px]" role="radiogroup" aria-label="Unit">
-            {(["cm", "in"] as const).map((u) => (
-              <button
-                key={u}
-                type="button"
-                role="radio"
-                aria-checked={unit === u}
-                onClick={() => onUnit(u)}
-                className={`rounded-full px-[18px] py-[7px] text-[14px] transition-colors ${unit === u ? "bg-white font-semibold shadow-sm" : "font-medium text-stone-500"}`}
-              >
-                {u}
-              </button>
-            ))}
-          </div>
+          <UnitSwitch value={unit} onChange={onUnit} />
         </div>
         <div className="flex gap-2.5 rounded-[14px] bg-amber-100 px-3.5 py-3 text-[13px] leading-[1.45] text-amber-800">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="mt-px shrink-0" aria-hidden>

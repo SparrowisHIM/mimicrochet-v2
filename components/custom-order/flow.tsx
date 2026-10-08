@@ -7,7 +7,8 @@ import { useRef, useState } from "react";
 import { ChevronIcon } from "@/components/icons";
 import { IdeasSheet } from "@/components/custom-order/ideas-sheet";
 import { PhotoTile } from "@/components/custom-order/photo-tile";
-import { formatMeasure, MeasureSheet, measureSteps, type MeasureKey, type Measures } from "@/components/custom-order/measure-sheet";
+import { MeasureSheet, measureSteps, toIn, type MeasureKey, type Measures } from "@/components/custom-order/measure-sheet";
+import { CountingNumber, UnitSwitch } from "@/components/ui/unit-switch";
 import { SendingMoment } from "@/components/custom-order/sending";
 import { SentView } from "@/components/custom-order/sent";
 import { VoiceNote, type Voice } from "@/components/custom-order/voice-note";
@@ -864,13 +865,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                             <span className="text-[15px] font-semibold">Not sure of your size?</span>
                             <span className="text-[13px] text-stone-500">Add your measurements and Mimi uses them instead.</span>
                           </span>
-                          <span className="flex shrink-0 gap-0.5 rounded-full bg-orange-100 p-[3px]">
-                            {(["cm", "in"] as const).map((u) => (
-                              <button key={u} type="button" onClick={() => set({ unit: u })} aria-pressed={d.unit === u} className={`rounded-full px-3 py-1 text-[13px] ${d.unit === u ? "bg-stone-900 font-semibold text-orange-50" : "text-stone-600"}`}>
-                                {u}
-                              </button>
-                            ))}
-                          </span>
+                          <UnitSwitch size="sm" value={d.unit} onChange={(unit) => set({ unit })} />
                         </div>
                         <div className="grid grid-cols-2 gap-2.5">
                           {measureSteps.map((m) => {
@@ -879,8 +874,12 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                               <button key={m.key} type="button" onClick={() => setMeasuring(m.key)} className="flex flex-col gap-1.5 text-left">
                                 <span className="text-[13px] font-medium text-stone-600">{m.label}</span>
                                 <span className={`flex h-12 items-center justify-between rounded-[12px] border px-3.5 text-[16px] transition-colors duration-150 hover:border-stone-500 ${v ? "border-stone-900 font-medium" : "border-stone-300 text-stone-400"}`}>
-                                  {v ? formatMeasure(v, d.unit) : "Add"}
-                                  <span className="text-[13px] text-stone-400">{d.unit}</span>
+                                  {v ? <CountingNumber value={d.unit === "cm" ? v : toIn(v)} countOn={d.unit} /> : "Add"}
+                                  <AnimatePresence mode="popLayout" initial={false}>
+                                    <motion.span key={d.unit} className="text-[13px] text-stone-400" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ type: "spring", duration: 0.3, bounce: 0 }}>
+                                      {d.unit}
+                                    </motion.span>
+                                  </AnimatePresence>
                                 </span>
                               </button>
                             );
