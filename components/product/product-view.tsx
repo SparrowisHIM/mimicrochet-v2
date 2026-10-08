@@ -148,7 +148,7 @@ export function ProductView({ product }: { product: Product }) {
                 ))}
               </div>
             )}
-            <div className={`relative lg:flex-1 ${product.images.length > 1 ? "" : "lg:ml-[104px]"}`}>
+            <div className="relative lg:flex-1">
               {/* desktop main photo */}
               <div className="relative hidden aspect-[3/4] overflow-hidden rounded-[24px] bg-orange-100 lg:block">
                 <AnimatePresence initial={false}>
