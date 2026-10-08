@@ -33,7 +33,7 @@ export default function AboutPage() {
             before="Crochet made with colour, care and"
             marked="Port Harcourt"
             after="energy."
-            className="font-serif text-[40px] leading-[1.06] tracking-[-0.02em] lg:text-[64px]"
+            className="font-serif text-[40px] leading-[1.06] tracking-[-0.02em] text-balance lg:text-[64px]"
           />
           <p className="max-w-[560px] text-[17px] leading-[1.55] text-stone-600 lg:text-[19px]">
             Mimi crochets every piece herself, from playful sets to dresses that stop people mid-sentence. Some are ready to wear today. The rest she makes just for you.
