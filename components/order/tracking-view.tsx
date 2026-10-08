@@ -408,6 +408,30 @@ export function TrackingView({ code, justPaid = false }: { code: string; justPai
     )
   ) : null;
 
+  // Once it's delivered, invite a photo: it's how "Worn, loved, re-worn" on Home gets new stories.
+  const photoAsk = (
+    <Card className="flex flex-col gap-4">
+      {order.piece.image && (
+        <span className="relative block aspect-[4/5] overflow-hidden rounded-[16px] bg-orange-100">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={order.piece.image} alt={order.piece.name} className="size-full object-cover" />
+        </span>
+      )}
+      <h2 className="font-serif text-[26px] leading-[1.15] text-balance">Wearing it? Send Mimi a photo</h2>
+      <p className="text-[15px] leading-[1.55] text-stone-600">
+        She’d love to see it. If you’re happy for her to share it, your photo and a few words could appear in “Worn, loved, re-worn” on the site.
+      </p>
+      <a
+        href={whatsappLink(`Hi Mimi! It’s ${order.name}, order ${order.id}. Here’s me in my ${order.piece.name}.`)}
+        target="_blank"
+        rel="noreferrer"
+        className={`${buttonClass("primary")} self-start max-sm:self-stretch`}
+      >
+        <WhatsAppIcon size={18} /> Send Mimi a photo
+      </a>
+    </Card>
+  );
+
   const details = (
     <Card className="flex flex-col gap-4">
       <h2 className="text-[16px] font-semibold">Your order</h2>
@@ -473,6 +497,7 @@ export function TrackingView({ code, justPaid = false }: { code: string; justPai
             </Card>
           </div>
           {latestCard}
+          {order.stage >= 4 && photoAsk}
           {timeline}
         </div>
         <div className="flex flex-col gap-4 lg:sticky lg:top-28 lg:w-[400px]">
