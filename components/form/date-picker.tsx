@@ -31,11 +31,12 @@ function CalendarMonth(props: React.ComponentProps<typeof motion.div>) {
   const present = useIsPresent();
   return <motion.div {...props} inert={!present} />;
 }
+// Mimi's normal making time is three weeks; anything sooner is a rush (and costs extra).
 const quick: [string, number][] = [
-  ["In 2 weeks", 14],
   ["In 3 weeks", 21],
   ["In a month", 30],
   ["In 6 weeks", 42],
+  ["In 2 months", 60],
 ];
 
 function monthGrid(view: Date) {
@@ -54,7 +55,7 @@ export function DatePicker({
   onChange,
   now,
   minDays = 1,
-  rushDays = 14,
+  rushDays = 21,
   maxDays = 183,
 }: {
   id?: string;
@@ -295,7 +296,7 @@ export function DatePicker({
               <span className="h-2.5 w-5 rounded-full bg-amber-100" aria-hidden /> Time until your date
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-amber-600" aria-hidden /> Rush (under 2 weeks)
+              <span className="size-1.5 rounded-full bg-amber-600" aria-hidden /> Rush, costs extra (under 3 weeks)
             </span>
             <span className="ml-auto hidden items-center gap-1 lg:flex">
               <kbd className="rounded-[5px] border border-stone-200 bg-white px-1 text-[11px]">←</kbd>
@@ -313,7 +314,7 @@ export function DatePicker({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
           >
-            <span className="font-semibold">A little sooner?</span> Mimi will check whether she can meet this date and agree any rush fee with you before you pay.
+            <span className="font-semibold">This is a rush order, so it costs extra.</span> Mimi normally needs three weeks. She’ll check she can meet this date and tell you the rush fee on WhatsApp before you pay anything.
           </motion.p>
         )}
       </AnimatePresence>

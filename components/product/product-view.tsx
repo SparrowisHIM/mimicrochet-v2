@@ -45,7 +45,7 @@ function MadeForYou({ product }: { product: Product }) {
     <div className="flex flex-col gap-3 rounded-[18px] border border-orange-200 bg-white px-[22px] py-5">
       <div className="flex items-center justify-between">
         <span className="text-[16px] font-semibold">Made for you</span>
-        <span className="text-[14px] font-semibold text-amber-800">{quick ? "About 3 days" : "About 2 weeks"}</span>
+        <span className="text-[14px] font-semibold text-amber-800">{quick ? "About 3 days" : "About 3 weeks"}</span>
       </div>
       <p className="text-[15px] leading-[1.5] text-stone-600">
         {quick
@@ -228,10 +228,10 @@ export function ProductView({ product }: { product: Product }) {
                     <motion.div key={otherSize ? "other" : "stock"} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }} className="flex flex-col gap-1.5">
                       <p className="flex items-center gap-2.5 text-[15px] font-medium">
                         <span className={`size-2 rounded-full ${otherSize ? "bg-amber-600" : "bg-emerald-600"}`} />
-                        {otherSize ? `${size} is made for you, in about 2 weeks` : stockLine(stockSize)}
+                        {otherSize ? `${size} is made for you, in about 3 weeks` : stockLine(stockSize)}
                       </p>
                       <p className="text-[14px] text-stone-500">
-                        {otherSize ? `Only ${stockSize} is in stock right now. Mimi confirms the price on WhatsApp before she starts.` : "Other sizes are made for you, in about 2 weeks."}
+                        {otherSize ? `Only ${stockSize} is in stock right now. Mimi confirms the price on WhatsApp before she starts.` : "Other sizes are made for you, in about 3 weeks."}
                       </p>
                     </motion.div>
                   </AnimatePresence>
