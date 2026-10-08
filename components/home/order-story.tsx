@@ -15,7 +15,6 @@ import {
 } from "motion/react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { RevealText } from "@/components/motion/reveal";
-import { TrackingCard } from "@/components/order/tracking-card";
 import { ButtonLink } from "@/components/ui/button";
 import { demoOrder } from "@/lib/orders";
 import { formatNaira } from "@/lib/site";
@@ -258,8 +257,8 @@ export function OrderStory() {
               ))}
             </div>
 
-            {/* Desktop: the photo is sized so it and the card under it both fit the sticky column. */}
-            <div className="mx-auto w-full rounded-[26px] border border-stone-200 bg-white p-2.5 shadow-[0_30px_70px_-40px_rgb(28_25_23/0.4)] lg:max-w-[min(100%,calc((100svh-352px)*0.75+24px))] lg:p-3">
+            {/* Desktop: the photo is sized so it and Mimi's line under it fit the sticky column. */}
+            <div className="mx-auto w-full rounded-[26px] border border-stone-200 bg-white p-2.5 shadow-[0_30px_70px_-40px_rgb(28_25_23/0.4)] lg:max-w-[min(100%,calc((100svh-272px)*0.75+24px))] lg:p-3">
               <div className="flex items-center justify-between px-2 pt-1 pb-3 text-[13px] font-medium text-stone-500">
                 <AnimatePresence mode="popLayout" initial={false}>
                   <motion.span key={current.tag} className="font-semibold text-stone-900" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ type: "spring", duration: 0.3, bounce: 0 }}>
@@ -285,9 +284,27 @@ export function OrderStory() {
                   <Layer key={s.title} i={i} pos={pos} active={active} reduce={reduce} />
                 ))}
               </motion.div>
-            </div>
-            <div className="relative z-10 mx-auto -mt-14 w-full px-4 lg:max-w-[min(100%,calc((100svh-352px)*0.75+24px))]">
-              <TrackingCard orderId={demoOrder.id} piece={demoOrder.piece.name} stage={active} note={notes[active]} />
+              {/* Mimi's line for this stage, under the photo (never over it), like a caption. */}
+              <div className="flex items-start gap-2.5 px-2 pt-3.5 pb-1.5">
+                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-orange-100 font-serif text-[14px] text-amber-900" aria-hidden>
+                  M
+                </span>
+                <div className="relative min-h-[2.75rem] min-w-0 flex-1" aria-live="polite">
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.p
+                      key={active}
+                      className="flex flex-col gap-0.5"
+                      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8, filter: "blur(4px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6, filter: "blur(4px)", transition: { duration: 0.15 } }}
+                      transition={{ type: "spring", duration: 0.4, bounce: 0 }}
+                    >
+                      <span className={`text-[12px] font-semibold ${active >= 3 ? "text-emerald-800" : "text-amber-800"}`}>{stages[active].label}</span>
+                      <span className="text-[15px] leading-snug text-stone-700">{notes[active]}</span>
+                    </motion.p>
+                  </AnimatePresence>
+                </div>
+              </div>
             </div>
 
             <div className="mt-5 flex flex-col gap-3 lg:hidden" aria-live="polite">
