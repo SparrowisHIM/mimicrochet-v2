@@ -15,6 +15,7 @@ import {
 } from "motion/react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { RevealText } from "@/components/motion/reveal";
+import { StageIcon } from "@/components/home/stage-icons";
 import { ButtonLink } from "@/components/ui/button";
 import { demoOrder } from "@/lib/orders";
 import { formatNaira } from "@/lib/site";
@@ -284,11 +285,9 @@ export function OrderStory() {
                   <Layer key={s.title} i={i} pos={pos} active={active} reduce={reduce} />
                 ))}
               </motion.div>
-              {/* Mimi's line for this stage, under the photo (never over it), like a caption. */}
+              {/* Mimi's line for this stage, under the photo (never over it), like a caption, led by the stage's own animated icon. */}
               <div className="flex items-start gap-2.5 px-2 pt-3.5 pb-1.5">
-                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-orange-100 font-serif text-[14px] text-amber-900" aria-hidden>
-                  M
-                </span>
+                <StageIcon stage={active} />
                 <div className="relative min-h-[2.75rem] min-w-0 flex-1" aria-live="polite">
                   <AnimatePresence mode="popLayout" initial={false}>
                     <motion.p
