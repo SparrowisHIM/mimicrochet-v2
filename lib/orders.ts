@@ -120,8 +120,17 @@ export function updateOrder(id: string, patch: Partial<Order>) {
 
 export function newOrderIds() {
   const n = 2412 + Math.floor(Math.random() * 400);
+  // The tracking code is the key to a private page (name, phone, address), so it comes from the
+  // browser's secure random source, never Math.random, and is long enough that guessing one is hopeless.
+  // Letters and numbers that look alike (i, l, o, 0, 1) are left out so it's easy to read out.
   const alphabet = "abcdefghjkmnpqrstuvwxyz23456789";
-  const code = Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
+  let code = "";
+  while (code.length < 8) {
+    for (const b of crypto.getRandomValues(new Uint8Array(16))) {
+      // Bytes past the last whole run of the alphabet are skipped, so every character is equally likely.
+      if (b < 256 - (256 % alphabet.length) && code.length < 8) code += alphabet[b % alphabet.length];
+    }
+  }
   return { id: `MIMI-${n}`, code };
 }
 
