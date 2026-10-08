@@ -123,7 +123,7 @@ function Story({ customer, next, instant, onNext, onClose }: { customer: Custome
             <Name text={customer.name} />
           </h2>
           <p className="mt-3.5 text-[18px] text-stone-600">{customer.city}</p>
-          <p className="mt-10 font-serif text-[34px] leading-[1.22]">“{customer.quote}”</p>
+          <p className="mt-10 font-serif text-[34px] leading-[1.22] text-balance">“{customer.quote}”</p>
           <div className="mt-8">{wearing}</div>
           <div className="mt-9">{actions}</div>
           {count > 1 && (
@@ -225,7 +225,7 @@ function Story({ customer, next, instant, onNext, onClose }: { customer: Custome
             <Name text={customer.name} />
           </h2>
           <p className="mt-2 text-[15px] text-stone-600">{customer.city}</p>
-          <p className="mt-5 font-serif text-[24px] leading-[1.25]">“{customer.quote}”</p>
+          <p className="mt-5 font-serif text-[24px] leading-[1.25] text-balance">“{customer.quote}”</p>
           <div className="mt-6">{wearing}</div>
           <button type="button" onClick={onNext} className="mt-6 flex items-center gap-2 self-start text-[14px] font-semibold">
             Next story: {next.name} <ChevronIcon size={18} />

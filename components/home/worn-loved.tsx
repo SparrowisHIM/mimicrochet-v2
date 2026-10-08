@@ -59,7 +59,7 @@ function CustomerPreview({ customer, open, onOpen }: { customer: Customer; open:
         </>}
       </div>
       <button type="button" onClick={onOpen} className="group/quote mt-4 flex w-full flex-col gap-3 text-left lg:mt-[18px]" aria-label={`Read ${customer.name}’s story`}>
-        <span className="font-serif text-[19px] leading-[1.35] lg:text-[21px]">“{customer.quote}”</span>
+        <span className="font-serif text-[19px] leading-[1.35] text-balance lg:text-[21px]">“{customer.quote}”</span>
         <span className="text-[13px] font-medium text-stone-500 underline decoration-transparent decoration-[1.5px] underline-offset-4 transition-[text-decoration-color,color] duration-200 group-hover/quote:text-stone-900 group-hover/quote:decoration-stone-900/40 lg:text-[14px]">{customer.name}, {customer.city}</span>
       </button>
     </li>
