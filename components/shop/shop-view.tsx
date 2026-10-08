@@ -14,7 +14,10 @@ import { Sheet } from "@/components/ui/sheet";
 import { Hairline } from "@/components/ui/hairline";
 import { Toggle } from "@/components/ui/toggle";
 import { categories, colourGroups, type ColourGroup } from "@/lib/products";
-import { applyFilters, defaultFilters, priceBands, sorts, type ShopFilters } from "@/lib/shop-filter";
+import { PriceRange } from "@/components/shop/price-range";
+import { ShadePicker } from "@/components/shop/shade-picker";
+import { hsvToHex, matchShade } from "@/lib/colour-match";
+import { applyFilters, defaultFilters, priceDomain, shopPrices, sorts, type ShopFilters } from "@/lib/shop-filter";
 import { hasSizes } from "@/lib/sizes";
 
 const PAGE = 15;
@@ -55,6 +58,7 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
   const [f, setF] = useState<ShopFilters>({ ...defaultFilters, ...initial });
   const [shown, setShown] = useState(PAGE);
   const [sheet, setSheet] = useState(false);
+  const [pickShade, setPickShade] = useState(false);
   const [searching, setSearching] = useState(Boolean(initial.search || initial.query));
   // The header's search icon links to /shop?search=1. Already on the shop, that only changes the
   // query, so open the search when it arrives, and drop it again on close so the icon works twice.
@@ -252,13 +256,12 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
           </fieldset>
           <fieldset className="flex flex-col">
             <legend className="mb-2.5 text-[15px] font-semibold">Price</legend>
-            <div className="flex flex-wrap gap-2">
-              {priceBands.map((b) => (
-                <Chip key={b.key} on={f.price === b.key} onClick={() => set({ price: f.price === b.key ? null : b.key })}>
-                  {b.label}
-                </Chip>
-              ))}
-            </div>
+            <PriceRange
+              domain={priceDomain}
+              value={f.price ?? priceDomain}
+              prices={shopPrices}
+              onChange={(v) => set({ price: v[0] <= priceDomain[0] && v[1] >= priceDomain[1] ? null : v })}
+            />
           </fieldset>
           <fieldset className="flex flex-col">
             <legend className="mb-2.5 text-[15px] font-semibold">Colour</legend>
@@ -270,7 +273,7 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
                     key={c}
                     type="button"
                     aria-pressed={on}
-                    onClick={() => set({ colours: on ? f.colours.filter((x) => x !== c) : [...f.colours, c] })}
+                    onClick={() => set({ colours: on ? f.colours.filter((x) => x !== c) : [...f.colours, c], shade: null })}
                     className="flex flex-col items-center gap-1.5"
                   >
                     <span className={`grid size-9 place-items-center rounded-full transition-shadow ${on ? "ring-2 ring-stone-900 ring-offset-2 ring-offset-orange-50" : ""}`}>
@@ -281,6 +284,27 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
                 );
               })}
             </div>
+            {/* Not sure of the name? Drag to the shade and the closest colours are picked. */}
+            <Hairline label={pickShade ? "Hide the shade picker" : "Or pick any shade"} onClick={() => setPickShade((v) => !v)} expanded={pickShade} className="mt-4" />
+            <AnimatePresence initial={false}>
+              {pickShade && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} className="overflow-hidden">
+                  <div className="flex flex-col gap-3 pt-4">
+                    <ShadePicker value={f.shade ?? { h: 340, s: 0.55, v: 0.85 }} onChange={(shade) => set({ shade, colours: matchShade(hsvToHex(shade.h, shade.s, shade.v)) })} />
+                    <p className="flex items-center gap-2.5 text-[14px] text-stone-600" aria-live="polite">
+                      <span className="size-6 shrink-0 rounded-full border border-stone-300" style={{ background: f.shade ? hsvToHex(f.shade.h, f.shade.s, f.shade.v) : "transparent" }} aria-hidden />
+                      {f.shade ? (
+                        <>
+                          Closest: <span className="font-semibold text-stone-900">{f.colours.join(" and ")}</span>
+                        </>
+                      ) : (
+                        "Drag to any shade, and we’ll find the closest pieces."
+                      )}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </fieldset>
           <fieldset className="flex flex-col">
             <legend className="mb-2.5 text-[15px] font-semibold">Sort</legend>

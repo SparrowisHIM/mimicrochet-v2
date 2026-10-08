@@ -1,24 +1,24 @@
 import { products, type Category, type ColourGroup, type Product } from "@/lib/products";
 
-export type PriceBand = "under40" | "40to60" | "over60";
 export type Sort = "newest" | "price-asc" | "price-desc";
 
 export type ShopFilters = {
   type: "all" | "ready" | "made";
   category: Category | "all";
-  price: PriceBand | null;
+  /** [lowest, highest] in naira, or null for any price. */
+  price: [number, number] | null;
   colours: ColourGroup[];
+  /** The exact shade dragged to in the colour picker (colours holds the groups it matched). */
+  shade: { h: number; s: number; v: number } | null;
   sort: Sort;
   query: string;
 };
 
-export const defaultFilters: ShopFilters = { type: "all", category: "all", price: null, colours: [], sort: "newest", query: "" };
+export const defaultFilters: ShopFilters = { type: "all", category: "all", price: null, colours: [], shade: null, sort: "newest", query: "" };
 
-export const priceBands: { key: PriceBand; label: string; test: (n: number) => boolean }[] = [
-  { key: "under40", label: "Under ₦40k", test: (n) => n < 40000 },
-  { key: "40to60", label: "₦40k–60k", test: (n) => n >= 40000 && n <= 60000 },
-  { key: "over60", label: "Over ₦60k", test: (n) => n > 60000 },
-];
+/** Every price in the shop, and the span the price slider covers. */
+export const shopPrices = products.flatMap((p) => (p.price === null ? [] : [p.price]));
+export const priceDomain: [number, number] = [Math.floor(Math.min(...shopPrices) / 1000) * 1000, Math.ceil(Math.max(...shopPrices) / 1000) * 1000];
 
 export const sorts: { key: Sort; label: string }[] = [
   { key: "newest", label: "Newest" },
@@ -42,10 +42,7 @@ export function applyFilters(f: ShopFilters, skip?: keyof ShopFilters, list: Pro
   let out = list.filter((p) => {
     if (skip !== "type" && f.type !== "all" && p.kind !== f.type) return false;
     if (skip !== "category" && f.category !== "all" && p.category !== f.category) return false;
-    if (skip !== "price" && f.price) {
-      const band = priceBands.find((b) => b.key === f.price)!;
-      if (p.price === null || !band.test(p.price)) return false;
-    }
+    if (skip !== "price" && f.price && (p.price === null || p.price < f.price[0] || p.price > f.price[1])) return false;
     if (skip !== "colours" && f.colours.length && !f.colours.some((c) => p.colours.includes(c))) return false;
     if (skip !== "query" && !matchesQuery(p, f.query)) return false;
     return true;
