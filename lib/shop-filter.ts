@@ -16,9 +16,11 @@ export type ShopFilters = {
 
 export const defaultFilters: ShopFilters = { type: "all", category: "all", price: null, colours: [], shade: null, sort: "newest", query: "" };
 
-/** Every price in the shop, and the span the price slider covers. */
+/** Every price in the shop. */
 export const shopPrices = products.flatMap((p) => (p.price === null ? [] : [p.price]));
-export const priceDomain: [number, number] = [Math.floor(Math.min(...shopPrices) / 1000) * 1000, Math.ceil(Math.max(...shopPrices) / 1000) * 1000];
+/** The price slider runs from the cheapest piece to ₦100,000+. The top end is open: at ₦100,000+
+ *  nothing is too expensive, so dragging a handle all the way right means "no upper limit". */
+export const priceDomain: [number, number] = [Math.floor(Math.min(...shopPrices) / 1000) * 1000, 100000];
 
 export const sorts: { key: Sort; label: string }[] = [
   { key: "newest", label: "Newest" },
@@ -42,7 +44,7 @@ export function applyFilters(f: ShopFilters, skip?: keyof ShopFilters, list: Pro
   let out = list.filter((p) => {
     if (skip !== "type" && f.type !== "all" && p.kind !== f.type) return false;
     if (skip !== "category" && f.category !== "all" && p.category !== f.category) return false;
-    if (skip !== "price" && f.price && (p.price === null || p.price < f.price[0] || p.price > f.price[1])) return false;
+    if (skip !== "price" && f.price && (p.price === null || p.price < f.price[0] || (f.price[1] < priceDomain[1] && p.price > f.price[1]))) return false;
     if (skip !== "colours" && f.colours.length && !f.colours.some((c) => p.colours.includes(c))) return false;
     if (skip !== "query" && !matchesQuery(p, f.query)) return false;
     return true;

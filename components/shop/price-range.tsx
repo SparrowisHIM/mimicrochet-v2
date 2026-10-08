@@ -3,22 +3,20 @@
 import { useRef } from "react";
 import { formatNaira } from "@/lib/site";
 
-// A price range with two handles (like v1's), and small bars above it showing how many pieces sit
-// at each price, lit inside the chosen range, so you can see where the pieces are as you drag.
+// A price range with two handles (like v1's), with bars above it that rise from the cheapest end to
+// the dearest, lit inside the chosen range. The top end reads ₦100,000+: no upper limit.
 
-const BINS = 18;
+const BARS = 18;
 
 export function PriceRange({
   domain,
   step = 1000,
   value,
-  prices,
   onChange,
 }: {
   domain: [number, number];
   step?: number;
   value: [number, number];
-  prices: number[];
   onChange: (v: [number, number]) => void;
 }) {
   const track = useRef<HTMLDivElement>(null);
@@ -32,9 +30,7 @@ export function PriceRange({
   };
   const set = (thumb: 0 | 1, n: number) => onChange(thumb === 0 ? [Math.min(n, value[1]), value[1]] : [value[0], Math.max(n, value[0])]);
 
-  const counts = Array.from({ length: BINS }, () => 0);
-  for (const p of prices) counts[Math.min(BINS - 1, Math.floor(((p - lo) / span) * BINS))]++;
-  const most = Math.max(...counts, 1);
+  const label = (n: number) => (n >= hi ? `${formatNaira(hi)}+` : formatNaira(n));
 
   const handle = (thumb: 0 | 1) => {
     const n = value[thumb];
@@ -46,7 +42,7 @@ export function PriceRange({
         aria-valuemin={thumb === 0 ? lo : value[0]}
         aria-valuemax={thumb === 0 ? value[1] : hi}
         aria-valuenow={n}
-        aria-valuetext={formatNaira(n)}
+        aria-valuetext={label(n)}
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId);
         }}
@@ -70,15 +66,15 @@ export function PriceRange({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between text-[15px] font-semibold tabular-nums">
-        <span>{formatNaira(value[0])}</span>
+        <span>{label(value[0])}</span>
         <span className="text-[13px] font-normal text-stone-500">to</span>
-        <span>{formatNaira(value[1])}</span>
+        <span>{label(value[1])}</span>
       </div>
       <div className="flex h-10 items-end gap-[3px] px-3.5" aria-hidden>
-        {counts.map((c, i) => {
-          const mid = lo + ((i + 0.5) / BINS) * span;
+        {Array.from({ length: BARS }, (_, i) => {
+          const mid = lo + ((i + 0.5) / BARS) * span;
           const inside = mid >= value[0] && mid <= value[1];
-          return <span key={i} className={`flex-1 rounded-t-[3px] transition-colors duration-200 ${inside ? "bg-stone-900" : "bg-stone-300"}`} style={{ height: c ? `${18 + (c / most) * 82}%` : "6%" }} />;
+          return <span key={i} className={`flex-1 rounded-t-[3px] transition-colors duration-200 ${inside ? "bg-stone-900" : "bg-stone-300"}`} style={{ height: `${14 + 86 * ((i + 1) / BARS) ** 1.3}%` }} />;
         })}
       </div>
       <div ref={track} className="relative mx-3.5 h-1.5 rounded-full bg-stone-200">

@@ -17,7 +17,7 @@ import { categories, colourGroups, type ColourGroup } from "@/lib/products";
 import { PriceRange } from "@/components/shop/price-range";
 import { ShadePicker } from "@/components/shop/shade-picker";
 import { hsvToHex, matchShade } from "@/lib/colour-match";
-import { applyFilters, defaultFilters, priceDomain, shopPrices, sorts, type ShopFilters } from "@/lib/shop-filter";
+import { applyFilters, defaultFilters, priceDomain, sorts, type ShopFilters } from "@/lib/shop-filter";
 import { hasSizes } from "@/lib/sizes";
 
 const PAGE = 15;
@@ -259,7 +259,6 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
             <PriceRange
               domain={priceDomain}
               value={f.price ?? priceDomain}
-              prices={shopPrices}
               onChange={(v) => set({ price: v[0] <= priceDomain[0] && v[1] >= priceDomain[1] ? null : v })}
             />
           </fieldset>
