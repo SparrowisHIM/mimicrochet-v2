@@ -32,6 +32,7 @@ function headline(o: Order) {
   const isAre = w === "earrings" ? "are" : "is";
   if (o.stage === 0 && o.sent === false) return { title: "Not sent to Mimi yet", lead: "Send your request on WhatsApp so Mimi gets it. This page follows every step after that." };
   if (o.stage === 0) return { title: "Mimi has your idea", lead: "She’ll message you on WhatsApp to agree the price and the date." };
+  if (o.stage === 1 && !o.depositPaid && o.paymentSent) return { title: "Payment sent", lead: "Mimi is checking her bank. This page moves on as soon as she confirms it." };
   if (o.stage === 1 && !o.depositPaid) return { title: "Your price is ready", lead: "Mimi starts as soon as your payment arrives: the deposit or the full price." };
   if (o.stage === 1) return { title: o.paidInFull ? "Paid in full" : "Deposit received", lead: "Mimi is picking your yarn and starting soon." };
   if (o.stage === 2) return { title: `Your ${w} ${isAre} being made`, lead: `Mimi started on it. She’ll update this page when it’s ready to send.` };
@@ -114,7 +115,7 @@ function useSpotlight(o: Order | undefined, target: RefObject<HTMLDivElement | n
 
 /* ------------------------------------ pieces ------------------------------------ */
 
-function Stepper({ stage, lifted }: { stage: number; lifted: boolean }) {
+export function Stepper({ stage, lifted = false }: { stage: number; lifted?: boolean }) {
   return (
     <ol className="flex items-start justify-between" aria-label="Order stages">
       {stages.map((s, i) => {
@@ -174,7 +175,7 @@ function PayCard({ order, price }: { order: Order; price: number }) {
         </span>
       </div>
       <p className="text-[15px] leading-[1.5] text-stone-700">Pay by bank transfer to the account Mimi sent with your price on WhatsApp, then tap below. She checks her bank and starts.</p>
-      <Button onClick={() => updateOrder(order.id, { depositPaid: true, paidInFull: full })} disabled={order.sample}>
+      <Button onClick={() => updateOrder(order.id, { paymentSent: full ? "full" : "deposit" })} disabled={order.sample}>
         {full ? "I’ve paid in full" : "I’ve paid the deposit"}
       </Button>
       <p className="text-[13px] text-amber-800">
@@ -386,7 +387,15 @@ export function TrackingView({ code, justPaid = false }: { code: string; justPai
 
   const money = order.price ? (
     awaitingDeposit ? (
-      <PayCard order={order} price={order.price} />
+      order.paymentSent ? (
+        <Card className="flex flex-col gap-3 border border-amber-200 bg-amber-50">
+          <span className="text-[14px] font-semibold text-amber-800">{order.paymentSent === "full" ? "Full payment sent" : "Deposit sent (60%)"}</span>
+          <span className="text-[34px] leading-none font-semibold tracking-[-0.01em]">{formatNaira(order.paymentSent === "full" ? order.price : deposit!)}</span>
+          <p className="text-[15px] leading-[1.5] text-stone-700">Mimi is checking her bank. Once it’s there, this page moves to “In progress”.</p>
+        </Card>
+      ) : (
+        <PayCard order={order} price={order.price} />
+      )
     ) : (
       <Card className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">

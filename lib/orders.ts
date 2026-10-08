@@ -37,6 +37,8 @@ export type Order = {
   depositPaid?: boolean;
   /** Paid the whole price up front instead of the 60% deposit, so nothing is left when it's ready. */
   paidInFull?: boolean;
+  /** The customer tapped "I've paid" on their page, and which amount they sent. Mimi still confirms it. */
+  paymentSent?: "deposit" | "full";
   sample?: boolean;
   /** Custom requests: false until the customer taps Send on WhatsApp (Mimi only gets it then). */
   sent?: boolean;
