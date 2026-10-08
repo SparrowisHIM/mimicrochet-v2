@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { CustomOrderFlow } from "@/components/custom-order/flow";
+import { getCustomer } from "@/lib/customers";
 import { getIdea } from "@/lib/ideas";
-import { pieceFromIdea, pieceFromProduct } from "@/lib/pieces";
+import { pieceFromCustomer, pieceFromIdea, pieceFromProduct } from "@/lib/pieces";
 import { getProduct } from "@/lib/products";
 
 export const metadata: Metadata = {
@@ -14,7 +15,8 @@ export default async function CustomOrderPage({ searchParams }: PageProps<"/cust
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
   const product = getProduct(one(q.piece) ?? "");
   const idea = getIdea(one(q.idea) ?? "");
-  const piece = product ? pieceFromProduct(product) : idea ? pieceFromIdea(idea) : undefined;
+  const customer = getCustomer(one(q.story) ?? "");
+  const piece = product ? pieceFromProduct(product) : idea ? pieceFromIdea(idea) : customer ? pieceFromCustomer(customer) : undefined;
 
   return <CustomOrderFlow initialPiece={piece} initialSize={one(q.size)} />;
 }

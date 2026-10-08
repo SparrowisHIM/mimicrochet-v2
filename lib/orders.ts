@@ -15,7 +15,7 @@ export type Order = {
   id: string; // MIMI-2406
   code: string; // private tracking code, e.g. k7x2p9
   createdAt: string;
-  piece: { name: string; image?: string; slug?: string; source: "product" | "idea" | "photo" | "words"; price?: number | null };
+  piece: { name: string; image?: string; slug?: string; source: "product" | "idea" | "story" | "photo" | "words"; price?: number | null; note?: string };
   photos: string[]; // small data-URL previews of the customer's photos
   hasVoiceNote?: boolean;
   description?: string;

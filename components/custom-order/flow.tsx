@@ -192,7 +192,9 @@ function PieceSlot({ draft, onChange }: { draft: Draft; onChange: () => void }) 
   const chosen = Boolean(p || draft.photos.length || hasWords(draft.words, 4) || draft.voice);
   const name = p ? p.name : draft.photos.length ? "Your photo" : chosen ? "Your idea" : "Your piece";
   const meta = p
-    ? p.price
+    ? p.note
+      ? `${p.note}. Mimi prices it with you on WhatsApp.`
+      : p.price
       ? `From ₦${p.price.toLocaleString("en-NG")}, made to order`
       : "Price on request"
     : chosen
@@ -558,7 +560,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       code,
       createdAt: new Date().toISOString(),
       piece: d.piece
-        ? { name: d.piece.name, image: d.piece.image, slug: d.piece.slug, source: d.piece.source, price: d.piece.price }
+        ? { name: d.piece.name, image: d.piece.image, slug: d.piece.slug, source: d.piece.source, price: d.piece.price, note: d.piece.note }
         : { name: d.photos.length ? "From your photo" : "Your own idea", image: d.photos.find((p) => p.preview)?.preview, source: d.photos.length ? "photo" : "words" },
       photos: d.photos.map((p) => p.preview).filter(Boolean),
       hasVoiceNote: Boolean(d.voice),
@@ -689,7 +691,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                   </span>
                   <span className="flex flex-1 flex-col">
                     <span className="text-[15px] font-medium">{d.piece.name}</span>
-                    <span className="text-[14px] text-stone-500">{d.piece.price ? `From ₦${d.piece.price.toLocaleString("en-NG")}, made to order` : "Price on request"}</span>
+                    <span className="text-[14px] text-stone-500">{d.piece.note ?? (d.piece.price ? `From ₦${d.piece.price.toLocaleString("en-NG")}, made to order` : "Price on request")}</span>
                   </span>
                   <button type="button" onClick={() => go(0)} className="text-[14px] font-medium underline underline-offset-4">
                     Change

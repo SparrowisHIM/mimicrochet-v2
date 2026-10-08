@@ -68,7 +68,7 @@ function Story({ customer, next, instant, onNext, onClose }: { customer: Custome
           Shop this piece
         </ButtonLink>
       ) : (
-        <ButtonLink href="/custom-order" className="min-w-0 flex-1 px-4 lg:flex-none lg:px-7">
+        <ButtonLink href={`/custom-order?story=${customer.slug}`} className="min-w-0 flex-1 px-4 lg:flex-none lg:px-7">
           Have yours made
         </ButtonLink>
       )}

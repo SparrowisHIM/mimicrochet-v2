@@ -16,7 +16,14 @@ const useOrigin = () => useSyncExternalStore(() => () => {}, origin, () => "");
 
 export function orderMessage(o: Order) {
   const parts = [`Hi Mimi! I'd like to discuss this custom request: ${o.id}`];
-  let what = o.piece.source === "photo" ? "from my photo" : o.piece.source === "words" ? "my own idea" : `the ${o.piece.name}`;
+  let what =
+    o.piece.source === "photo"
+      ? "from my photo"
+      : o.piece.source === "words"
+        ? "my own idea"
+        : o.piece.source === "story"
+          ? `the ${o.piece.name.toLowerCase()}, ${o.piece.note?.toLowerCase() ?? "from your customer photos"} on your site`
+          : `the ${o.piece.name}`;
   if (o.size) what += ` in size ${o.size}`;
   const visual = o.piece.source !== "words";
   what += o.colours === "different" ? `, in ${o.colourNote}` : visual ? ", colours as in the photo" : ", colours your choice";
