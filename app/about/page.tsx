@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Parallax, ThreadRail, VelocityMarquee, Wipe, WordReveal } from "@/components/about/about-motion";
+import { InViewVideo, Parallax, ThreadRail, VelocityMarquee, Wipe, WordReveal } from "@/components/about/about-motion";
 import { FactCard } from "@/components/about/fact-card";
 import { WhatsAppIcon } from "@/components/icons";
 import { ButtonLink, linkClass, linkLightClass } from "@/components/ui/button";
@@ -12,11 +12,14 @@ export const metadata: Metadata = {
   description: "Mimi crochets every piece herself in Port Harcourt, from playful sets to dresses that stop people mid-sentence.",
 };
 
-const steps = [
-  { n: "01", title: "Your idea", text: "A photo, a saved pin, or a piece she’s made before.", src: "/images/ideas/carnival-granny-crochet-shirt.jpg", alt: "A concept picture of a granny-square shirt", tag: "Your reference" },
-  { n: "02", title: "Yarn & colour", text: "Picked to glow on skin, in the sun and on camera.", src: "/images/story/yarn-pink-white-red.jpg", alt: "Pink, white and red balls of yarn in Mimi’s hand" },
-  { n: "03", title: "Stitch by stitch", text: "Crocheted by hand, one row at a time.", src: "/images/story/stitch-heart-square.jpg", alt: "A crochet hook working purple heart squares" },
-  { n: "04", title: "Finished for you", text: "Edges, ties and straps finished so it wears beautifully.", src: "/images/products/candy-bloom-ruffle-set-1.jpg", alt: "The finished Sasha Ruffle Set on Mimi’s mannequin" },
+// One dress followed from idea to finished: the Neon Granny Square Dress. 03 and 04 are Mimi's own
+// videos (upscaled); 01 is a generated reference picture and 02 a generated picture of its yarn.
+type Step = { n: string; title: string; text: string; src: string; alt: string; tag?: string; video?: string; href?: string };
+const steps: Step[] = [
+  { n: "01", title: "Your idea", text: "A saved pin, a photo, or a piece she’s made before. This one began as a neon granny-square dress.", src: "/images/story/neon-dress-reference.jpg", alt: "A reference picture of a neon granny-square dress on a dress form", tag: "Your reference" },
+  { n: "02", title: "Yarn & colour", text: "Black to hold it all together, neon to make it glow.", src: "/images/story/neon-dress-yarn.jpg", alt: "Balls of lime, orange, red, purple, pink, yellow and black yarn beside a blue crochet hook" },
+  { n: "03", title: "Stitch by stitch", text: "Every square crocheted by hand, then joined to the next, one by one.", src: "/images/story/neon-squares-joining.jpg", video: "/video/neon-squares-joining.mp4", alt: "Mimi joining neon granny squares with a blue hook" },
+  { n: "04", title: "Finished for you", text: "Shaped on the mannequin, every end woven in, ready to wear.", src: "/images/story/neon-dress-finished.jpg", video: "/video/neon-dress-finished.mp4", alt: "The finished Neon Granny Square Dress turning on Mimi’s mannequin", href: "/shop/neon-granny-square-dress" },
 ];
 
 export default function AboutPage() {
@@ -76,19 +79,28 @@ export default function AboutPage() {
         <div className="container-page flex flex-col gap-8 lg:gap-12">
           <Wipe className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <h2 className="font-serif text-[34px] leading-[1.08] tracking-[-0.02em] lg:text-[48px]">How a piece comes to life</h2>
-            <p className="text-[16px] text-stone-600 lg:text-[17px]">No machines. Just Mimi, a hook and a lot of yarn.</p>
+            <p className="text-[16px] text-stone-600 lg:text-[17px]">One dress, start to finish. No machines, just Mimi, a hook and a lot of yarn.</p>
           </Wipe>
           <ol className="no-scrollbar -mx-5 flex snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-6 lg:px-0">
             {steps.map((s) => (
               <li key={s.n} className="w-[72vw] max-w-[300px] shrink-0 snap-start lg:w-auto lg:max-w-none">
                 <Wipe className="flex flex-col gap-3.5">
                   <div className="relative aspect-[4/5] overflow-hidden rounded-[18px] bg-orange-100">
-                    <Image src={s.src} alt={s.alt} fill sizes="(min-width: 1024px) 310px, 72vw" className="object-cover" />
+                    {s.video ? (
+                      <InViewVideo src={s.video} poster={s.src} label={s.alt} />
+                    ) : (
+                      <Image src={s.src} alt={s.alt} fill sizes="(min-width: 1024px) 310px, 72vw" className="object-cover" />
+                    )}
                     {s.tag && <span className="absolute top-3 left-3 rounded-full bg-white/94 px-2.5 py-1 text-[12px] font-semibold">{s.tag}</span>}
                   </div>
                   <span className="font-serif text-[20px] text-amber-700">{s.n}</span>
                   <h3 className="-mt-1.5 text-[19px] font-medium">{s.title}</h3>
                   <p className="text-[15px] leading-[1.5] text-stone-600">{s.text}</p>
+                  {s.href && (
+                    <Link href={s.href} className={`${linkClass} self-start`}>
+                      See this dress
+                    </Link>
+                  )}
                 </Wipe>
               </li>
             ))}

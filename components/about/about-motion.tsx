@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useAnimationFrame, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform, useVelocity } from "motion/react";
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -105,6 +105,20 @@ export function Wipe({ children, className = "" }: { children: ReactNode; classN
       {children}
     </motion.div>
   );
+}
+
+/** A looping clip of Mimi's that only plays while it's on screen; reduced motion keeps the still. */
+export function InViewVideo({ src, poster, label }: { src: string; poster: string; label: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const reduce = useReducedMotion();
+  const onScreen = useInView(ref, { amount: 0.4 });
+  useEffect(() => {
+    const v = ref.current;
+    if (!v || reduce) return;
+    if (onScreen) v.play().catch(() => {});
+    else v.pause();
+  }, [onScreen, reduce]);
+  return <video ref={ref} className="size-full object-cover" src={src} poster={poster} muted loop playsInline preload="none" aria-label={label} />;
 }
 
 /** The portrait drifts slowly inside its frame as you scroll; the frame stays put. */
