@@ -827,7 +827,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                         id="describe"
                         rows={3}
                         value={d.words}
-                        onChange={(e) => set({ words: e.target.value })}
+                        onChange={(e) => set({ words: e.target.value.slice(0, 1500) })}
                         placeholder="The piece, the colours, the occasion…"
                         className="w-full resize-none bg-transparent text-[16px] leading-[1.5] outline-none placeholder:text-stone-400"
                       />

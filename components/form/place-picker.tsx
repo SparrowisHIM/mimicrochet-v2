@@ -169,7 +169,7 @@ function Combobox({
                 aria-label={searchPlaceholder}
                 value={query}
                 onChange={(e) => {
-                  setQuery(e.target.value);
+                  setQuery(e.target.value.slice(0, 80));
                   setActive(0);
                 }}
                 onKeyDown={(e) => {
