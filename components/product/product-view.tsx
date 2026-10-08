@@ -325,11 +325,11 @@ export function ProductView({ product }: { product: Product }) {
       <Sheet open={guide} onClose={() => setGuide(false)} title="Size guide">
         <p className="text-[15px] text-stone-600">Body measurements each size fits, in centimetres.</p>
         <div className="mt-4 overflow-hidden rounded-[18px] bg-white">
-          <table className="w-full text-left text-[15px]">
+          <table className="w-full text-left text-[15px] whitespace-nowrap tabular-nums">
             <thead className="text-stone-500">
               <tr>
                 {["Size", "UK", "Bust", "Waist", "Hips"].map((h) => (
-                  <th key={h} scope="col" className="px-4 py-3 font-medium">
+                  <th key={h} scope="col" className="px-3 py-3 font-medium sm:px-4">
                     {h}
                   </th>
                 ))}
@@ -338,11 +338,11 @@ export function ProductView({ product }: { product: Product }) {
             <tbody>
               {sizeChart.map((r) => (
                 <tr key={r.size} className={`border-t border-stone-100 ${r.size === stockSize ? "bg-emerald-50 font-semibold" : ""}`}>
-                  <td className="px-4 py-3">{r.size}</td>
-                  <td className="px-4 py-3">{r.uk}</td>
-                  <td className="px-4 py-3">{r.bust} cm</td>
-                  <td className="px-4 py-3">{r.waist} cm</td>
-                  <td className="px-4 py-3">{r.hips} cm</td>
+                  <td className="px-3 py-3 sm:px-4">{r.size}</td>
+                  <td className="px-3 py-3 sm:px-4">{r.uk}</td>
+                  <td className="px-3 py-3 sm:px-4">{r.bust}</td>
+                  <td className="px-3 py-3 sm:px-4">{r.waist}</td>
+                  <td className="px-3 py-3 sm:px-4">{r.hips}</td>
                 </tr>
               ))}
             </tbody>
