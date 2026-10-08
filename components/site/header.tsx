@@ -56,6 +56,24 @@ export function Header() {
     };
   }, [menuOpen]);
 
+  // Mimi's studio is her work page, not the shop: just the name, a Studio tag and her initial.
+  if (pathname.startsWith("/studio"))
+    return (
+      <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-orange-50/92 backdrop-blur-md">
+        <div className="container-page flex h-[62px] items-center justify-between lg:h-[72px]">
+          <div className="flex items-center gap-2.5">
+            <Link href="/" className="font-serif text-[19px] tracking-[-0.01em] text-stone-900 max-[380px]:text-[17px] lg:text-[22px]" aria-label={`${site.name}, back to the shop`}>
+              {site.name}
+            </Link>
+            <span className="rounded-full bg-stone-900 px-2 py-0.5 text-[11px] font-semibold text-orange-50">Studio</span>
+          </div>
+          <span className="grid size-9 place-items-center rounded-full bg-orange-100 font-serif text-[16px] text-amber-800" role="img" aria-label="Signed in as Mimi">
+            M
+          </span>
+        </div>
+      </header>
+    );
+
   return (
     <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-orange-50/92 backdrop-blur-md">
       <div className="container-page flex h-[62px] items-center justify-between lg:h-[72px]">

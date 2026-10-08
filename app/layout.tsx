@@ -4,6 +4,7 @@ import { BagDrawer } from "@/components/cart/bag-drawer";
 import { Announcement } from "@/components/site/announcement";
 import { Footer } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
+import { ShopOnly } from "@/components/site/shop-only";
 import { InputModality } from "@/components/site/input-modality";
 import { site } from "@/lib/site";
 import "./globals.css";
@@ -47,7 +48,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <Announcement />
+        <ShopOnly>
+          <Announcement />
+        </ShopOnly>
         <Header />
         {/* overflow-x-clip: stamps, tags and flashes that peek past a card must never widen the page
             on a phone (that lets it pan sideways and lose the header). It sits on main, not body,
@@ -55,7 +58,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <main id="main" className="flex-1 overflow-x-clip">
           {children}
         </main>
-        <Footer />
+        <ShopOnly>
+          <Footer />
+        </ShopOnly>
         <BagDrawer />
         <InputModality />
       </body>
