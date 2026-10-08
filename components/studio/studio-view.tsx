@@ -9,7 +9,8 @@ import { Button, linkClass } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
 import { Toggle } from "@/components/ui/toggle";
-import { patchOrder, thumbnail, useOrders, type Order } from "@/lib/orders";
+import { patchOrder, useOrders, type Order } from "@/lib/orders";
+import { checkPhoto } from "@/lib/upload-safety";
 import { formatNaira } from "@/lib/site";
 import { stages } from "@/lib/stages";
 import { sampleOrders } from "@/lib/studio";
@@ -108,12 +109,13 @@ function SetPrice({ o, onDone }: { o: Row; onDone: () => void }) {
 function PostUpdate({ o, onDone }: { o: Row; onDone: () => void }) {
   const [note, setNote] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
+  const [photoNote, setPhotoNote] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const file = useRef<HTMLInputElement>(null);
   return (
     <div className="flex flex-col gap-5">
       <p className="text-[15px] text-stone-600">{o.name} sees this on their tracking page.</p>
-      <input ref={file} type="file" accept="image/*" capture="environment" hidden onChange={async (e) => { const f = e.target.files?.[0]; if (f) setPhoto(await thumbnail(f, 900)); }} />
+      <input ref={file} type="file" accept="image/*" capture="environment" hidden onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ""; if (!f) return; const c = await checkPhoto(f, { preview: 900 }); if (c.ok && c.preview) { setPhoto(c.preview); setPhotoNote(null); } else setPhotoNote(c.ok ? "That photo can’t be shown here. Try a JPEG or PNG." : c.reason); }} />
       <div className="grid grid-cols-3 gap-2.5">
         {photo ? (
           <span className="relative aspect-[3/4] overflow-hidden rounded-[12px]">
@@ -126,6 +128,7 @@ function PostUpdate({ o, onDone }: { o: Row; onDone: () => void }) {
           {photo ? "Change" : "Camera or gallery"}
         </button>
       </div>
+      {photoNote && <p className="-mt-2 text-[13px] text-amber-800" role="status">{photoNote}</p>}
       <label className="flex flex-col gap-2">
         <span className="text-[14px] font-semibold">Note (optional)</span>
         <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. The top is done. Starting the skirt now." className="h-12 rounded-[12px] border border-stone-300 bg-white px-3.5 text-[16px] outline-none focus:border-stone-900" />

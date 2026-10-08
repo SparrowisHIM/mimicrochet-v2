@@ -20,7 +20,8 @@ import { CardStack } from "@/components/ui/card-stack";
 import { Chip } from "@/components/ui/chip";
 import { isLgaOf } from "@/lib/nigeria";
 import { isRequestDate } from "@/lib/request-date";
-import { isImageFile, newOrderIds, saveOrder, thumbnail, toJpeg, type Order } from "@/lib/orders";
+import { newOrderIds, saveOrder, type Order } from "@/lib/orders";
+import { checkPhoto, precheckPhoto } from "@/lib/upload-safety";
 import { pieceFromIdea, pieceFromProduct, type Piece } from "@/lib/pieces";
 import { getProduct, type Product } from "@/lib/products";
 import { sizeLabels } from "@/lib/sizes";
@@ -493,46 +494,44 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
     go(step + 1);
   };
 
-  // A photo shows as a tile the moment it's picked, then joins the request once its small copy is made.
+  // A photo shows as a tile the moment it's picked, then joins the request once it's been checked.
   // Each one is held for a beat (staggered when several arrive) so the reveal reads as a moment.
-  // Every image counts: iPhone HEIC photos are converted, and a photo this browser can't show at all
-  // still goes to Mimi (its tile just says it can't be previewed). Nothing is dropped quietly.
+  // Only real photos get in (lib/upload-safety.ts checks the file's bytes, size and pixel count), and
+  // what's kept is a clean JPEG redrawn from the pixels. iPhone HEIC photos are converted; a real photo
+  // this browser can't show at all still goes to Mimi (its tile just says it can't be previewed).
+  // Anything turned away says why. Nothing is dropped quietly.
   const addFiles = async (files: FileList | null) => {
-    if (!files) return;
+    if (!files?.length) return;
     const room = 6 - d.photos.length - adding.length;
-    // Files with no type at all are tried too: Windows sometimes reports a photo that way.
-    const picked = [...files].filter((f) => isImageFile(f) || !f.type).slice(0, Math.max(0, room));
-    setUploadNote(picked.length < files.length && room >= files.length ? "Only photos can be added here." : null);
+    const all = [...files];
+    const pre = await Promise.all(all.map(precheckPhoto));
+    const photos = all.filter((_, i) => pre[i].ok);
+    const notPhotos = pre.filter((c) => !c.ok && c.notPhoto).length;
+    const picked = photos.slice(0, Math.max(0, room));
+    // Everything turned away in this pick, said once: "x isn’t a photo… y is over 25 MB…".
+    const notes: string[] = [];
+    const say = () => setUploadNote(!notes.length ? null : notes.length <= 2 ? notes.join(" ") : `${notes[0]} ${notes.length - 1} more files weren’t added either.`);
+    if (notPhotos) notes.push(notPhotos === all.length ? (all.length === 1 ? "That file isn’t a photo, so it wasn’t added." : "Those files aren’t photos, so they weren’t added.") : "Only photos can be added here, so the other files were left out.");
+    for (const c of pre) if (!c.ok && !c.notPhoto) notes.push(c.reason);
+    if (picked.length < photos.length) notes.push("Up to 6 photos, so the rest were left out.");
+    say();
     if (!picked.length) return;
-    const items = picked.map((file) => ({ id: `${file.name}-${file.size}-${Math.random()}`, file, url: URL.createObjectURL(file) }));
+    const items = picked.map((file) => ({ id: `${file.size}-${Math.random().toString(36).slice(2)}`, file, url: URL.createObjectURL(file) }));
     setAdding((cur) => [...cur, ...items.map(({ id, url }) => ({ id, url }))]);
     await Promise.all(
       items.map(async ({ id, file, url }, i) => {
         const hold = new Promise((r) => setTimeout(r, reduce ? 0 : 1000 + i * 300));
-        let shown = file;
-        let src = url;
-        let preview = await thumbnail(file).catch(() => "");
-        if (!preview) {
-          const jpeg = await toJpeg(file);
-          if (jpeg) {
-            shown = jpeg;
-            URL.revokeObjectURL(url);
-            src = URL.createObjectURL(jpeg);
-            preview = await thumbnail(jpeg).catch(() => "");
-          }
+        const checked = await checkPhoto(file);
+        URL.revokeObjectURL(url);
+        if (!checked.ok) {
+          setAdding((cur) => cur.filter((a) => a.id !== id));
+          notes.push(checked.reason);
+          say();
+          return;
         }
-        if (!preview) {
-          URL.revokeObjectURL(src);
-          src = "";
-          if (!isImageFile(file)) {
-            // Not a photo after all.
-            setAdding((cur) => cur.filter((a) => a.id !== id));
-            setUploadNote(`“${file.name}” isn’t a photo, so it wasn’t added.`);
-            return;
-          }
-        }
+        const src = checked.preview ? URL.createObjectURL(checked.file) : "";
         await hold;
-        setD((cur) => ({ ...cur, photos: [...cur.photos, { id, name: file.name, bytes: file.size, preview, url: src, file: shown }].slice(0, 6) }));
+        setD((cur) => ({ ...cur, photos: [...cur.photos, { id, name: checked.file.name, bytes: checked.file.size, preview: checked.preview, url: src, file: checked.file }].slice(0, 6) }));
         setAdding((cur) => cur.filter((a) => a.id !== id));
       }),
     );

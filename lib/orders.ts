@@ -127,42 +127,4 @@ export function newOrderIds() {
 
 export const trackingUrl = (code: string) => `mimicrochet.ng/t/${code}`;
 
-/** Downscale an image file to a small JPEG data URL for previews that survive a reload. */
-export async function thumbnail(file: File, max = 360): Promise<string> {
-  const url = URL.createObjectURL(file);
-  try {
-    const img = await new Promise<HTMLImageElement>((res, rej) => {
-      const i = new Image();
-      i.onload = () => res(i);
-      i.onerror = rej;
-      i.src = url;
-    });
-    const s = Math.min(1, max / Math.max(img.width, img.height));
-    const c = document.createElement("canvas");
-    c.width = Math.round(img.width * s);
-    c.height = Math.round(img.height * s);
-    c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
-    return c.toDataURL("image/jpeg", 0.78);
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
-
 export { nigerianStates } from "@/lib/nigeria";
-
-// Any photo a customer picks counts, whatever the browser reports its type as.
-const IMAGE_NAME = /\.(heic|heif|avif|webp|jfif|pjpeg|pjp|jpe?g|png|gif|bmp|tiff?|svg|ico)$/i;
-export const isImageFile = (f: File) => f.type.startsWith("image/") || IMAGE_NAME.test(f.name);
-
-/** iPhone photos (HEIC/HEIF) can't be shown by most desktop browsers: convert them to JPEG. The
- *  converter only loads when such a photo is picked. Returns null if the file still can't be read. */
-export async function toJpeg(file: File): Promise<File | null> {
-  try {
-    const { default: heic2any } = await import("heic2any");
-    const out = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
-    const blob = Array.isArray(out) ? out[0] : out;
-    return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.jpg`, { type: "image/jpeg" });
-  } catch {
-    return null;
-  }
-}
