@@ -2,6 +2,7 @@
 
 import { motion, useInView, useReducedMotion } from "motion/react";
 import { useRef, type ReactNode } from "react";
+import { useIntroDone } from "@/lib/intro";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -30,7 +31,8 @@ export function RevealText({
   const reduce = useReducedMotion();
   const ref = useRef<HTMLHeadingElement>(null);
   const seen = useInView(ref, { once: true, margin: "0px 0px -12% 0px" });
-  const play = immediate || seen;
+  // Not under the loading screen: wait until it lifts.
+  const play = useIntroDone() && (immediate || seen);
   let n = 0;
   const lines = text.split("\n");
   return (

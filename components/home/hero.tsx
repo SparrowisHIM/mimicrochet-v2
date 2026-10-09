@@ -7,6 +7,7 @@ import { useRef, useSyncExternalStore } from "react";
 import { Magnetic } from "@/components/motion/magnetic";
 import { RevealText } from "@/components/motion/reveal";
 import { ButtonLink, linkClass } from "@/components/ui/button";
+import { useIntroDone } from "@/lib/intro";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const wide = "(min-width: 1024px)";
@@ -18,6 +19,8 @@ const subscribeWide = (notify: () => void) => {
 
 export function Hero() {
   const reduce = useReducedMotion();
+  // On the first visit the entrance waits for the loading screen to lift, so it's seen.
+  const ready = useIntroDone();
   // The photo and text ease away as you scroll, on large screens where they sit side by side.
   const desktop = useSyncExternalStore(subscribeWide, () => window.matchMedia(wide).matches, () => false);
   const scrollOut = desktop && !reduce;
@@ -31,7 +34,7 @@ export function Hero() {
   const fade = (delay: number) =>
     reduce
       ? {}
-      : { initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.7, ease, delay } };
+      : { initial: { opacity: 0, y: 14 }, animate: ready ? { opacity: 1, y: 0 } : undefined, transition: { duration: 0.7, ease, delay } };
 
   return (
     <section ref={section} className="lg:container-page flex flex-col lg:flex-row lg:items-center lg:gap-[72px] lg:pt-8 lg:pb-24">
@@ -39,14 +42,14 @@ export function Hero() {
         className="relative aspect-[3/4] w-full overflow-hidden max-lg:max-h-[78svh] lg:order-2 lg:w-[min(640px,calc((100dvh-150px)*0.75))] lg:shrink-0 lg:rounded-[18px]"
         style={scrollOut ? { scale: photoScale, y: photoY } : undefined}
         initial={reduce ? false : { clipPath: "inset(10% 10% 10% 10% round 28px)", opacity: 0.3 }}
-        animate={{ clipPath: "inset(0% 0% 0% 0% round 0px)", opacity: 1 }}
+        animate={ready ? { clipPath: "inset(0% 0% 0% 0% round 0px)", opacity: 1 } : undefined}
         transition={{ duration: 1, ease }}
       >
         <motion.div className="absolute inset-0" style={scrollOut ? { scale: inner } : undefined}>
         <motion.div
           className="absolute inset-0"
           initial={reduce ? false : { scale: 1.12 }}
-          animate={{ scale: 1 }}
+          animate={ready ? { scale: 1 } : undefined}
           transition={{ duration: 1.2, ease }}
         >
           <Image

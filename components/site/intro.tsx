@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { introLifted } from "@/lib/intro";
 import { BALL, LETTERS, LOGO_VIEWBOX, MARK, TAIL } from "@/lib/logo";
 
 // The loading screen (Figma: Home > Loading). First visit only, 2.5s, no skip: Mimi's logo stitches
 // itself in amber thread, fills with ink, the yarn ball rolls in, its tail draws out, MIMICROCHET
-// appears letter by letter, then the cream lifts away like every page change. The motion is CSS
-// (.intro in globals.css) so it starts with the first paint; this component only cleans up after.
+// appears letter by letter, then the cream lifts away and the page plays its own entrance (see
+// lib/intro.ts). The motion is CSS (.intro in globals.css) so it starts with the first paint; this
+// component only signals the lift and cleans up after.
 
 const SEEN = "mimi:intro";
 // Runs while the HTML is still parsing, before the first paint: later page loads in the same visit
@@ -24,16 +26,27 @@ export function Intro() {
   useEffect(() => {
     const el = ref.current;
     if (!el || el.hidden) return;
+    const start = (e: AnimationEvent) => {
+      if (e.animationName === "intro-lift") introLifted();
+    };
     const end = (e: AnimationEvent) => {
-      if (e.target === el && (e.animationName === "intro-done" || e.animationName === "intro-fade")) setGone(true);
+      if (e.target === el && (e.animationName === "intro-done" || e.animationName === "intro-fade")) {
+        introLifted();
+        setGone(true);
+      }
     };
     // No scrolling the page underneath while the logo is on screen.
     const hold = (e: Event) => e.preventDefault();
+    el.addEventListener("animationstart", start);
     el.addEventListener("animationend", end);
     el.addEventListener("wheel", hold, { passive: false });
     el.addEventListener("touchmove", hold, { passive: false });
-    const late = window.setTimeout(() => setGone(true), 4000);
+    const late = window.setTimeout(() => {
+      introLifted();
+      setGone(true);
+    }, 4000);
     return () => {
+      el.removeEventListener("animationstart", start);
       el.removeEventListener("animationend", end);
       el.removeEventListener("wheel", hold);
       el.removeEventListener("touchmove", hold);
@@ -77,8 +90,6 @@ export function Intro() {
             ))}
           </svg>
         </div>
-        {/* the stitched thread riding the curtain's edge as it lifts */}
-        <span className="intro-edge" />
       </div>
       <InlineScript html={script} />
     </>
