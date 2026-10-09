@@ -14,6 +14,7 @@ import {
   type MotionValue,
 } from "motion/react";
 import { useEffect, useEffectEvent, useRef, useState, type RefObject } from "react";
+import { Flow } from "@/components/motion/flow";
 import { RevealText } from "@/components/motion/reveal";
 import { StageIcon } from "@/components/home/stage-icons";
 import { ButtonLink } from "@/components/ui/button";
@@ -127,6 +128,157 @@ function Layer({ i, pos, active, reduce, loop, near, videoRef: video }: LayerPro
   );
 }
 
+/* --------------------------------- the flow --------------------------------- */
+
+// Desktop: every stage is an outlined card, and one channel links them top to bottom. A short run of
+// amber flows down each link, round the card's edge (along the top, down the right, back along the
+// bottom) and out to the next stage, so it's always going round the stage you're reading. Your scroll
+// is its clock: scroll back and it flows back.
+
+const CARD_RADIUS = 20;
+const CARD_TAIL = 300;
+
+type Channel = { w: number; h: number; links: string; path: string; mids: number[]; end: number };
+
+function channelOf(list: HTMLElement, cards: (HTMLElement | null)[]): Channel | null {
+  const box = list.getBoundingClientRect();
+  const rs = cards.map((c) => c?.getBoundingClientRect());
+  if (!rs.length || rs.some((r) => !r?.width)) return null;
+  const r = CARD_RADIUS - 0.5;
+  // The channel runs down the number circles' column: 20px padding plus half the 32px circle.
+  const x = rs[0]!.left - box.left + 36;
+  const top = rs[0]!.top - box.top + 0.5;
+  let path = `M${x} 0 V${top}`;
+  let links = path;
+  let len = top;
+  const mids: number[] = [];
+  rs.forEach((c, i) => {
+    const t = c!.top - box.top + 0.5;
+    const b = c!.bottom - box.top - 0.5;
+    const right = c!.right - box.left - 0.5;
+    const across = right - r - x;
+    const arc = (Math.PI * r) / 2;
+    const side = b - t - 2 * r;
+    path += ` H${right - r} A${r} ${r} 0 0 1 ${right} ${t + r} V${b - r} A${r} ${r} 0 0 1 ${right - r} ${b} H${x}`;
+    // A stage is "being read" when the flow is halfway down its right edge.
+    mids.push(len + across + arc + side / 2);
+    len += 2 * across + 2 * arc + side;
+    const next = i < rs.length - 1 ? rs[i + 1]!.top - box.top + 0.5 : box.height;
+    path += ` V${next}`;
+    links += ` M${x} ${b} V${next}`;
+    len += next - b;
+  });
+  return { w: box.width, h: box.height, links, path, mids, end: len };
+}
+
+const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+
+/** Where the flow's head is for a scroll position: -1 is still above the list, `last + 1` has drained out below it. */
+function headAt(q: number, g: Channel) {
+  const v = Math.max(-1, Math.min(last + 1, q));
+  if (v < 0) return mix(-1, g.mids[0], v + 1);
+  if (v >= last) return mix(g.mids[last], g.end + CARD_TAIL, v - last);
+  const i = Math.floor(v);
+  return mix(g.mids[i], g.mids[i + 1], v - i);
+}
+
+function StageChannel({ list, cards, q, reduce }: { list: RefObject<HTMLOListElement | null>; cards: RefObject<(HTMLButtonElement | null)[]>; q: MotionValue<number>; reduce: boolean }) {
+  const [geo, setGeo] = useState<Channel | null>(null);
+  const geoRef = useRef<Channel | null>(null);
+  const head = useMotionValue(-1);
+  const follow = (v: number) => {
+    if (geoRef.current) head.set(headAt(v, geoRef.current));
+  };
+  useMotionValueEvent(q, "change", follow);
+
+  const layout = useEffectEvent(() => {
+    const el = list.current;
+    if (!el) return;
+    const g = channelOf(el, cards.current);
+    geoRef.current = g;
+    setGeo(g);
+    follow(q.get());
+  });
+  useEffect(() => {
+    const el = list.current;
+    if (!el) return;
+    let live = true;
+    // The observer reports once as soon as it starts watching, so this also draws the first layout.
+    const ro = new ResizeObserver(() => layout());
+    ro.observe(el);
+    document.fonts?.ready.then(() => live && layout());
+    return () => {
+      live = false;
+      ro.disconnect();
+    };
+  }, [list]);
+
+  if (!geo) return null;
+  return (
+    <svg className="pointer-events-none absolute top-0 left-0 overflow-visible" width={geo.w} height={geo.h} aria-hidden>
+      <path d={geo.links} fill="none" className="stroke-stone-300" strokeWidth={1} />
+      {!reduce && <Flow d={geo.path} head={head} tail={CARD_TAIL} width={3} />}
+    </svg>
+  );
+}
+
+// Phones: the stage buttons are linked the same way. While a stage plays, the flow splits round its
+// button, over the top and under the bottom, and the two runs meet on the far side as the stage ends
+// (3s for a photo, the video's own length), then drain away and the next button starts.
+
+const CHIP_RADIUS = 12;
+const CHIP_TAIL = 46;
+
+type Chips = { w: number; h: number; pipes: string; boxes: { x0: number; x1: number; y0: number; y1: number }[] };
+
+function ChipFlow({ row, chips, active, progress, playing }: { row: RefObject<HTMLDivElement | null>; chips: RefObject<(HTMLButtonElement | null)[]>; active: number; progress: MotionValue<number>; playing: boolean }) {
+  const [geo, setGeo] = useState<Chips | null>(null);
+  const layout = useEffectEvent(() => {
+    const el = row.current;
+    if (!el) return;
+    const box = el.getBoundingClientRect();
+    const rs = chips.current.map((c) => c?.getBoundingClientRect());
+    if (!box.width || rs.some((r) => !r?.width)) return setGeo(null);
+    const boxes = rs.map((r) => ({ x0: r!.left - box.left + 0.5, x1: r!.right - box.left - 0.5, y0: r!.top - box.top + 0.5, y1: r!.bottom - box.top - 0.5 }));
+    const pipes = boxes
+      .slice(0, -1)
+      .map((b, i) => `M${b.x1 + 0.5} ${(b.y0 + b.y1) / 2} H${boxes[i + 1].x0 - 0.5}`)
+      .join(" ");
+    setGeo({ w: box.width, h: box.height, pipes, boxes });
+  });
+  useEffect(() => {
+    const el = row.current;
+    if (!el) return;
+    // The observer reports once as soon as it starts watching, so this also draws the first layout.
+    const ro = new ResizeObserver(() => layout());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [row]);
+
+  const b = geo?.boxes[active];
+  const r = CHIP_RADIUS - 0.5;
+  const mid = b ? (b.y0 + b.y1) / 2 : 0;
+  const half = b ? 2 * (mid - b.y0 - r) + Math.PI * r + (b.x1 - b.x0 - 2 * r) : 0;
+  // The runs meet on the far side at 90% of the stage's time and drain away in the last 10%.
+  const head = useMotionValue(0);
+  useMotionValueEvent(progress, "change", (p) => head.set(p < 0.9 ? (p / 0.9) * half : half + ((p - 0.9) / 0.1) * CHIP_TAIL));
+
+  if (!geo || !b) return null;
+  const over = `M${b.x0} ${mid} V${b.y0 + r} A${r} ${r} 0 0 1 ${b.x0 + r} ${b.y0} H${b.x1 - r} A${r} ${r} 0 0 1 ${b.x1} ${b.y0 + r} V${mid}`;
+  const under = `M${b.x0} ${mid} V${b.y1 - r} A${r} ${r} 0 0 0 ${b.x0 + r} ${b.y1} H${b.x1 - r} A${r} ${r} 0 0 0 ${b.x1} ${b.y1 - r} V${mid}`;
+  return (
+    <svg className="pointer-events-none absolute top-0 left-0 overflow-visible" width={geo.w} height={geo.h} aria-hidden>
+      <path d={geo.pipes} fill="none" className="stroke-stone-300" strokeWidth={1} />
+      {playing && (
+        <g key={active}>
+          <Flow d={over} head={head} tail={CHIP_TAIL} width={2} />
+          <Flow d={under} head={head} tail={CHIP_TAIL} width={2} />
+        </g>
+      )}
+    </svg>
+  );
+}
+
 /* --------------------------------- the section --------------------------------- */
 
 export function OrderStory() {
@@ -134,23 +286,30 @@ export function OrderStory() {
   const desktop = useMedia("(min-width: 1024px)");
   const [active, setActive] = useState(0);
   const pos = useMotionValue(0);
+  // The same position, but it carries on a stage's worth before the first and after the last,
+  // so the flow can run in from above the list and drain out below it.
+  const flow = useMotionValue(-1);
   const rows = useRef<(HTMLLIElement | null)[]>([]);
-  const rail = useTransform(pos, [0, last], [0, 1]);
+  const list = useRef<HTMLOListElement>(null);
+  const cards = useRef<(HTMLButtonElement | null)[]>([]);
 
   // Where the stage list sits against a focus line 45% down the screen, as a continuous number:
   // 1.5 means halfway between stage 2 and stage 3.
   const measure = () => {
     const focus = window.innerHeight * 0.45;
-    const centers = rows.current.map((r) => {
+    const c = rows.current.map((r) => {
       const b = r?.getBoundingClientRect();
       return b ? b.top + b.height / 2 : 0;
     });
-    let p = 0;
-    if (focus >= centers[last]) p = last;
-    else if (focus > centers[0]) {
-      const k = centers.findIndex((c, n) => focus >= c && focus < centers[n + 1]);
-      p = k + (focus - centers[k]) / (centers[k + 1] - centers[k]);
+    let q: number;
+    if (focus < c[0]) q = Math.max(-1, (focus - c[0]) / (c[1] - c[0]));
+    else if (focus >= c[last]) q = Math.min(last + 1, last + (focus - c[last]) / (c[last] - c[last - 1]));
+    else {
+      const k = c.findIndex((v, n) => focus >= v && focus < c[n + 1]);
+      q = k + (focus - c[k]) / (c[k + 1] - c[k]);
     }
+    flow.set(q);
+    const p = Math.max(0, Math.min(last, q));
     pos.set(p);
     const a = Math.round(p);
     setActive((cur) => (cur === a ? cur : a));
@@ -198,12 +357,20 @@ export function OrderStory() {
   const autoplay = !desktop && !reduce && onScreen;
   const onVideo = story[active].media.kind === "video";
   const clipProgress = useMotionValue(0);
+  const imageProgress = useMotionValue(0);
+  const chipRow = useRef<HTMLDivElement>(null);
+  const chips = useRef<(HTMLButtonElement | null)[]>([]);
   const advance = useEffectEvent(() => go(active === last ? 0 : active + 1, active === last));
   useEffect(() => {
     if (!autoplay) return;
     if (!onVideo) {
+      imageProgress.set(0);
+      const run = animate(imageProgress, 1, { duration: IMAGE_MS / 1000, ease: "linear" });
       const t = setTimeout(() => advance(), IMAGE_MS);
-      return () => clearTimeout(t);
+      return () => {
+        run.stop();
+        clearTimeout(t);
+      };
     }
     // The video stage: play from the top, fill the bar with the real playback (it waits if the video
     // buffers), and move on when the video ends.
@@ -224,7 +391,7 @@ export function OrderStory() {
       v.removeEventListener("ended", done);
       clearTimeout(stall);
     };
-  }, [autoplay, active, onVideo, clipProgress]);
+  }, [autoplay, active, onVideo, clipProgress, imageProgress]);
 
   const current = story[active];
 
@@ -237,36 +404,40 @@ export function OrderStory() {
         </div>
 
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16 xl:gap-24">
-          {/* Desktop: the stage list (sage reference: a rail with an inset selected row) */}
+          {/* Desktop: the stage list, outlined cards on one channel with the flow running through it */}
           {/* The space under the button keeps the photo fully on screen while the last stage is centred. */}
           <div className="hidden lg:block lg:pb-[24vh]">
-            <ol className="relative" aria-label="Order stages">
-              <span className="absolute top-[18vh] bottom-[18vh] left-9 w-px bg-stone-200" aria-hidden />
-              <motion.span className="absolute top-[18vh] bottom-[18vh] left-9 w-px origin-top bg-stone-900" style={{ scaleY: reduce ? active / last : rail }} aria-hidden />
-              {story.map((s, i) => {
-                const on = i === active;
-                return (
-                  <li key={s.title} ref={(el) => { rows.current[i] = el; }} className="flex min-h-[36vh] items-center">
-                    <button
-                      type="button"
-                      onClick={() => go(i)}
-                      aria-current={on ? "step" : undefined}
-                      className={`relative flex w-full gap-5 rounded-[20px] px-5 py-6 text-left transition-opacity duration-200 ${on ? "opacity-100" : "opacity-45 hover:opacity-80"}`}
-                    >
-                      {on && <motion.span layoutId="story-selected" className="absolute inset-0 rounded-[20px] border border-stone-200 bg-white shadow-[0_12px_32px_-24px_rgb(28_25_23/0.3)]" transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 36 }} />}
-                      <span className={`relative mt-1 grid size-8 shrink-0 place-items-center rounded-full border text-[12px] font-semibold tabular-nums transition-colors duration-300 ${on ? "border-stone-900 bg-stone-900 text-orange-50" : "border-stone-300 bg-orange-50 text-stone-500"}`}>
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <span className="relative flex flex-col gap-2">
-                        <span className={`text-[13px] font-semibold ${on ? "text-amber-800" : "text-stone-500"}`}>{stages[i].label}</span>
-                        <span className="font-serif text-[26px] leading-tight">{s.title}</span>
-                        <span className="max-w-[380px] text-[16px] leading-relaxed text-stone-600">{s.detail}</span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
+            <div className="relative">
+              <ol ref={list} aria-label="Order stages">
+                {story.map((s, i) => {
+                  const on = i === active;
+                  const quiet = on ? "" : "opacity-45 group-hover:opacity-80";
+                  return (
+                    <li key={s.title} ref={(el) => { rows.current[i] = el; }} className="flex min-h-[36vh] items-center">
+                      <button
+                        ref={(el) => { cards.current[i] = el; }}
+                        type="button"
+                        onClick={() => go(i)}
+                        aria-current={on ? "step" : undefined}
+                        className="group relative flex w-full gap-5 rounded-[20px] border border-stone-300 px-5 py-6 text-left"
+                      >
+                        {/* The stage being read lights up where it is; nothing slides between stages. */}
+                        <span className={`absolute inset-0 rounded-[19px] bg-white shadow-[0_12px_32px_-24px_rgb(28_25_23/0.3)] transition-opacity duration-300 ${on ? "opacity-100" : "opacity-0"}`} aria-hidden />
+                        <span className={`relative mt-1 grid size-8 shrink-0 place-items-center rounded-full border text-[12px] font-semibold tabular-nums transition-[color,background-color,border-color,opacity] duration-300 ${on ? "border-stone-900 bg-stone-900 text-orange-50" : "border-stone-300 bg-orange-50 text-stone-500"} ${quiet}`}>
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <span className={`relative flex flex-col gap-2 transition-opacity duration-200 ${quiet}`}>
+                          <span className={`text-[13px] font-semibold ${on ? "text-amber-800" : "text-stone-500"}`}>{stages[i].label}</span>
+                          <span className="font-serif text-[26px] leading-tight">{s.title}</span>
+                          <span className="max-w-[380px] text-[16px] leading-relaxed text-stone-600">{s.detail}</span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+              <StageChannel list={list} cards={cards} q={flow} reduce={reduce} />
+            </div>
             <div className="pl-5">
               <ButtonLink href="/custom-order">Let’s make your piece</ButtonLink>
             </div>
@@ -274,32 +445,24 @@ export function OrderStory() {
 
           {/* The photo, with the tag on top and the order's tracking card tucked under its bottom edge */}
           <div className="lg:sticky lg:top-24">
-            <div className="mb-4 flex justify-between gap-1.5 lg:hidden" role="group" aria-label="Choose an order stage">
+            <div ref={chipRow} className="relative mb-4 flex justify-between gap-1.5 lg:hidden" role="group" aria-label="Choose an order stage">
               {stages.map((st, i) => (
                 <button
                   key={st.key}
+                  ref={(el) => { chips.current[i] = el; }}
                   type="button"
                   aria-pressed={i === active}
                   aria-label={st.label}
                   onClick={() => go(i)}
-                  className={`relative flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 overflow-hidden rounded-[12px] border text-[11px] font-medium transition-colors ${
+                  className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[12px] border text-[11px] font-medium transition-colors ${
                     i === active ? "border-stone-900 bg-stone-900 text-orange-50" : "border-stone-200 bg-white text-stone-600"
                   }`}
                 >
                   <span className="text-[13px] tabular-nums">{i + 1}</span>
                   {st.short}
-                  {/* While it plays, a thin bar fills under the current stage. */}
-                  {i === active && autoplay && (
-                    <span className="absolute inset-x-2 bottom-1.5 h-[2px] overflow-hidden rounded-full bg-white/25" aria-hidden>
-                      {onVideo ? (
-                        <motion.span className="block size-full origin-left bg-orange-50" style={{ scaleX: clipProgress }} />
-                      ) : (
-                        <span key={active} className="block size-full origin-left bg-orange-50" style={{ animation: `customer-photo-progress ${IMAGE_MS}ms linear forwards` }} />
-                      )}
-                    </span>
-                  )}
                 </button>
               ))}
+              <ChipFlow row={chipRow} chips={chips} active={active} progress={onVideo ? clipProgress : imageProgress} playing={autoplay} />
             </div>
 
             {/* Desktop: the photo is sized so it and Mimi's line under it fit the sticky column. */}
