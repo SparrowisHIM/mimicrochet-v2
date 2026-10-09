@@ -8,6 +8,7 @@ import { TrackingCard } from "@/components/order/tracking-card";
 import { Button, linkClass } from "@/components/ui/button";
 import { Confetti } from "@/components/ui/confetti";
 import { fitWords } from "@/lib/fit";
+import { kindName } from "@/lib/fit-outline";
 import { updateOrder, type Order } from "@/lib/orders";
 import { whatsappLink } from "@/lib/site";
 
@@ -19,9 +20,9 @@ export function orderMessage(o: Order) {
   const parts = [`Hi Mimi! I'd like to discuss this custom request: ${o.id}`];
   let what =
     o.piece.source === "photo"
-      ? "from my photo"
+      ? o.pieceKind ? `${kindName(o.pieceKind)} from my photo` : "from my photo"
       : o.piece.source === "words"
-        ? "my own idea"
+        ? o.pieceKind ? `${kindName(o.pieceKind)}, my own idea` : "my own idea"
         : o.piece.source === "story"
           ? `the ${o.piece.name.toLowerCase()}, ${o.piece.note?.toLowerCase() ?? "from your customer photos"} on your site`
           : `the ${o.piece.name}`;

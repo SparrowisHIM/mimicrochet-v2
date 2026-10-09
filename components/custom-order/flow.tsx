@@ -8,6 +8,7 @@ import { ChevronIcon } from "@/components/icons";
 import { IdeasSheet } from "@/components/custom-order/ideas-sheet";
 import { PhotoTile } from "@/components/custom-order/photo-tile";
 import { FitSheet, type FitStep } from "@/components/custom-order/fit-sheet";
+import { KindTiles } from "@/components/custom-order/kind-tiles";
 import { MiniMat } from "@/components/custom-order/fit-pad";
 import { toIn, type Measures } from "@/components/custom-order/measure-sheet";
 import { SendingMoment } from "@/components/custom-order/sending";
@@ -20,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { CardStack } from "@/components/ui/card-stack";
 import { Chip } from "@/components/ui/chip";
 import { fitWords, hasFit, heightLabel, saveFit, useSavedFit, type Fit } from "@/lib/fit";
+import { isFitKind, kindLabel, type PieceKind } from "@/lib/fit-outline";
 import { isLgaOf } from "@/lib/nigeria";
 import { isRequestDate } from "@/lib/request-date";
 import { newOrderIds, saveOrder, type Order } from "@/lib/orders";
@@ -43,6 +45,8 @@ export type Draft = {
   photos: Photo[];
   voice?: Voice;
   piece?: Piece;
+  /** What it is, when it starts from their own photo or words (Mimi's pieces already know). */
+  kind?: PieceKind;
   words: string;
   size?: string;
   measures: Measures;
@@ -73,7 +77,8 @@ const starter = ["sunflower-crop-cardigan", "noir-bloom-crochet-shirt", "heart-s
   .map((s) => getProduct(s))
   .filter(Boolean) as Product[];
 
-const unsized = (p?: Piece) => p && !p.sized;
+/** No size or fit questions: one of Mimi's pieces sized with her (hats, earrings), or their own hat or "something else". */
+const noSize = (d: Draft) => (d.piece ? !d.piece.sized : d.kind === "hat" || d.kind === "other");
 
 /** "165 cm tall · Bust 86 · Waist 70 · Hips 94" in the customer's unit. */
 function fitLine(d: Draft) {
@@ -257,7 +262,7 @@ function PieceSlot({ draft, onChange }: { draft: Draft; onChange: () => void }) 
 function Summary({ draft, rows, step, onJump, compact }: { draft: Draft; rows: Row[]; step: number; onJump: (r: Row) => void; compact?: boolean }) {
   const reduce = useReducedMotion();
   const ready = rows.filter((r) => r.state === "done").length;
-  const all = ready === rows.length && (unsized(draft.piece) || draft.sizeOk);
+  const all = ready === rows.length && (noSize(draft) || draft.sizeOk);
 
   return (
     <div className="relative flex flex-col gap-[18px] rounded-[22px] bg-white p-5 shadow-[0_24px_56px_-32px_rgb(28_25_23/0.3)] lg:p-6">
@@ -412,23 +417,27 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
   /* What's done, step by step. Nothing counts until the customer chooses it. */
   const hasVisual = d.photos.length > 0 || Boolean(d.piece);
   const hasSource = hasVisual || hasWords(d.words, 4) || Boolean(d.voice);
+  // Their own photo or words: ask what it is, so the right drawing and questions follow.
+  const needsKind = !d.piece && hasSource;
+  const kindDone = !needsKind || Boolean(d.kind);
+  const step1Done = hasSource && kindDone;
   const fitted = hasFit(d);
-  const sizeDone = unsized(d.piece) || Boolean(d.size) || fitted;
+  const sizeDone = noSize(d) || Boolean(d.size) || fitted;
   const coloursDone = d.colours === "photo" || (d.colours === "different" && hasWords(d.colourNote, 3));
   const whenDone = d.when === "none" || (d.when === "date" && isRequestDate(d.date, today));
   const step2Done = sizeDone && coloursDone && whenDone;
   const nameOk = isName(d.name);
   const phoneErr = phoneProblem(d.phone);
   const placeOk = isLgaOf(d.state, d.area);
-  const sizeConfirmed = unsized(d.piece) || d.sizeOk;
+  const sizeConfirmed = noSize(d) || d.sizeOk;
   const step3Done = nameOk && !phoneErr && placeOk && sizeConfirmed;
-  const firstOpen = !hasSource ? 0 : !step2Done ? 1 : !step3Done ? 2 : 3;
+  const firstOpen = !step1Done ? 0 : !step2Done ? 1 : !step3Done ? 2 : 3;
   const needsBudget = !d.piece || d.piece.price === null;
   const show = (field: string) => tried > 0 || touched[field];
 
   const firstMissing = (s: number) =>
     s === 0
-      ? "f-source"
+      ? !hasSource ? "f-source" : "f-kind"
       : s === 1
         ? !sizeDone ? "f-size" : !coloursDone ? "f-colours" : "f-when"
         : !nameOk ? "f-name" : phoneErr ? "f-phone" : !placeOk ? "f-place" : "f-sizeok";
@@ -438,14 +447,16 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       key: "Piece",
       step: 0,
       field: "f-source",
-      value: d.piece ? d.piece.name : d.photos.length ? `From your photo${d.photos.length > 1 ? "s" : ""}` : hasWords(d.words, 4) ? "In your words" : d.voice ? "Your voice note" : "",
-      state: hasSource ? "done" : "todo",
+      value: d.piece
+        ? d.piece.name
+        : `${d.kind ? `${kindLabel(d.kind)}, ` : ""}${d.photos.length ? `${d.kind ? "f" : "F"}rom your photo${d.photos.length > 1 ? "s" : ""}` : hasWords(d.words, 4) ? `${d.kind ? "i" : "I"}n your words` : d.voice ? `${d.kind ? "y" : "Y"}our voice note` : ""}`,
+      state: step1Done ? "done" : hasSource ? "warn" : "todo",
     },
     {
       key: "Size",
       step: 1,
       field: "f-size",
-      value: unsized(d.piece) ? "Agreed with Mimi" : fitted ? `${d.size ? d.size + " + " : ""}your fit` : d.size ?? "",
+      value: noSize(d) ? "Agreed with Mimi" : fitted ? `${d.size ? d.size + " + " : ""}your fit` : d.size ?? "",
       state: sizeDone ? "done" : "todo",
     },
     {
@@ -521,7 +532,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
   };
 
   const next = () => {
-    const done = step === 0 ? hasSource : step2Done;
+    const done = step === 0 ? step1Done : step2Done;
     if (!done) {
       setTried((t) => t + 1);
       focusField(firstMissing(step), true);
@@ -597,14 +608,19 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       createdAt: new Date().toISOString(),
       piece: d.piece
         ? { name: d.piece.name, image: d.piece.image, slug: d.piece.slug, source: d.piece.source, price: d.piece.price, note: d.piece.note }
-        : { name: d.photos.length ? "From your photo" : "Your own idea", image: d.photos.find((p) => p.preview)?.preview, source: d.photos.length ? "photo" : "words" },
+        : {
+            name: d.kind ? `${kindLabel(d.kind)} ${d.photos.length ? "from your photo" : "(your own idea)"}` : d.photos.length ? "From your photo" : "Your own idea",
+            image: d.photos.find((p) => p.preview)?.preview,
+            source: d.photos.length ? "photo" : "words",
+          },
+      pieceKind: d.piece ? undefined : d.kind,
       photos: d.photos.map((p) => p.preview).filter(Boolean),
       hasVoiceNote: Boolean(d.voice),
       description: d.words.trim() || undefined,
-      size: d.size,
-      measurements: Object.keys(d.measures).length ? { ...d.measures, unit: d.unit } : undefined,
-      height: d.height,
-      fit: d.fit,
+      size: noSize(d) ? undefined : d.size,
+      measurements: !noSize(d) && Object.keys(d.measures).length ? { ...d.measures, unit: d.unit } : undefined,
+      height: noSize(d) ? undefined : d.height,
+      fit: noSize(d) ? undefined : d.fit,
       colours: d.colours!,
       colourNote: d.colours === "different" ? d.colourNote.trim() : undefined,
       when: d.when === "date" && d.date ? `By ${shortDate(d.date)}` : "No rush",
@@ -619,7 +635,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       updates: [{ stage: 0, note: "Request prepared. Send the details to Mimi on WhatsApp to confirm.", at: "Today" }],
     };
     saveOrder(order);
-    if (fitted) saveFit({ size: d.size, height: d.height, measures: d.measures, unit: d.unit, fit: d.fit });
+    if (fitted && !noSize(d)) saveFit({ size: d.size, height: d.height, measures: d.measures, unit: d.unit, fit: d.fit });
     setSending({ order, files: [...d.photos.map((p) => p.file), ...(d.voice ? [d.voice.file] : [])] });
   };
 
@@ -882,12 +898,23 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                       />
                     </div>
                   </div>
+
+                  <AnimatePresence initial={false}>
+                    {needsKind && (
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: easeOutExpo }} className="-m-1 overflow-hidden p-1">
+                        <Spot id="f-kind" flash={flash} className="flex flex-col gap-2.5">
+                          <KindTiles value={d.kind} onChange={(kind) => set({ kind })} invalid={tried > 0 && !d.kind} />
+                          {tried > 0 && !d.kind && <Problem>Tap the picture that looks most like it.</Problem>}
+                        </Spot>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </Spot>
               )}
 
               {step === 1 && (
                 <>
-                  {!unsized(d.piece) && (
+                  {!noSize(d) && (
                     <Spot id="f-size" flash={flash} className="flex flex-col gap-3">
                       <Label>Size</Label>
                       <div className="flex gap-2" role="radiogroup" aria-label="Size">
@@ -1033,7 +1060,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                     <Summary draft={d} rows={rows} step={step} onJump={jump} compact />
                   </div>
 
-                  {!unsized(d.piece) && (
+                  {!noSize(d) && (
                     <Spot id="f-sizeok" flash={flash}>
                       <label className={`flex cursor-pointer gap-3 rounded-[18px] border-[1.5px] bg-white p-4 transition-colors duration-150 ${tried > 0 && !d.sizeOk ? "border-red-400" : d.sizeOk ? "border-stone-900" : "border-transparent"}`}>
                         <input type="checkbox" checked={d.sizeOk} onChange={(e) => set({ sizeOk: e.target.checked })} className="mt-0.5 size-5 shrink-0 accent-stone-900" />
@@ -1093,7 +1120,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
         <FitSheet
           open
           startAt={fitting}
-          kind={d.piece?.kind ?? "dress"}
+          kind={d.piece?.kind ?? (isFitKind(d.kind) ? d.kind : "shirt")}
           answers={{ size: d.size, height: d.height, measures: d.measures, unit: d.unit, fit: d.fit }}
           onChange={(patch) => set({ ...patch, sizeOk: false })}
           onSave={() => {

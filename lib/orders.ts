@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import type { PieceKind } from "@/lib/fit-outline";
 
 // Prototype order store: orders live on this device (no backend yet). The demo order
 // MIMI-2406 is always available so the tracking page and Mimi's page can be explored.
@@ -16,6 +17,8 @@ export type Order = {
   code: string; // private tracking code, e.g. k7x2p9
   createdAt: string;
   piece: { name: string; image?: string; slug?: string; source: "product" | "idea" | "story" | "photo" | "words"; price?: number | null; note?: string };
+  /** What it is, when it started from their own photo or words. See lib/fit-outline.ts. */
+  pieceKind?: PieceKind;
   photos: string[]; // small data-URL previews of the customer's photos
   hasVoiceNote?: boolean;
   description?: string;

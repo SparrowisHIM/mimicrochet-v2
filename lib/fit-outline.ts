@@ -62,3 +62,21 @@ const along = (stops: number[], v: number) => {
 };
 export const widthAt = (x: number) => along(widths, x);
 export const lengthAt = (y: number) => along(lengths, y);
+
+// What a custom order is for, when it starts from the customer's own photo or words (Mimi's own
+// pieces already know). Hats and "something else" skip the size and fit questions.
+export type PieceKind = FitKind | "hat" | "other";
+
+export const pieceKinds: { key: PieceKind; label: string; name: string }[] = [
+  { key: "shirt", label: "Shirt", name: "a shirt" },
+  { key: "top", label: "Top", name: "a top" },
+  { key: "dress", label: "Dress", name: "a dress" },
+  { key: "set", label: "Set", name: "a set" },
+  { key: "hat", label: "Hat", name: "a hat" },
+  { key: "other", label: "Something else", name: "something else" },
+];
+
+export const isFitKind = (k?: PieceKind): k is FitKind => k === "shirt" || k === "top" || k === "dress" || k === "set";
+export const kindLabel = (k: PieceKind) => pieceKinds.find((p) => p.key === k)!.label;
+/** "a shirt", for Mimi's message. */
+export const kindName = (k: PieceKind) => pieceKinds.find((p) => p.key === k)!.name;
