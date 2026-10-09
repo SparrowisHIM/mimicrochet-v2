@@ -113,11 +113,11 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
           <h1 className="font-serif text-[40px] leading-none tracking-[-0.02em] lg:text-[56px]">Shop</h1>
           <p className="text-[15px] text-stone-600 lg:text-[17px]">
             <span className="lg:hidden">{results.length} pieces</span>
-            <span className="max-lg:hidden">One-of-one pieces ready to wear, and pieces Mimi makes for you in your size.</span>
+            <span className="max-lg:hidden">One-of-one pieces ready now, and pieces Mimi makes for you in your size.</span>
           </p>
         </div>
         <div className="hidden items-center gap-5 lg:flex">
-          <Toggle id="shop-ready" label="Ready to wear only" checked={f.type === "ready"} onChange={(v) => set({ type: v ? "ready" : "all" })} />
+          <Toggle id="shop-ready" label="Ready now only" checked={f.type === "ready"} onChange={(v) => set({ type: v ? "ready" : "all" })} />
           <SelectMenu label="Sort" value={f.sort} options={sorts} onChange={(sort) => set({ sort })} />
         </div>
       </div>
@@ -157,7 +157,7 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
       </div>
 
       <div className="container-page flex items-center justify-between py-4 lg:hidden">
-        <Toggle id="shop-ready-m" label="Ready to wear only" checked={f.type === "ready"} onChange={(v) => set({ type: v ? "ready" : "all" })} />
+        <Toggle id="shop-ready-m" label="Ready now only" checked={f.type === "ready"} onChange={(v) => set({ type: v ? "ready" : "all" })} />
         <FilterButton count={activeExtras} onClick={() => setSheet(true)} className="-mr-3.5" />
       </div>
 
@@ -237,10 +237,10 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
             <legend className="mb-2.5 text-[15px] font-semibold">Type</legend>
             <div className="flex flex-wrap gap-2">
               <Chip on={f.type === "ready"} onClick={() => set({ type: f.type === "ready" ? "all" : "ready" })}>
-                Ready to wear · {typeCount("ready")}
+                Ready now · {typeCount("ready")}
               </Chip>
               <Chip on={f.type === "made"} onClick={() => set({ type: f.type === "made" ? "all" : "made" })}>
-                Made to order · {typeCount("made")}
+                Made for you · {typeCount("made")}
               </Chip>
             </div>
           </fieldset>

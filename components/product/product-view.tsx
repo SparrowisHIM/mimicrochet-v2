@@ -44,7 +44,7 @@ function MadeForYou({ product }: { product: Product }) {
   return (
     <div className="flex flex-col gap-3 rounded-[18px] border border-orange-200 bg-white px-[22px] py-5">
       <div className="flex items-center justify-between">
-        <span className="text-[16px] font-semibold">Made for you</span>
+        <span className="text-[16px] font-semibold">How Mimi makes it</span>
         <span className="text-[14px] font-semibold text-amber-800">{quick ? "About 3 days" : "About 3 weeks"}</span>
       </div>
       <p className="text-[15px] leading-[1.5] text-stone-600">
@@ -266,7 +266,7 @@ export function ProductView({ product }: { product: Product }) {
 
             <div className="border-b border-stone-200">
               <Accordion title="Details" defaultOpen>
-                Colour: {product.colour.toLowerCase()}. {product.kind === "made" ? (sized ? "Made to order in your size and colours. " : "Made to order for you. ") : ""}Crocheted by hand in soft cotton yarn.
+                Colour: {product.colour.toLowerCase()}. {product.kind === "made" ? (sized ? "Made for you in your size and colours. " : "Made for you. ") : ""}Crocheted by hand in soft cotton yarn.
               </Accordion>
               {sized && (
                 <Accordion title="Size & fit">

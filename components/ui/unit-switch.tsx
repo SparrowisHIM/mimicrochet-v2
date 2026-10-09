@@ -4,7 +4,7 @@ import { animate, motion, useMotionValue, useReducedMotion, useTransform } from 
 import { useEffect, useRef, useState } from "react";
 
 // cm / in: a squircle switch between the two units (after Cloudflare Kumo's switch), in Mimi's caramel,
-// the amber-800 that marks "made to order" across the site. The thumb springs across, and while the
+// the amber-800 that marks "made for you" across the site. The thumb springs across, and while the
 // track is pressed it stretches toward the side it's about to go. Either word can be tapped too, and
 // arrow keys move between them like a native radio group.
 

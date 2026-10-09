@@ -21,7 +21,7 @@ export type Product = {
   checkout: "bag" | "request";
   /** Size of the one piece in stock (ready pieces only). */
   size?: string;
-  /** Shown instead of the size for quick made-to-order pieces. */
+  /** Shown instead of the size for quick made-for-you pieces (earrings: "Made in 3 days"). */
   leadTime?: string;
   colour: string;
   colours: ColourGroup[];
@@ -46,7 +46,7 @@ export const products: Product[] = [
   { slug: "cream-granny-square-mini-dress", name: "Cream Granny Square Mini Dress", category: "Dresses", kind: "ready", price: 60000, checkout: "bag", size: "M", colour: "Cream with coloured squares", colours: ["Cream"], description: "Cream granny-square mini dress with colourful flower squares.", images: img("cream-granny-square-mini-dress", 2) },
   { slug: "candy-stripe-crochet-shirt", name: "Candy Stripe Crochet Shirt", category: "Shirts", kind: "ready", price: 70000, checkout: "bag", size: "XL", colour: "White, navy, pink and yellow", colours: ["Pink", "Yellow", "Blue"], description: "Button-up crochet shirt with a white collar and multicolour stripes.", images: img("candy-stripe-crochet-shirt", 2) },
   { slug: "ivory-beach-skirt-set", name: "Ivory Beach Skirt Set", category: "Sets & shorts", kind: "ready", price: 35000, checkout: "bag", size: "M", colour: "Ivory", colours: ["Cream"], description: "Ivory triangle top with a skirt that laces up the side.", images: img("ivory-beach-skirt-set") },
-  { slug: "monochrome-crochet-shirt", name: "Striped Crochet Shirt", category: "Shirts", kind: "made", price: 80000, priceFrom: true, checkout: "request", colour: "Black with white stripes", colours: ["Black"], description: "A black crochet shirt with white stripes, made to order in your size.", images: img("monochrome-crochet-shirt") },
+  { slug: "monochrome-crochet-shirt", name: "Striped Crochet Shirt", category: "Shirts", kind: "made", price: 80000, priceFrom: true, checkout: "request", colour: "Black with white stripes", colours: ["Black"], description: "A black crochet shirt with white stripes, made in your size.", images: img("monochrome-crochet-shirt") },
   { slug: "blossin-loom-earrings", name: "Blossin Loom Earrings", category: "Earrings", kind: "made", price: 8000, checkout: "bag", leadTime: "Made in 3 days", colour: "Cobalt blue", colours: ["Blue"], description: "Cobalt blue crochet rosettes on gold studs.", images: img("blossin-loom-earrings") },
   { slug: "florra-loom-earrings", name: "Florra Loom Earrings", category: "Earrings", kind: "made", price: 8000, checkout: "bag", leadTime: "Made in 3 days", colour: "Red", colours: ["Red"], description: "Red crochet flowers with a pearl centre.", images: img("florra-loom-earrings") },
   { slug: "fern-loom-earrings", name: "Fern Loom Earrings", category: "Earrings", kind: "made", price: 8000, checkout: "bag", leadTime: "Made in 3 days", colour: "Green and cream", colours: ["Green", "Cream"], description: "Green and cream crochet swirl circles.", images: img("fern-loom-earrings") },
@@ -101,6 +101,6 @@ export function priceLabel(p: Pick<Product, "price" | "priceFrom">) {
 }
 
 export function tagLabel(p: Product) {
-  if (p.kind === "ready") return "Ready to wear";
-  return p.leadTime ?? "Made to order";
+  if (p.kind === "ready") return "Ready now";
+  return p.leadTime ?? "Made for you";
 }

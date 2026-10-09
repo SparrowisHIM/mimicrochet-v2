@@ -5,7 +5,7 @@ import { categories, type Category } from "@/lib/products";
 
 export const metadata: Metadata = {
   title: "Shop",
-  description: "One-of-one crochet pieces ready to wear, and pieces Mimi makes for you in your size.",
+  description: "One-of-one crochet pieces ready now, and pieces Mimi makes for you in your size.",
 };
 
 export default async function ShopPage({ searchParams }: PageProps<"/shop">) {

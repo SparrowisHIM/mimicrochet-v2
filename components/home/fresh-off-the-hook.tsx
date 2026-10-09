@@ -16,7 +16,7 @@ export function FreshOffTheHook({ pieces }: { pieces: Product[] }) {
     <section className="container-page flex flex-col gap-6 py-16 lg:gap-10 lg:py-24">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <RevealText text="Fresh off the hook" className="font-serif text-[32px] leading-[1.08] tracking-[-0.02em] lg:text-[48px]" />
-        <Toggle id="home-ready-only" label="Ready to wear only" checked={readyOnly} onChange={setReadyOnly} />
+        <Toggle id="home-ready-only" label="Ready now only" checked={readyOnly} onChange={setReadyOnly} />
       </div>
 
       <motion.ul layout className="grid grid-cols-2 gap-x-3 gap-y-7 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-11">

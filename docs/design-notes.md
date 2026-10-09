@@ -101,7 +101,8 @@ The section stays on screen for about two scrolls, on desktop and phone. Each st
 - Colour is a fact, not a picker. Choices like size and colours live in the custom order flow.
 - One main button. On phones a floating bar shows it only after it scrolls away.
 - Removed: the "promise" section, trust badges ("Secure checkout" while payments were off), share icon. (Wishlist/favourites is coming back, see Shop.)
-- Made to order gets a "Made for you" box: time, how the price is agreed, and the tracking stages.
+- Made-for-you pieces get a "How Mimi makes it" box: time, how the price is agreed, and the tracking stages.
+- **Labels (9 Oct):** "Ready to wear" is now **Ready now** and "Made to order" is now **Made for you** everywhere (tags, filters, the toggle "Ready now only", FAQ, About), because "made to order" wasn't clear. "Made in 3 days" stays on the earrings. "Ready to wear" survives only where it means ready to put on (the order story and About steps).
 
 ### References used
 - Dawn: the phone's floating bar (thumbnail, price, Add to bag) floats like Dawn's "Add new" pill.

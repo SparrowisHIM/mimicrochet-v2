@@ -34,7 +34,7 @@ export default function AboutPage() {
             className="font-serif text-[40px] leading-[1.06] tracking-[-0.02em] text-balance lg:text-[64px]"
           />
           <p className="max-w-[560px] text-[17px] leading-[1.55] text-stone-600 lg:text-[19px]">
-            Mimi crochets every piece herself, from playful sets to dresses that stop people mid-sentence. Some are ready to wear today. The rest she makes just for you.
+            Mimi crochets every piece herself, from playful sets to dresses that stop people mid-sentence. Some are ready now. The rest she makes just for you.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-7">
             <ButtonLink href="/shop">Shop her pieces</ButtonLink>
@@ -84,7 +84,7 @@ export default function AboutPage() {
       </section>
 
       <section className="container-page grid gap-4 py-16 lg:grid-cols-3 lg:gap-6 lg:py-24">
-        <FactCard title="One of one" text="Every ready-to-wear piece exists once. When it’s gone, it’s gone." />
+        <FactCard title="One of one" text="Every piece that’s ready now exists once. When it’s gone, it’s gone." />
         <FactCard title="Made to your size" text="Pick XS to XL, or send your own measurements." />
         <FactCard title="Anywhere in Nigeria" text="Delivered to your door, in every state." />
       </section>

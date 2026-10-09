@@ -50,7 +50,7 @@ export function MeetMimi() {
           <RevealText text="Meet the hands behind every stitch" className="font-serif text-[32px] leading-[1.08] tracking-[-0.02em] lg:text-[56px]" />
           <Reveal delay={0.2}>
             <p className="text-[17px] leading-[1.55] text-stone-600 lg:text-[20px]">
-              Mimi crochets every piece herself in her Port Harcourt studio, in colours made to turn heads. Some are ready to wear today; the
+              Mimi crochets every piece herself in her Port Harcourt studio, in colours made to turn heads. Some are ready now; the
               rest she makes just for you.
             </p>
           </Reveal>

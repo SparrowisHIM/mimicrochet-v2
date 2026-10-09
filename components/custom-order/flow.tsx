@@ -223,7 +223,7 @@ function PieceSlot({ draft, onChange }: { draft: Draft; onChange: () => void }) 
     ? p.note
       ? `${p.note}. Mimi prices it with you on WhatsApp.`
       : p.price
-      ? `From ₦${p.price.toLocaleString("en-NG")}, made to order`
+      ? `From ₦${p.price.toLocaleString("en-NG")}, made for you`
       : "Price on request"
     : chosen
       ? "Mimi prices it with you on WhatsApp."
@@ -746,7 +746,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                   </span>
                   <span className="flex flex-1 flex-col">
                     <span className="text-[15px] font-medium">{d.piece.name}</span>
-                    <span className="text-[14px] text-stone-500">{d.piece.note ?? (d.piece.price ? `From ₦${d.piece.price.toLocaleString("en-NG")}, made to order` : "Price on request")}</span>
+                    <span className="text-[14px] text-stone-500">{d.piece.note ?? (d.piece.price ? `From ₦${d.piece.price.toLocaleString("en-NG")}, made for you` : "Price on request")}</span>
                   </span>
                   <button type="button" onClick={() => go(0)} className="text-[14px] font-medium underline underline-offset-4">
                     Change

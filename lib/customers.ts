@@ -21,8 +21,8 @@ export const customers: Customer[] = [
     city: "Bayelsa",
     quote: "It’s so beautiful. I love it ❤️",
     wearing: [
-      { name: "Ruffle bucket hat", detail: "Made to order", image: "/images/customers/favour-6.jpg" },
-      { name: "Crochet bikini", detail: "Made to order", image: "/images/customers/favour-5.jpg" },
+      { name: "Ruffle bucket hat", detail: "Made for you", image: "/images/customers/favour-6.jpg" },
+      { name: "Crochet bikini", detail: "Made for you", image: "/images/customers/favour-5.jpg" },
     ],
     photos: [
       { src: "/images/customers/favour-2.jpg", alt: "Favour in a ruffle bucket hat and crochet bikini, lowering her sunglasses", caption: "Shot under a sunset lamp. In daylight, it’s hot pink and baby pink." },
@@ -39,7 +39,7 @@ export const customers: Customer[] = [
     name: "Emeka",
     city: "Port Harcourt",
     quote: "Neat work. It fits just right.",
-    wearing: [{ name: "Olive Bloom Shirt", detail: "Ready to wear", image: "/images/products/olive-bloom-crochet-shirt-1.jpg", href: "/shop/olive-bloom-crochet-shirt" }],
+    wearing: [{ name: "Olive Bloom Shirt", detail: "Ready now", image: "/images/products/olive-bloom-crochet-shirt-1.jpg", href: "/shop/olive-bloom-crochet-shirt" }],
     photos: [
       { src: "/images/customers/emeka-1.jpg", alt: "A customer in the Olive Bloom crochet shirt, standing between two grey doors" },
       { src: "/images/customers/emeka-2.jpg", alt: "The same customer looking down at the shirt" },
@@ -51,7 +51,7 @@ export const customers: Customer[] = [
     name: "Tobi",
     city: "Abuja",
     quote: "Came quicker than I expected, and the stitching is so neat.",
-    wearing: [{ name: "Emerald Everyday Shirt", detail: "Made to order", image: "/images/customers/tobi-1.jpg" }],
+    wearing: [{ name: "Emerald Everyday Shirt", detail: "Made for you", image: "/images/customers/tobi-1.jpg" }],
     photos: [{ src: "/images/customers/tobi-1.jpg", alt: "A customer taking a mirror selfie in a green crochet shirt" }],
     confirmed: false,
   },
