@@ -143,7 +143,7 @@ export function SendingMoment({
       aria-label="Preparing your request"
       onKeyDown={(e) => { if (e.key === "Escape") done.current(); }}
     >
-      <button autoFocus type="button" onClick={() => done.current()} className="absolute top-5 right-5 z-10 rounded-full border border-white/30 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Skip animation</button>
+      <button autoFocus type="button" onClick={() => done.current()} className="absolute top-5 right-5 z-10 rounded-full border border-white/30 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white" aria-label="Skip the animation">Skip</button>
       {/* The yarn thread from the parcel to Mimi */}
       <svg className="pointer-events-none absolute inset-0 size-full" aria-hidden>
         {path && <motion.path data-thread d={path} fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" initial={{ pathLength: 0, opacity: 0 }} />}
