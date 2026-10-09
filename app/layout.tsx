@@ -32,6 +32,18 @@ export const metadata: Metadata = {
     template: `%s · ${site.name}`,
   },
   description: site.description,
+  // Icons live in public/ (made from Mimi's logo by design-assets/brand/build_icons.py). Listed here rather
+  // than as app/ files so the .ico can say 32x32: with sizes="any" Chrome picks it over the SVG, and only
+  // the SVG turns cream in a dark browser.
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+  },
+  // The name under the icon when someone adds the site to an iPhone home screen.
+  appleWebApp: { title: site.shortName },
 };
 
 export const viewport: Viewport = {
