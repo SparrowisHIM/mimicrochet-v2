@@ -6,6 +6,7 @@ import { Footer } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
 import { ShopOnly } from "@/components/site/shop-only";
 import { InputModality } from "@/components/site/input-modality";
+import { Intro } from "@/components/site/intro";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en-NG" className={`${youngSerif.variable} ${figtree.variable} antialiased`}>
       <body className="flex min-h-dvh flex-col">
+        <Intro />
         <a
           href="#main"
           className="sr-only z-50 rounded-full bg-stone-900 px-4 py-2 text-orange-50 focus:not-sr-only focus:fixed focus:top-3 focus:left-3"

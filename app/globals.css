@@ -358,3 +358,127 @@
     transform: translateX(calc(var(--i) * var(--fan-x-open))) translateY(-2px) rotate(calc(var(--i) * var(--fan-r-open)));
   }
 }
+
+/* Loading screen (components/site/intro.tsx): first visit only, 2.5s, no skip. An amber thread
+   stitches the M and C (0-0.6s), the ink fills in, the yarn ball rolls in from the left and its tail
+   draws out, MIMICROCHET appears letter by letter, then at 2.1s the cream lifts away trailing the
+   stitched thread, like every page change (app/template.tsx). Reduced motion: a one-second fade. */
+@keyframes intro-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes intro-out {
+  to { opacity: 0; }
+}
+@keyframes intro-in {
+  from { opacity: 0; }
+}
+/* 90 units at radius 30 is 3 radians: the ball turns as far as it travels */
+@keyframes intro-roll {
+  from { opacity: 0; transform: translateX(-90px) rotate(-172deg); }
+  30% { opacity: 1; }
+}
+@keyframes intro-wipe {
+  from { transform: scaleX(0); }
+}
+@keyframes intro-letter {
+  from { opacity: 0; transform: translateY(6px); }
+}
+@keyframes intro-lift {
+  to { clip-path: inset(0 0 100% 0); }
+}
+@keyframes intro-edge {
+  from { opacity: 1; transform: translateY(calc(100dvh - 3px)); }
+  80% { opacity: 1; }
+  to { opacity: 0; transform: translateY(-3px); }
+}
+@keyframes intro-done {
+  to { visibility: hidden; }
+}
+@keyframes intro-fade {
+  0% { opacity: 0; }
+  20%, 70% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+@layer components {
+  .intro {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    animation: intro-done 0s linear 2.5s forwards;
+  }
+  .intro[hidden] {
+    display: none;
+  }
+  .intro-curtain {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: var(--color-orange-50);
+    color: var(--color-stone-900);
+    animation: intro-lift 0.4s cubic-bezier(0.19, 1, 0.22, 1) 2.1s forwards;
+  }
+  .intro-logo {
+    width: min(200px, 52vw);
+    overflow: visible;
+    translate: 0 -3vh;
+  }
+  @media (width >= 64rem) {
+    .intro-logo {
+      width: 280px;
+    }
+  }
+  .intro-thread {
+    fill: none;
+    stroke: var(--color-amber-500);
+    stroke-width: 1.5;
+    stroke-dasharray: 1 1.1;
+    stroke-dashoffset: 1;
+    animation:
+      intro-draw 0.6s cubic-bezier(0.645, 0.045, 0.355, 1) forwards,
+      intro-out 0.25s ease 0.75s forwards;
+  }
+  .intro-ink {
+    animation: intro-in 0.35s ease-out 0.45s both;
+  }
+  .intro-ball {
+    transform-box: view-box;
+    transform-origin: 513.4px 547.2px;
+    animation: intro-roll 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.7s both;
+  }
+  .intro-tail-clip {
+    transform-box: fill-box;
+    transform-origin: left;
+    animation: intro-wipe 0.45s cubic-bezier(0.645, 0.045, 0.355, 1) 1.15s both;
+  }
+  .intro-letter {
+    transform-box: fill-box;
+    animation: intro-letter 0.4s cubic-bezier(0.22, 1, 0.36, 1) calc(1.25s + var(--i) * 40ms) both;
+  }
+  .intro-edge {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 3px;
+    background: repeating-linear-gradient(90deg, var(--color-amber-500) 0 14px, transparent 14px 22px);
+    opacity: 0;
+    animation: intro-edge 0.4s cubic-bezier(0.19, 1, 0.22, 1) 2.1s forwards;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .intro {
+      animation: intro-fade 1s ease forwards;
+    }
+    .intro-curtain,
+    .intro-ink,
+    .intro-ball,
+    .intro-tail-clip,
+    .intro-letter {
+      animation: none;
+    }
+    .intro-thread,
+    .intro-edge {
+      display: none;
+    }
+  }
+}
