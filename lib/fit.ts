@@ -1,23 +1,24 @@
 import { useSyncExternalStore } from "react";
 import type { Measures } from "@/components/custom-order/measure-sheet";
 
-// How a customer likes a piece to fit, from the custom order's fit questions. x runs snug (-2) to
-// relaxed (+2), y runs shorter (-2) to longer (+2); 0, 0 is the piece as it's pictured.
+// How a customer likes a piece to fit, from the custom order's fit questions. x runs tight (-2) to
+// loose (+2), y runs short (-2) to long (+2); 0, 0 is the piece like the picture. The words are kept
+// plain on purpose, so anyone can follow them.
 export type Fit = { x: number; y: number };
 
 /** Everything the fit questions collect. Kept on the customer's own phone so their next order starts with it. */
 export type SavedFit = { size?: string; height?: number; measures: Measures; unit: "cm" | "in"; fit?: Fit };
 
-const widths = ["Very snug", "A little snug", "", "A little relaxed", "Very relaxed"];
-const lengths = ["much shorter", "a bit shorter", "", "a bit longer", "much longer"];
+const widths = ["Very tight", "A bit tight", "", "A bit loose", "Very loose"];
+const lengths = ["very short", "a bit short", "", "a bit long", "very long"];
 
-/** "A little snug, a bit longer." in plain words, for the customer, Mimi and the WhatsApp message. */
+/** "A bit tight, a bit long" in plain words, for the customer, Mimi and the WhatsApp message. */
 export function fitWords({ x, y }: Fit) {
   const w = widths[x + 2];
   const l = lengths[y + 2];
-  if (!w && !l) return "Just as pictured";
-  if (!l) return `${w}, the length as pictured`;
-  if (!w) return `The fit as pictured, ${l}`;
+  if (!w && !l) return "Like the picture";
+  if (!l) return w;
+  if (!w) return l[0].toUpperCase() + l.slice(1);
   return `${w}, ${l}`;
 }
 

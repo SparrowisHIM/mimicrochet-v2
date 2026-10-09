@@ -913,7 +913,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                           <div className="flex items-center gap-3.5">
                             <MiniMat fit={d.fit} />
                             <span className="flex min-w-0 flex-col gap-1">
-                              <span className="font-serif text-[18px] leading-tight">{d.fit ? fitWords(d.fit) : "Fit as pictured"}</span>
+                              <span className="font-serif text-[18px] leading-tight">{d.fit ? fitWords(d.fit) : "Like the picture"}</span>
                               <span className="text-[13px] text-stone-600">{fitLine(d)}</span>
                             </span>
                           </div>
@@ -1093,6 +1093,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
         <FitSheet
           open
           startAt={fitting}
+          kind={d.piece?.kind ?? "dress"}
           answers={{ size: d.size, height: d.height, measures: d.measures, unit: d.unit, fit: d.fit }}
           onChange={(patch) => set({ ...patch, sizeOk: false })}
           onSave={() => {

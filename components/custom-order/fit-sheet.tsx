@@ -1,8 +1,8 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useMotionValue } from "motion/react";
 import { useState } from "react";
-import { FitPad } from "@/components/custom-order/fit-pad";
+import { FitPad, FitPicture } from "@/components/custom-order/fit-pad";
 import { measureSteps, toIn, type MeasureKey, type Measures } from "@/components/custom-order/measure-sheet";
 import { Ruler } from "@/components/custom-order/ruler";
 import { ChevronIcon } from "@/components/icons";
@@ -10,6 +10,7 @@ import { Button, linkClass } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { CountingNumber, UnitSwitch } from "@/components/ui/unit-switch";
 import { fitWords, heightLabel, type Fit } from "@/lib/fit";
+import type { FitKind } from "@/lib/fit-outline";
 import { sizeChart } from "@/lib/sizes";
 import { useMedia } from "@/lib/use-media";
 
@@ -29,7 +30,7 @@ const help = (s: FitStep) =>
   s === "height"
     ? "Stand straight against a wall, without shoes."
     : s === "fit"
-      ? "Drag the pin. The middle is the piece as it’s pictured."
+      ? "Drag the pin. The middle is the piece like the picture."
       : s === "check"
         ? "Check it over. Tap a line to change it."
         : measure(s)!.help;
@@ -41,6 +42,7 @@ const smallLink =
 export function FitSheet({
   open,
   startAt,
+  kind,
   answers,
   onChange,
   onSave,
@@ -48,6 +50,8 @@ export function FitSheet({
 }: {
   open: boolean;
   startAt: FitStep;
+  /** Which drawing of the piece to show under the mat. */
+  kind: FitKind;
   answers: FitAnswers;
   onChange: (patch: Partial<FitAnswers>) => void;
   onSave: () => void;
@@ -60,13 +64,16 @@ export function FitSheet({
   const [cm, setCm] = useState(() => startOf(steps[Math.max(0, steps.indexOf(startAt))]));
   const [skipped, setSkipped] = useState<FitStep[]>([]);
   const [why, setWhy] = useState(false);
+  // Where the pin is right now, for the drawing under the mat.
+  const pinX = useMotionValue(answers.fit?.x ?? 0);
+  const pinY = useMotionValue(answers.fit?.y ?? 0);
 
   const goTo = (n: number) => {
     setI(n);
     setCm(startOf(steps[n]));
     setWhy(false);
   };
-  /** Keep this step's answer, then move on. On the mat, moving on without dragging means "as pictured". */
+  /** Keep this step's answer, then move on. On the mat, moving on without dragging means "like the picture". */
   const next = () => {
     if (step === "height") onChange({ height: cm });
     else if (measure(step)) onChange({ measures: { ...answers.measures, [step]: cm } });
@@ -114,11 +121,17 @@ export function FitSheet({
     if (step === "fit") {
       return (
         <>
-          <FitPad value={answers.fit ?? { x: 0, y: 0 }} onChange={(fit) => onChange({ fit })} />
-          {/* Room for two lines, so a longer answer never shifts the mat */}
-          <p className="grid min-h-[2.5em] place-items-center text-center font-serif text-[24px] leading-tight text-balance" aria-live="polite">
-            {fitWords(answers.fit ?? { x: 0, y: 0 })}.
-          </p>
+          <FitPad value={answers.fit ?? { x: 0, y: 0 }} onChange={(fit) => onChange({ fit })} live={{ x: pinX, y: pinY }} />
+          {/* The drawing of their piece changes as the pin moves; the words say the same thing */}
+          <div className="flex items-center gap-4">
+            <FitPicture kind={kind} x={pinX} y={pinY} />
+            <div className="flex min-w-0 flex-col gap-1">
+              <p className="font-serif text-[22px] leading-tight text-balance lg:text-[24px]" aria-live="polite">
+                {fitWords(answers.fit ?? { x: 0, y: 0 })}.
+              </p>
+              <p className="text-[13px] leading-[1.4] text-stone-500">The dashed line is the piece like the picture.</p>
+            </div>
+          </div>
         </>
       );
     }
