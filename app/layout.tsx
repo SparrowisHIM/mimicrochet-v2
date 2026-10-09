@@ -26,7 +26,9 @@ const siteUrl =
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  openGraph: { images: ["/images/story/hero-ruby.jpg"], siteName: site.name },
+  // Share pictures come from app/opengraph-image.tsx (every page) and app/shop/[slug]/opengraph-image.tsx (each piece).
+  openGraph: { siteName: site.name },
+  twitter: { card: "summary_large_image" },
   title: {
     default: `${site.name} · Handmade crochet from Port Harcourt`,
     template: `%s · ${site.name}`,
