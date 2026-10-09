@@ -5,6 +5,12 @@
   to { transform: scaleX(1); }
 }
 
+/* Home order story: the stage card the flow has just reached sends out one warm ring. */
+@keyframes flow-arrive {
+  0% { border-color: var(--color-amber-500); box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-amber-400) 55%, transparent); }
+  100% { border-color: transparent; box-shadow: 0 0 0 18px color-mix(in oklab, var(--color-amber-400) 0%, transparent); }
+}
+
 /*
   Mimi Crochet v2 foundations (Figma "Foundations" page).
   Colours are Tailwind palette values used directly in markup:

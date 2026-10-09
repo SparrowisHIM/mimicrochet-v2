@@ -21,6 +21,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { demoOrder } from "@/lib/orders";
 import { formatNaira } from "@/lib/site";
 import { stages } from "@/lib/stages";
+import { useChase } from "@/lib/use-chase";
 import { useMedia } from "@/lib/use-media";
 
 // One order told start to finish: the Ruby Dress, from the idea to Mimi's packed bag.
@@ -133,12 +134,14 @@ function Layer({ i, pos, active, reduce, loop, near, videoRef: video }: LayerPro
 // Desktop: every stage is an outlined card, and one channel links them top to bottom. A short run of
 // amber flows down each link, round the card's edge (along the top, down the right, back along the
 // bottom) and out to the next stage, so it's always going round the stage you're reading. Your scroll
-// is its clock: scroll back and it flows back.
+// sets where it's heading and it follows at its own pace, never faster than it can be seen, so a hard
+// flick still plays out as a flow. Its tail stretches as it speeds up, and each stage it reaches
+// lights up with one warm ring. Scroll back and it flows back.
 
 const CARD_RADIUS = 20;
-const CARD_TAIL = 300;
+const CARD_TAIL = 240;
 
-type Channel = { w: number; h: number; links: string; path: string; mids: number[]; end: number };
+type Channel = { w: number; h: number; links: string; path: string; mids: number[]; spans: [number, number][]; end: number };
 
 function channelOf(list: HTMLElement, cards: (HTMLElement | null)[]): Channel | null {
   const box = list.getBoundingClientRect();
@@ -152,6 +155,7 @@ function channelOf(list: HTMLElement, cards: (HTMLElement | null)[]): Channel | 
   let links = path;
   let len = top;
   const mids: number[] = [];
+  const spans: [number, number][] = [];
   rs.forEach((c, i) => {
     const t = c!.top - box.top + 0.5;
     const b = c!.bottom - box.top - 0.5;
@@ -162,13 +166,14 @@ function channelOf(list: HTMLElement, cards: (HTMLElement | null)[]): Channel | 
     path += ` H${right - r} A${r} ${r} 0 0 1 ${right} ${t + r} V${b - r} A${r} ${r} 0 0 1 ${right - r} ${b} H${x}`;
     // A stage is "being read" when the flow is halfway down its right edge.
     mids.push(len + across + arc + side / 2);
+    spans.push([len, len + 2 * across + 2 * arc + side]);
     len += 2 * across + 2 * arc + side;
     const next = i < rs.length - 1 ? rs[i + 1]!.top - box.top + 0.5 : box.height;
     path += ` V${next}`;
     links += ` M${x} ${b} V${next}`;
     len += next - b;
   });
-  return { w: box.width, h: box.height, links, path, mids, end: len };
+  return { w: box.width, h: box.height, links, path, mids, spans, end: len };
 }
 
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -182,14 +187,42 @@ function headAt(q: number, g: Channel) {
   return mix(g.mids[i], g.mids[i + 1], v - i);
 }
 
-function StageChannel({ list, cards, q, reduce }: { list: RefObject<HTMLOListElement | null>; cards: RefObject<(HTMLButtonElement | null)[]>; q: MotionValue<number>; reduce: boolean }) {
+function StageChannel({
+  list,
+  cards,
+  q,
+  reduce,
+  onArrive,
+}: {
+  list: RefObject<HTMLOListElement | null>;
+  cards: RefObject<(HTMLButtonElement | null)[]>;
+  q: MotionValue<number>;
+  reduce: boolean;
+  /** The flow has just entered this stage's card (-1: it's back above the list). */
+  onArrive: (i: number) => void;
+}) {
   const [geo, setGeo] = useState<Channel | null>(null);
   const geoRef = useRef<Channel | null>(null);
-  const head = useMotionValue(-1);
+  const target = useMotionValue(-1);
+  const { value: head, speed } = useChase(target, { rate: 2.4, max: 900, grip: 4, within: 1.1, on: !reduce });
+  const tail = useTransform(speed, (v) => CARD_TAIL + Math.min(420, Math.abs(v) * 0.32));
   const follow = (v: number) => {
-    if (geoRef.current) head.set(headAt(v, geoRef.current));
+    if (geoRef.current) target.set(headAt(v, geoRef.current));
   };
   useMotionValueEvent(q, "change", follow);
+
+  const inside = useRef(-2);
+  useMotionValueEvent(head, "change", (h) => {
+    const g = geoRef.current;
+    if (!g) return;
+    const i = h < g.spans[0][0] ? -1 : g.spans.findIndex(([a, b]) => h >= a && h <= b);
+    if (i !== -1 || h < g.spans[0][0]) {
+      if (i !== inside.current) {
+        inside.current = i;
+        onArrive(i);
+      }
+    }
+  });
 
   const layout = useEffectEvent(() => {
     const el = list.current;
@@ -217,7 +250,7 @@ function StageChannel({ list, cards, q, reduce }: { list: RefObject<HTMLOListEle
   return (
     <svg className="pointer-events-none absolute top-0 left-0 overflow-visible" width={geo.w} height={geo.h} aria-hidden>
       <path d={geo.links} fill="none" className="stroke-stone-300" strokeWidth={1} />
-      {!reduce && <Flow d={geo.path} head={head} tail={CARD_TAIL} width={3} />}
+      {!reduce && <Flow d={geo.path} head={head} tail={tail} width={3.5} />}
     </svg>
   );
 }
@@ -292,6 +325,13 @@ export function OrderStory() {
   const rows = useRef<(HTMLLIElement | null)[]>([]);
   const list = useRef<HTMLOListElement>(null);
   const cards = useRef<(HTMLButtonElement | null)[]>([]);
+  // Desktop: the card that lights up is the one the flow has reached, and it sends out a ring as it does.
+  const [lit, setLit] = useState(-1);
+  const [ring, setRing] = useState(0);
+  const arrive = (i: number) => {
+    setLit(i);
+    if (i >= 0) setRing((n) => n + 1);
+  };
 
   // Where the stage list sits against a focus line 45% down the screen, as a continuous number:
   // 1.5 means halfway between stage 2 and stage 3.
@@ -410,7 +450,7 @@ export function OrderStory() {
             <div className="relative">
               <ol ref={list} aria-label="Order stages">
                 {story.map((s, i) => {
-                  const on = i === active;
+                  const on = reduce ? i === active : i === lit;
                   const quiet = on ? "" : "opacity-45 group-hover:opacity-80";
                   return (
                     <li key={s.title} ref={(el) => { rows.current[i] = el; }} className="flex min-h-[36vh] items-center">
@@ -422,7 +462,8 @@ export function OrderStory() {
                         className="group relative flex w-full gap-5 rounded-[20px] border border-stone-300 px-5 py-6 text-left"
                       >
                         {/* The stage being read lights up where it is; nothing slides between stages. */}
-                        <span className={`absolute inset-0 rounded-[19px] bg-white shadow-[0_12px_32px_-24px_rgb(28_25_23/0.3)] transition-opacity duration-300 ${on ? "opacity-100" : "opacity-0"}`} aria-hidden />
+                        <span className={`absolute inset-0 rounded-[19px] bg-white shadow-[0_12px_32px_-24px_rgb(28_25_23/0.3)] transition-opacity duration-500 ease-out ${on ? "opacity-100" : "opacity-0"}`} aria-hidden />
+                        {on && !reduce && ring > 0 && <span key={ring} className="pointer-events-none absolute -inset-px animate-[flow-arrive_1.1s_cubic-bezier(0.22,1,0.36,1)_both] rounded-[20px] border" aria-hidden />}
                         <span className={`relative mt-1 grid size-8 shrink-0 place-items-center rounded-full border text-[12px] font-semibold tabular-nums transition-[color,background-color,border-color,opacity] duration-300 ${on ? "border-stone-900 bg-stone-900 text-orange-50" : "border-stone-300 bg-orange-50 text-stone-500"} ${quiet}`}>
                           {String(i + 1).padStart(2, "0")}
                         </span>
@@ -436,7 +477,7 @@ export function OrderStory() {
                   );
                 })}
               </ol>
-              <StageChannel list={list} cards={cards} q={flow} reduce={reduce} />
+              <StageChannel list={list} cards={cards} q={flow} reduce={reduce} onArrive={arrive} />
             </div>
             <div className="pl-5">
               <ButtonLink href="/custom-order">Let’s make your piece</ButtonLink>

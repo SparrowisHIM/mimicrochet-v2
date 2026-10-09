@@ -2,17 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useMotionValueEvent, useReducedMotion, useScroll } from "motion/react";
+import { motion, useMotionValue, useMotionValueEvent, useReducedMotion, useScroll } from "motion/react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { InViewVideo } from "@/components/about/about-motion";
 import { linkClass } from "@/components/ui/button";
+import { useChase } from "@/lib/use-chase";
 
 export type Step = { n: string; title: string; text: string; src: string; alt: string; tag?: string; video?: string; href?: string };
 
 // A chain stitch links 01 to 04: a row of the little ovals crochet charts use for a chain. It stitches
-// itself in, one loop at a time, as the steps come on screen, and each number turns amber when the
-// stitch reaches it. The scroll is its clock, so scrolling back unpicks it. On phones, where the steps
-// swipe sideways, it only stitches as far as you've swiped. Reduced motion: drawn complete.
+// itself in, one loop at a time, as the steps come on screen, led by a glowing hook, and each number
+// pops like a knot as the stitch reaches it. The scroll decides how far it goes; the stitch gets
+// there at its own steady pace, so a fast scroll still plays out loop by loop. Scrolling back unpicks
+// it. On phones, where the steps swipe sideways, it only stitches as far as you've swiped. Reduced
+// motion: drawn complete.
 
 type Loop = { x: number; gap: number };
 type Chain = { w: number; h: number; cy: number; rx: number; ry: number; step: number; loops: Loop[]; from: number; to: number; numbers: number[] };
@@ -66,32 +69,56 @@ export function CraftSteps({ steps }: { steps: Step[] }) {
   const nums = useRef<(HTMLSpanElement | null)[]>([]);
   const firstNumber = useRef<HTMLSpanElement>(null);
   const loops = useRef<(SVGEllipseElement | null)[]>([]);
+  const hook = useRef<SVGGElement>(null);
+  const reached = useRef<boolean[]>([]);
   const [chain, setChain] = useState<Chain | null>(null);
   const chainRef = useRef<Chain | null>(null);
   // Starts as the row of numbers comes up from the bottom of the screen; done by the time it's halfway up.
   const { scrollYProgress } = useScroll({ target: firstNumber, offset: ["start 0.95", "start 0.55"] });
   const { scrollX } = useScroll({ container: list });
 
-  const stitch = () => {
+  // Where the scroll says the stitch should have got to, and where it actually is (chasing it).
+  const goal = useMotionValue(0);
+  const { value: front } = useChase(goal, { rate: 2.2, max: 300, grip: 4, within: 2.2, on: !reduce });
+  const aim = () => {
     const g = chainRef.current;
     const el = list.current;
     if (!g || !el) return;
-    let front = reduce ? Infinity : g.from + (g.to - g.from) * scrollYProgress.get();
+    const end = g.to + g.step * 2;
+    let x = reduce ? end : g.from + (end - g.from) * scrollYProgress.get();
     // Phones: never stitch past what you've swiped to.
-    if (!reduce && el.scrollWidth > el.clientWidth + 1) front = Math.min(front, el.scrollLeft + el.clientWidth * 0.85);
+    if (!reduce && el.scrollWidth > el.clientWidth + 1) x = Math.min(x, el.scrollLeft + el.clientWidth * 0.85);
+    goal.set(x);
+  };
+  useMotionValueEvent(scrollYProgress, "change", aim);
+  useMotionValueEvent(scrollX, "change", aim);
+
+  const stitch = (at: number) => {
+    const g = chainRef.current;
+    if (!g) return;
     g.loops.forEach((l, k) => {
       const node = loops.current[k];
       if (!node) return;
-      const t = Math.max(0, Math.min(1, (front - l.x + g.step) / (g.step * 1.5)));
+      const t = Math.max(0, Math.min(1, (at - l.x + g.step) / (g.step * 1.5)));
       node.style.opacity = String(t);
       node.style.transform = `scale(${0.3 + 0.7 * pull(t)})`;
     });
+    // The hook glows at the working end while there's still chain to make.
+    const h = hook.current;
+    if (h) {
+      const working = !reduce && at > g.from + 1 && at < g.to + g.step;
+      h.style.opacity = working ? "1" : "0";
+      h.setAttribute("transform", `translate(${Math.min(at, g.to)} ${g.cy})`);
+    }
     nums.current.forEach((n, i) => {
-      if (n && i > 0) n.dataset.waiting = String(front < g.numbers[i]);
+      if (!n || i === 0) return;
+      const got = at >= g.numbers[i];
+      n.dataset.waiting = String(!got);
+      if (got && !reached.current[i] && !reduce) n.animate([{ transform: "scale(1)" }, { transform: "scale(1.22)" }, { transform: "scale(1)" }], { duration: 520, easing: "cubic-bezier(0.34, 1.56, 0.64, 1)" });
+      reached.current[i] = got;
     });
   };
-  useMotionValueEvent(scrollYProgress, "change", stitch);
-  useMotionValueEvent(scrollX, "change", stitch);
+  useMotionValueEvent(front, "change", stitch);
 
   const layout = useEffectEvent(() => {
     const el = list.current;
@@ -99,6 +126,7 @@ export function CraftSteps({ steps }: { steps: Step[] }) {
     const g = chainOf(el, nums.current);
     chainRef.current = g;
     setChain(g);
+    aim();
   });
   useEffect(() => {
     const el = list.current;
@@ -113,8 +141,8 @@ export function CraftSteps({ steps }: { steps: Step[] }) {
       ro.disconnect();
     };
   }, []);
-  // Once the loops are drawn, put them in the right state for where the page already is.
-  useEffect(() => stitch());
+  // Once the loops are drawn, put them in the right state for where the stitch already is.
+  useEffect(() => stitch(front.get()));
 
   return (
     <ol ref={list} className="no-scrollbar relative -mx-5 flex snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-6 lg:px-0">
@@ -171,6 +199,16 @@ export function CraftSteps({ steps }: { steps: Step[] }) {
                   style={{ opacity: 0 }}
                 />
               ))}
+              <g ref={hook} className="transition-opacity duration-500" style={{ opacity: 0 }}>
+                <circle r={13} fill="url(#stitch-hook)" />
+                <circle r={3.5} className="fill-amber-500" />
+              </g>
+              <defs>
+                <radialGradient id="stitch-hook">
+                  <stop offset="0" stopColor="currentColor" stopOpacity="0.6" className="text-amber-400" />
+                  <stop offset="1" stopColor="currentColor" stopOpacity="0" className="text-amber-400" />
+                </radialGradient>
+              </defs>
             </svg>
           )}
         </motion.li>

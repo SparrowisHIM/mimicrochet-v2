@@ -1,6 +1,6 @@
 "use client";
 
-import { useMotionValueEvent, type MotionValue } from "motion/react";
+import { useMotionValue, useMotionValueEvent, type MotionValue } from "motion/react";
 import { useEffect, useId, useRef } from "react";
 
 // A short run of amber that travels along a path, like water through a channel: a bright head and a
@@ -12,7 +12,8 @@ import { useEffect, useId, useRef } from "react";
 const STEP = 4; // px between traced points
 const fade = (x: number) => Math.max(0, Math.min(1, x)) ** 1.6;
 
-export function Flow({ d, head, tail, width }: { d: string; head: MotionValue<number>; tail: number; width: number }) {
+/** `tail` can move too: a tail that stretches with speed reads like water running faster. */
+export function Flow({ d, head, tail: tailIn, width }: { d: string; head: MotionValue<number>; tail: number | MotionValue<number>; width: number }) {
   // useId can contain characters that break url(#…) references.
   const id = `flow${useId().replace(/[^\w-]/g, "")}`;
   const track = useRef<SVGPathElement>(null);
@@ -21,7 +22,11 @@ export function Flow({ d, head, tail, width }: { d: string; head: MotionValue<nu
   const stops = useRef<(SVGStopElement | null)[]>([]);
   const dot = useRef<SVGGElement>(null);
 
+  const still = useMotionValue(0);
+  const tailMv = typeof tailIn === "number" ? still : tailIn;
+
   const draw = (h: number) => {
+    const tail = typeof tailIn === "number" ? tailIn : tailIn.get();
     const p = track.current;
     const r = run.current;
     const g = grad.current;
@@ -60,6 +65,7 @@ export function Flow({ d, head, tail, width }: { d: string; head: MotionValue<nu
     }
   };
   useMotionValueEvent(head, "change", draw);
+  useMotionValueEvent(tailMv, "change", () => draw(head.get()));
   // The path changes when the layout does; redraw the run on it.
   useEffect(() => draw(head.get()));
 
