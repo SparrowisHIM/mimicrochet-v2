@@ -38,7 +38,7 @@ export function PieceMarquee({ pieces }: { pieces: { name: string; image: string
       {pieces.map((p) => (
         <span key={p.name} className="flex items-center">
           <span className="px-6 font-serif text-[34px] leading-none whitespace-nowrap lg:px-9 lg:text-[64px]">{p.name}</span>
-          <span className="relative block h-12 w-9 shrink-0 -rotate-6 overflow-hidden rounded-[10px] bg-orange-100 shadow-[0_10px_24px_-12px_rgb(28_25_23/0.5)] lg:h-[84px] lg:w-[64px] lg:rounded-[14px]">
+          <span className="relative block h-12 w-9 shrink-0 -rotate-6 overflow-hidden rounded-[8px] bg-orange-100 shadow-[0_10px_24px_-12px_rgb(28_25_23/0.5)] lg:h-[84px] lg:w-[64px] lg:rounded-[8px]">
             <Image src={p.image} alt="" fill sizes="64px" className="object-cover" />
           </span>
         </span>

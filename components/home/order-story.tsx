@@ -138,7 +138,7 @@ function Layer({ i, pos, active, reduce, loop, near, videoRef: video }: LayerPro
 // flick still plays out as a flow. Its tail stretches as it speeds up, and each stage it reaches
 // lights up with one warm ring. Scroll back and it flows back.
 
-const CARD_RADIUS = 20;
+const CARD_RADIUS = 22;
 const CARD_TAIL = 240;
 
 type Channel = { w: number; h: number; links: string; path: string; mids: number[]; spans: [number, number][]; end: number };
@@ -259,7 +259,7 @@ function StageChannel({
 // button, over the top and under the bottom, and the two runs meet on the far side as the stage ends
 // (3s for a photo, the video's own length), then drain away and the next button starts.
 
-const CHIP_RADIUS = 12;
+const CHIP_RADIUS = 14;
 const CHIP_TAIL = 46;
 
 type Chips = { w: number; h: number; pipes: string; boxes: { x0: number; x1: number; y0: number; y1: number }[] };
@@ -459,11 +459,11 @@ export function OrderStory() {
                         type="button"
                         onClick={() => go(i)}
                         aria-current={on ? "step" : undefined}
-                        className="group relative flex w-full gap-5 rounded-[20px] border border-stone-300 px-5 py-6 text-left"
+                        className="group relative flex w-full gap-5 rounded-[22px] border border-stone-300 px-5 py-6 text-left"
                       >
                         {/* The stage being read lights up where it is; nothing slides between stages. */}
-                        <span className={`absolute inset-0 rounded-[19px] bg-white shadow-[0_12px_32px_-24px_rgb(28_25_23/0.3)] transition-opacity duration-500 ease-out ${on ? "opacity-100" : "opacity-0"}`} aria-hidden />
-                        {on && !reduce && ring > 0 && <span key={ring} className="pointer-events-none absolute -inset-px animate-[flow-arrive_1.1s_cubic-bezier(0.22,1,0.36,1)_both] rounded-[20px] border" aria-hidden />}
+                        <span className={`absolute inset-0 rounded-[21px] bg-white shadow-[0_12px_32px_-24px_rgb(28_25_23/0.3)] transition-opacity duration-500 ease-out ${on ? "opacity-100" : "opacity-0"}`} aria-hidden />
+                        {on && !reduce && ring > 0 && <span key={ring} className="pointer-events-none absolute -inset-px animate-[flow-arrive_1.1s_cubic-bezier(0.22,1,0.36,1)_both] rounded-[22px] border" aria-hidden />}
                         <span className={`relative mt-1 grid size-8 shrink-0 place-items-center rounded-full border text-[12px] font-semibold tabular-nums transition-[color,background-color,border-color,opacity] duration-300 ${on ? "border-stone-900 bg-stone-900 text-orange-50" : "border-stone-300 bg-orange-50 text-stone-500"} ${quiet}`}>
                           {String(i + 1).padStart(2, "0")}
                         </span>
@@ -495,7 +495,7 @@ export function OrderStory() {
                   aria-pressed={i === active}
                   aria-label={st.label}
                   onClick={() => go(i)}
-                  className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[12px] border text-[11px] font-medium transition-colors ${
+                  className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[14px] border text-[11px] font-medium transition-colors ${
                     i === active ? "border-stone-900 bg-stone-900 text-orange-50" : "border-stone-200 bg-white text-stone-600"
                   }`}
                 >
@@ -507,7 +507,7 @@ export function OrderStory() {
             </div>
 
             {/* Desktop: the photo is sized so it and Mimi's line under it fit the sticky column. */}
-            <div className="mx-auto w-full rounded-[26px] border border-stone-200 bg-white p-2.5 shadow-[0_30px_70px_-40px_rgb(28_25_23/0.4)] lg:max-w-[min(100%,calc((100svh-272px)*0.75+24px))] lg:p-3">
+            <div className="mx-auto w-full rounded-[22px] border border-stone-200 bg-white p-2.5 shadow-[0_30px_70px_-40px_rgb(28_25_23/0.4)] lg:max-w-[min(100%,calc((100svh-272px)*0.75+24px))] lg:p-3">
               <div className="flex items-center justify-between px-2 pt-1 pb-3 text-[13px] font-medium text-stone-500">
                 <AnimatePresence mode="popLayout" initial={false}>
                   <motion.span key={current.tag} className="font-semibold text-stone-900" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ type: "spring", duration: 0.3, bounce: 0 }}>
@@ -520,7 +520,7 @@ export function OrderStory() {
               </div>
               <motion.div
                 ref={frame}
-                className="relative aspect-[3/4] w-full touch-pan-y overflow-hidden rounded-[18px] bg-stone-200"
+                className="relative aspect-[3/4] w-full touch-pan-y overflow-hidden rounded-[12px] bg-stone-200 lg:rounded-[10px]"
                 drag={desktop ? false : "x"}
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.18}

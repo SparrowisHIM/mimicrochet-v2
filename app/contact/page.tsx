@@ -20,7 +20,7 @@ export default function ContactPage() {
           <RevealText as="h1" immediate text="Talk to Mimi." className="font-serif text-[48px] leading-none tracking-[-0.02em] lg:text-[72px]" />
           <p className="text-[17px] leading-[1.55] text-stone-600 lg:text-[20px]">Ask about a piece, your size, or that idea in your head. WhatsApp is the fastest way, and she usually replies the same day.</p>
         </div>
-        <div className="flex w-full flex-col gap-4 rounded-[28px] bg-stone-900 p-5 text-orange-50 lg:w-[560px] lg:p-7">
+        <div className="flex w-full flex-col gap-4 rounded-[22px] bg-stone-900 p-5 text-orange-50 lg:w-[560px] lg:p-7">
           <div className="flex items-center gap-3">
             <span className="grid size-10 place-items-center rounded-full bg-orange-50 text-stone-900">
               <WhatsAppIcon size={20} />

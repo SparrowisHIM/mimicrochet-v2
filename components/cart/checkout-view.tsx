@@ -107,7 +107,7 @@ export function CheckoutView() {
     <ul className="flex flex-col">
       {items.map((p) => (
         <li key={p.slug} className="flex items-center gap-3.5 border-t border-stone-200/80 py-4 first:border-t-0">
-          <span className="relative h-[72px] w-[54px] shrink-0 overflow-hidden rounded-[10px] bg-orange-100">
+          <span className="relative h-[72px] w-[54px] shrink-0 overflow-hidden rounded-[8px] bg-orange-100">
             <Image src={p.images[0]} alt="" fill sizes="54px" className="object-cover" />
           </span>
           <span className="flex flex-1 flex-col">
@@ -145,7 +145,7 @@ export function CheckoutView() {
         <div className="hidden lg:block">{totals}</div>
         <p className="hidden rounded-[14px] bg-amber-100 px-4 py-3 text-[14px] text-amber-800 lg:block">Mimi packs your order within 2 days. You’ll get a tracking link right after paying.</p>
 
-        <div className="rounded-[18px] bg-white p-4 lg:hidden">
+        <div className="rounded-[22px] bg-white p-4 lg:hidden">
           <button type="button" onClick={() => setShowItems((v) => !v)} className="group flex w-full items-center gap-3 text-left" aria-expanded={showItems}>
             <CardStack images={items.map((p) => p.images[0])} />
             <span className="flex min-w-0 flex-1 flex-col">
@@ -174,7 +174,7 @@ export function CheckoutView() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease, delay: 0.08 }}
-        className="flex flex-col gap-7 lg:w-[520px] lg:rounded-[28px] lg:bg-white lg:p-8 lg:shadow-[0_24px_60px_-20px_rgb(28_25_23/0.18)]"
+        className="flex flex-col gap-7 lg:w-[520px] lg:rounded-[22px] lg:bg-white lg:p-8 lg:shadow-[0_24px_60px_-20px_rgb(28_25_23/0.18)]"
       >
         <fieldset className="flex flex-col gap-5">
           <legend className="mb-4 flex items-center gap-2.5 text-[17px] font-semibold"><Num n={1} /> Your details</legend>
@@ -221,7 +221,7 @@ export function CheckoutView() {
             <p className="text-[13px] text-stone-500">Card, bank transfer or USSD. Mimi never sees your card details.</p>
           </div>
           <div className="lg:hidden">{totals}</div>
-          <p className="rounded-[12px] border border-dashed border-stone-300 px-3.5 py-2.5 text-[13px] text-stone-600">
+          <p className="rounded-[14px] border border-dashed border-stone-300 px-3.5 py-2.5 text-[13px] text-stone-600">
             Test mode: payments aren’t switched on yet, so nothing is charged.
           </p>
           {/* Not `disabled` while paying: that would fade it to grey. pay() already ignores repeat taps. */}

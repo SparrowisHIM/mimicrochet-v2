@@ -57,17 +57,17 @@ export function BagDrawer() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: 40, transition: { duration: 0.25 } }}
-                  className={`relative flex gap-3.5 rounded-[18px] border bg-white p-3 transition-colors duration-700 ${fresh ? "border-emerald-300" : "border-stone-200"}`}
+                  className={`relative flex gap-3.5 rounded-[22px] border bg-white p-3 transition-colors duration-700 ${fresh ? "border-emerald-300" : "border-stone-200"}`}
                 >
                   {fresh && (
                     <motion.span
-                      className="pointer-events-none absolute inset-0 rounded-[18px] bg-emerald-50"
+                      className="pointer-events-none absolute inset-0 rounded-[22px] bg-emerald-50"
                       initial={{ opacity: 1 }}
                       animate={{ opacity: 0 }}
                       transition={{ duration: 1.4, delay: 0.3 }}
                     />
                   )}
-                  <Link href={`/shop/${p.slug}`} onClick={bagUi.close} className="relative h-[84px] w-[63px] shrink-0 overflow-hidden rounded-[10px] bg-orange-100">
+                  <Link href={`/shop/${p.slug}`} onClick={bagUi.close} className="relative h-[84px] w-[63px] shrink-0 overflow-hidden rounded-[8px] bg-orange-100">
                     <Image src={p.images[0]} alt="" fill sizes="63px" className="object-cover" />
                   </Link>
                   <div className="relative flex min-w-0 flex-1 flex-col">

@@ -103,7 +103,7 @@ function Choice({ on, onClick, label, hint, invalid }: { on: boolean; onClick: (
       aria-checked={on}
       onClick={onClick}
       whileTap={{ scale: 0.985 }}
-      className={`flex w-full items-center gap-3 rounded-[16px] border bg-white px-4 py-3.5 text-left transition-[border-color,box-shadow] ${
+      className={`flex w-full items-center gap-3 rounded-[22px] border bg-white px-4 py-3.5 text-left transition-[border-color,box-shadow] ${
         on ? "border-stone-900 shadow-[0_0_0_1px_var(--color-stone-900)]" : invalid ? "border-red-400" : "border-stone-300 hover:border-stone-500"
       }`}
     >
@@ -230,14 +230,14 @@ function PieceSlot({ draft, onChange }: { draft: Draft; onChange: () => void }) 
       : "Add a photo or pick a piece, and it shows up here.";
   return (
     <div className="flex items-center gap-4">
-      <span className="relative h-32 w-24 shrink-0 overflow-hidden rounded-[12px] xl:h-40 xl:w-[120px] [@media(max-height:860px)]:h-20 [@media(max-height:860px)]:w-[60px]">
+      <span className="relative h-32 w-24 shrink-0 overflow-hidden rounded-[8px] xl:h-40 xl:w-[120px] [@media(max-height:860px)]:h-20 [@media(max-height:860px)]:w-[60px]">
         {p ? (
           <Image src={p.image} alt="" fill sizes="120px" className="object-cover" />
         ) : photo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={photo.preview} alt="" className="size-full object-cover" />
         ) : (
-          <span className="grid size-full place-items-center rounded-[12px] border-[1.5px] border-dashed border-stone-300 bg-stone-50 text-stone-400" aria-hidden>
+          <span className="grid size-full place-items-center rounded-[8px] border-[1.5px] border-dashed border-stone-300 bg-stone-50 text-stone-400" aria-hidden>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
               <rect x="3" y="4" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.6" />
               <circle cx="8.5" cy="9.5" r="1.6" fill="currentColor" />
@@ -299,7 +299,7 @@ function Summary({ draft, rows, step, onJump, compact }: { draft: Draft; rows: R
                       {r.value && !reduce && (
                         <motion.span
                           key={r.value}
-                          className="absolute -inset-x-2 inset-y-0.5 rounded-[10px] bg-amber-100"
+                          className="absolute -inset-x-2 inset-y-0.5 rounded-[14px] bg-amber-100"
                           initial={{ opacity: 0.9 }}
                           animate={{ opacity: 0 }}
                           transition={{ duration: 0.6, ease: easeOutExpo }}
@@ -334,7 +334,7 @@ function Summary({ draft, rows, step, onJump, compact }: { draft: Draft; rows: R
       )}
 
       {!compact && (
-        <p className="rounded-[12px] bg-orange-50 px-4 py-3.5 text-[14px] leading-snug text-stone-600 [@media(max-height:860px)]:hidden">No payment now. Mimi confirms the price on WhatsApp before she starts.</p>
+        <p className="rounded-[14px] bg-orange-50 px-4 py-3.5 text-[14px] leading-snug text-stone-600 [@media(max-height:860px)]:hidden">No payment now. Mimi confirms the price on WhatsApp before she starts.</p>
       )}
 
       <AnimatePresence>
@@ -693,7 +693,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
         className={`group flex w-[120px] shrink-0 flex-col gap-2 text-left transition-opacity duration-200 lg:w-auto ${other ? "opacity-55 hover:opacity-100" : ""} ${extra}`}
       >
         <span
-          className={`relative block aspect-[3/4] overflow-hidden rounded-[14px] bg-orange-100 transition-[box-shadow,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-1 group-hover:shadow-[0_14px_28px_-16px_rgb(28_25_23/0.45)] motion-reduce:group-hover:translate-y-0 ${
+          className={`relative block aspect-[3/4] overflow-hidden rounded-[18px] bg-orange-100 transition-[box-shadow,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-1 group-hover:shadow-[0_14px_28px_-16px_rgb(28_25_23/0.45)] motion-reduce:group-hover:translate-y-0 ${
             on ? "ring-[2.5px] ring-stone-900 ring-offset-2 ring-offset-orange-50" : ""
           }`}
         >
@@ -718,7 +718,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
   };
 
   const ideasCard = (
-    <button type="button" onClick={() => setIdeasOpen(true)} className="group flex items-center gap-2 rounded-[16px] bg-amber-100 py-2 pr-4 pl-1 text-left transition-colors duration-150 hover:bg-amber-200/70">
+    <button type="button" onClick={() => setIdeasOpen(true)} className="group flex items-center gap-2 rounded-[14px] bg-amber-100 py-2 pr-4 pl-1 text-left transition-colors duration-150 hover:bg-amber-200/70">
       <CardStack images={["/images/ideas/daisy-ruffle-crochet-set.jpg", "/images/ideas/azure-bloom-granny-bucket-hat.jpg", "/images/ideas/carnival-granny-crochet-shirt.jpg"]} />
       <span className="flex flex-1 flex-col">
         <span className="text-[15px] font-semibold text-amber-900">{d.piece?.source === "idea" ? `Idea: ${d.piece.name}` : "Need ideas?"}</span>
@@ -740,8 +740,8 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
           <AnimatePresence mode="popLayout" custom={dir} initial={false}>
             <motion.div key={step} custom={dir} variants={stepMotion} initial="enter" animate="center" exit="exit" className="flex flex-col gap-8">
               {step === 1 && d.piece && (
-                <div className="flex items-center gap-3 rounded-[18px] bg-white p-3 pr-4 lg:hidden">
-                  <span className="relative h-20 w-[60px] shrink-0 overflow-hidden rounded-[10px] bg-orange-100">
+                <div className="flex items-center gap-3 rounded-[22px] bg-white p-3 pr-4 lg:hidden">
+                  <span className="relative h-20 w-[60px] shrink-0 overflow-hidden rounded-[8px] bg-orange-100">
                     <Image src={d.piece.image} alt="" fill sizes="60px" className="object-cover" />
                   </span>
                   <span className="flex flex-1 flex-col">
@@ -773,7 +773,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                         onClick={() => fileInput.current?.click()}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
-                        className={`group flex flex-col items-center gap-2 rounded-[18px] border-[1.5px] border-dashed bg-white px-6 py-8 text-center transition-colors duration-150 hover:border-stone-900 lg:py-9 ${tried && !hasSource ? "border-red-400" : "border-stone-400"}`}
+                        className={`group flex flex-col items-center gap-2 rounded-[22px] border-[1.5px] border-dashed bg-white px-6 py-8 text-center transition-colors duration-150 hover:border-stone-900 lg:py-9 ${tried && !hasSource ? "border-red-400" : "border-stone-400"}`}
                       >
                         <span className="grid size-12 place-items-center rounded-full bg-orange-100 text-[24px] leading-none text-amber-800 transition-colors duration-150 group-hover:bg-amber-200">+</span>
                         <span className="text-[17px] font-semibold">Add a photo</span>
@@ -793,7 +793,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                               exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.15 } }}
                               transition={{ duration: 0.35, ease: easeOutExpo }}
                               aria-busy={!t.ready}
-                              className="relative aspect-[4/5] overflow-hidden rounded-[14px] bg-orange-100"
+                              className="relative aspect-[4/5] overflow-hidden rounded-[18px] bg-orange-100"
                             >
                               <PhotoTile src={t.src} name={t.name} ready={t.ready} index={i} onRemove={() => removePhoto(t.id)} />
                             </motion.li>
@@ -805,7 +805,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                                 onClick={() => fileInput.current?.click()}
                                 onDragOver={(e) => e.preventDefault()}
                                 onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
-                                className="group flex aspect-[4/5] w-full flex-col items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-dashed border-stone-300 bg-white/60 text-[14px] font-medium transition-colors duration-150 hover:border-stone-900"
+                                className="group flex aspect-[4/5] w-full flex-col items-center justify-center gap-1.5 rounded-[18px] border-[1.5px] border-dashed border-stone-300 bg-white/60 text-[14px] font-medium transition-colors duration-150 hover:border-stone-900"
                               >
                                 <span className="grid size-9 place-items-center rounded-full bg-orange-100 text-[20px] leading-none text-amber-800 transition-colors duration-150 group-hover:bg-amber-200" aria-hidden>+</span>
                                 Add photo
@@ -925,7 +925,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                         ))}
                       </div>
                       {fitted ? (
-                        <div className="flex flex-col gap-3 rounded-[18px] border-[1.5px] border-stone-900 bg-white p-4">
+                        <div className="flex flex-col gap-3 rounded-[22px] border-[1.5px] border-stone-900 bg-white p-4">
                           <div className="flex items-start justify-between gap-3">
                             <span className="flex flex-col gap-0.5">
                               <span className="text-[15px] font-semibold">Your fit</span>
@@ -950,7 +950,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                           type="button"
                           whileTap={{ scale: 0.985 }}
                           onClick={() => setFitting("height")}
-                          className="group flex items-center gap-3.5 rounded-[18px] border border-stone-200 bg-white py-4 pr-3 pl-4 text-left transition-[border-color,box-shadow] duration-200 hover:border-stone-300 hover:shadow-[0_10px_24px_-18px_rgb(28_25_23/0.35)]"
+                          className="group flex items-center gap-3.5 rounded-[22px] border border-stone-200 bg-white py-4 pr-3 pl-4 text-left transition-[border-color,box-shadow] duration-200 hover:border-stone-300 hover:shadow-[0_10px_24px_-18px_rgb(28_25_23/0.35)]"
                         >
                           <MiniMat />
                           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -1062,7 +1062,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
 
                   {!noSize(d) && (
                     <Spot id="f-sizeok" flash={flash}>
-                      <label className={`flex cursor-pointer gap-3 rounded-[18px] border-[1.5px] bg-white p-4 transition-colors duration-150 ${tried > 0 && !d.sizeOk ? "border-red-400" : d.sizeOk ? "border-stone-900" : "border-transparent"}`}>
+                      <label className={`flex cursor-pointer gap-3 rounded-[22px] border-[1.5px] bg-white p-4 transition-colors duration-150 ${tried > 0 && !d.sizeOk ? "border-red-400" : d.sizeOk ? "border-stone-900" : "border-transparent"}`}>
                         <input type="checkbox" checked={d.sizeOk} onChange={(e) => set({ sizeOk: e.target.checked })} className="mt-0.5 size-5 shrink-0 accent-stone-900" />
                         <span className="flex flex-col gap-1">
                           <span className="text-[15px] font-semibold">My size is right{d.size ? ` (${d.size})` : ""}</span>

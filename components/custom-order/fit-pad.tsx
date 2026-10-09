@@ -254,7 +254,7 @@ export function FitPicture({ kind, x, y }: { kind: FitKind; x: MotionValue<numbe
   const now = outlines[kind](widthAt(x.get()), lengthAt(y.get()));
   const ghost = outlines[kind](1, 1);
   return (
-    <span className="grid h-[124px] w-24 shrink-0 place-items-center rounded-[18px] border border-stone-200 bg-white" aria-hidden>
+    <span className="grid h-[124px] w-24 shrink-0 place-items-center rounded-[14px] border border-stone-200 bg-white" aria-hidden>
       <svg viewBox="0 0 100 130" className="h-[116px] w-[89px]">
         <path d={ghost.body} fill="none" className="stroke-stone-300" strokeWidth={1.3} strokeDasharray="3 3" strokeLinejoin="round" />
         <path ref={body} d={now.body} className="fill-white stroke-stone-900" strokeWidth={2} strokeLinejoin="round" />
@@ -268,7 +268,7 @@ export function FitPicture({ kind, x, y }: { kind: FitKind; x: MotionValue<numbe
 export function MiniMat({ fit }: { fit?: Fit }) {
   const f = fit ?? { x: 0, y: 0 };
   return (
-    <span className="relative size-[52px] shrink-0 overflow-hidden rounded-[12px] border border-stone-200 bg-white" aria-hidden>
+    <span className="relative size-[52px] shrink-0 overflow-hidden rounded-[14px] border border-stone-200 bg-white" aria-hidden>
       <span className="absolute inset-0 bg-[radial-gradient(circle,var(--color-stone-300)_0.5px,transparent_0.9px)] bg-size-[5px_5px] opacity-70" />
       {/* inset a little, so a pin on an outer hole isn't cut by the edge */}
       <span className="absolute inset-[5px]">

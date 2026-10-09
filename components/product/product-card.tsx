@@ -20,7 +20,7 @@ export function ProductCard({
       <div className="relative">
         <Link
           href={`/shop/${product.slug}`}
-          className="relative block aspect-[3/4] overflow-hidden rounded-[14px] bg-orange-100 lg:rounded-[18px]"
+          className="relative block aspect-[3/4] overflow-hidden rounded-[18px] bg-orange-100"
         >
           <Image
             src={main}

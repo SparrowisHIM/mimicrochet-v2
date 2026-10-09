@@ -29,7 +29,7 @@ export function MeetMimi() {
       <div className="container-page flex flex-col gap-8 py-16 lg:flex-row lg:items-center lg:gap-20 lg:py-28">
         <motion.div
           ref={frame}
-          className="relative aspect-[4/5] w-full overflow-hidden rounded-[20px] bg-stone-200 lg:w-[560px] lg:shrink-0 lg:rounded-[28px]"
+          className="relative aspect-[4/5] w-full overflow-hidden rounded-[18px] bg-stone-200 lg:w-[560px] lg:shrink-0"
           style={reduce ? undefined : { scale: frameScale }}
         >
           <motion.div className="absolute inset-x-0 -inset-y-[10%]" style={reduce ? undefined : { y }}>

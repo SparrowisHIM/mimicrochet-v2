@@ -139,7 +139,7 @@ export function FitSheet({
       const rows: [FitStep | "size", string][] = [["size", "Size"], ...steps.filter((s) => s !== "check").map((s) => [s, title(s)] as [FitStep, string])];
       return (
         <>
-          <ul className="overflow-hidden rounded-[18px] border border-stone-200 bg-white">
+          <ul className="overflow-hidden rounded-[22px] border border-stone-200 bg-white">
             {rows.map(([s, label]) => {
               const v = answer(s);
               return (
@@ -245,7 +245,7 @@ export function FitSheet({
               <button
                 type="button"
                 onClick={() => (s === "size" ? onClose() : goTo(steps.indexOf(s as FitStep)))}
-                className={`flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-left text-[15px] transition-colors duration-150 ${current ? "bg-orange-50" : "hover:bg-stone-50"}`}
+                className={`flex w-full items-center gap-2.5 rounded-[14px] px-2.5 py-2.5 text-left text-[15px] transition-colors duration-150 ${current ? "bg-orange-50" : "hover:bg-stone-50"}`}
               >
                 <StateMark state={state} />
                 <span className={current ? "font-semibold" : state === "todo" ? "text-stone-400" : ""}>{label}</span>

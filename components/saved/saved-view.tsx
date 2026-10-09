@@ -91,7 +91,7 @@ export function SavedView() {
             <AnimatePresence initial={false}>
               {rows.map((r) => (
                 <motion.li key={r.p.slug} layout exit={{ opacity: 0, x: -40 }} className="flex gap-3.5 border-b border-stone-200 py-[18px]">
-                  <Link href={`/shop/${r.p.slug}`} className={`relative h-32 w-24 shrink-0 overflow-hidden rounded-[12px] bg-orange-100 ${r.status === "sold" ? "opacity-55" : ""}`}>
+                  <Link href={`/shop/${r.p.slug}`} className={`relative h-32 w-24 shrink-0 overflow-hidden rounded-[8px] bg-orange-100 ${r.status === "sold" ? "opacity-55" : ""}`}>
                     <Image src={r.p.images[0]} alt="" fill sizes="96px" className="object-cover" />
                   </Link>
                   <div className="flex min-w-0 flex-1 flex-col gap-1">

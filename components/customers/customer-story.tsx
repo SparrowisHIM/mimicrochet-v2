@@ -137,7 +137,7 @@ function Story({ customer, next, instant, onNext, onClose }: { customer: Custome
                   aria-selected={i === index}
                   aria-label={`Photo ${i + 1} of ${count}`}
                   onClick={() => go(i)}
-                  className={`relative h-[65px] w-[52px] overflow-hidden rounded-[6px] transition-[opacity,box-shadow] ${
+                  className={`relative h-[65px] w-[52px] overflow-hidden rounded-[8px] transition-[opacity,box-shadow] ${
                     i === index ? "opacity-100 ring-2 ring-stone-900 ring-offset-2 ring-offset-orange-50" : "opacity-70 hover:opacity-100"
                   }`}
                 >
@@ -150,7 +150,7 @@ function Story({ customer, next, instant, onNext, onClose }: { customer: Custome
 
         <div className="relative flex min-w-0 flex-1 gap-6 self-stretch">
           <div className="flex w-[min(500px,46vw)] shrink-0 flex-col">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-[20px] bg-orange-100">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-[18px] bg-orange-100">
               <AnimatePresence initial={false} mode="popLayout">
                 <motion.div
                   key={photo.src}
@@ -184,12 +184,12 @@ function Story({ customer, next, instant, onNext, onClose }: { customer: Custome
 
           <div className="relative -mr-16 flex min-w-0 flex-1 flex-col justify-between pt-[12%]">
             {count > 1 && (
-              <button type="button" onClick={() => go(index + 1)} className="relative aspect-[4/5] w-[400px] overflow-hidden rounded-[16px] opacity-90 transition-opacity hover:opacity-100" aria-label="Next photo">
+              <button type="button" onClick={() => go(index + 1)} className="relative aspect-[4/5] w-[400px] overflow-hidden rounded-[18px] opacity-90 transition-opacity hover:opacity-100" aria-label="Next photo">
                 <Image src={nextPhoto.src} alt="" fill sizes="400px" className="object-cover" />
               </button>
             )}
             <button type="button" onClick={onNext} className="group flex items-center gap-3 self-start pb-1 text-left">
-              <span className="relative h-[55px] w-11 overflow-hidden rounded-[6px]">
+              <span className="relative h-[55px] w-11 overflow-hidden rounded-[8px]">
                 <Image src={next.photos[0].src} alt="" fill sizes="44px" className="object-cover" />
               </span>
               <span className="flex flex-col">
@@ -208,7 +208,7 @@ function Story({ customer, next, instant, onNext, onClose }: { customer: Custome
       <div className="flex flex-1 flex-col lg:hidden">
         <div ref={strip} onScroll={onScroll} className="no-scrollbar flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5">
           {customer.photos.map((p) => (
-            <div key={p.src} className="relative aspect-[4/5] w-[78vw] max-w-[340px] shrink-0 snap-start overflow-hidden rounded-[16px] bg-orange-100">
+            <div key={p.src} className="relative aspect-[4/5] w-[78vw] max-w-[340px] shrink-0 snap-start overflow-hidden rounded-[18px] bg-orange-100">
               <Image src={p.src} alt={p.alt} fill sizes="78vw" className="object-cover" />
             </div>
           ))}

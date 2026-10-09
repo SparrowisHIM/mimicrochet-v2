@@ -3,7 +3,7 @@
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
-// cm / in: a squircle switch between the two units (after Cloudflare Kumo's switch), in Mimi's caramel,
+// cm / in: a round switch between the two units, like every toggle on the site, in Mimi's caramel,
 // the amber-800 that marks "made for you" across the site. The thumb springs across, and while the
 // track is pressed it stretches toward the side it's about to go. Either word can be tapped too, and
 // arrow keys move between them like a native radio group.
@@ -11,8 +11,8 @@ import { useEffect, useRef, useState } from "react";
 export type Unit = "cm" | "in";
 
 const SIZES = {
-  sm: { track: "h-[22px] w-[38px] rounded-[8px]", thumb: 22, radius: 7, travel: 16, word: "h-9 text-[13px]" },
-  md: { track: "h-[26px] w-[46px] rounded-[9px]", thumb: 26, radius: 8, travel: 20, word: "h-11 text-[15px]" },
+  sm: { track: "h-[22px] w-[38px] rounded-full", thumb: 22, radius: 11, travel: 16, word: "h-9 text-[13px]" },
+  md: { track: "h-[26px] w-[46px] rounded-full", thumb: 26, radius: 13, travel: 20, word: "h-11 text-[15px]" },
 };
 
 export function UnitSwitch({ value, onChange, size = "md" }: { value: Unit; onChange: (u: Unit) => void; size?: "sm" | "md" }) {

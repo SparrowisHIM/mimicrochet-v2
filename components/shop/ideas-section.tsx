@@ -67,7 +67,7 @@ export function IdeasSection() {
               transition={{ duration: i >= from ? 0.45 : 0.3, ease: [0.22, 1, 0.36, 1], delay: i >= from && !reduce ? Math.min(i - from, 14) * 0.035 : 0 }}
             >
               <Link href={`/custom-order?idea=${idea.slug}`} className="group flex flex-col gap-2.5">
-                <span className="relative block aspect-[3/4] overflow-hidden rounded-[14px] bg-orange-100">
+                <span className="relative block aspect-[3/4] overflow-hidden rounded-[18px] bg-orange-100">
                   <Image
                     src={idea.image}
                     alt={`${idea.name}, a concept picture`}

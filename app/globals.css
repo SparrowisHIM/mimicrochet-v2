@@ -319,7 +319,7 @@
     margin-left: calc(var(--card-w) / -2);
     overflow: hidden;
     border: 1px solid #fff;
-    border-radius: 7px;
+    border-radius: 8px;
     background: var(--color-orange-100);
     box-shadow: 0 3px 8px -2px rgb(28 25 23 / 0.24);
     transform-origin: 50% 92%;

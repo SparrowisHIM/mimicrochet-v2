@@ -44,8 +44,8 @@ export default function AboutPage() {
           </div>
         </div>
         <div className="relative mx-auto w-full max-w-[420px] lg:mx-0 lg:w-[484px] lg:max-w-none">
-          <div className="absolute inset-0 translate-x-4 translate-y-4 rounded-[28px] bg-orange-200" aria-hidden />
-          <div className="relative aspect-[4/5] overflow-hidden rounded-[28px] bg-amber-900">
+          <div className="absolute inset-0 translate-x-4 translate-y-4 rounded-[18px] bg-orange-200" aria-hidden />
+          <div className="relative aspect-[4/5] overflow-hidden rounded-[18px] bg-amber-900">
             <Parallax>
               <Image src="/images/story/mimi-portrait.jpg" alt="Mimi, the maker behind Mimi Crochet" fill preload sizes="(min-width: 1024px) 484px, 90vw" className="object-cover object-top" />
             </Parallax>
@@ -90,7 +90,7 @@ export default function AboutPage() {
       </section>
 
       <section className="container-page pb-16 lg:pb-24">
-        <Wipe className="flex flex-col gap-6 rounded-[28px] bg-stone-900 px-6 py-10 text-orange-50 lg:flex-row lg:items-center lg:justify-between lg:px-14 lg:py-14">
+        <Wipe className="flex flex-col gap-6 rounded-[22px] bg-stone-900 px-6 py-10 text-orange-50 lg:flex-row lg:items-center lg:justify-between lg:px-14 lg:py-14">
           <div className="flex flex-col gap-3">
             <h2 className="font-serif text-[32px] leading-[1.08] lg:text-[44px]">
               Your next favourite outfit

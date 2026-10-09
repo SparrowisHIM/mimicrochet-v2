@@ -183,7 +183,7 @@ export function SendingMoment({
             )}
 
             <div className="flex items-center gap-3">
-              <span className="relative h-14 w-11 shrink-0 overflow-hidden rounded-[9px] bg-orange-100">
+              <span className="relative h-14 w-11 shrink-0 overflow-hidden rounded-[8px] bg-orange-100">
                 {image && <Image src={image} alt="" fill sizes="44px" className="object-cover" unoptimized={image.startsWith("data:")} />}
               </span>
               <span className="flex min-w-0 flex-col">
@@ -208,7 +208,7 @@ export function SendingMoment({
 
             {/* Swing tag on its thread */}
             <span data-tag-string className="absolute top-3 -right-1 h-9 w-px origin-top scale-y-0 bg-stone-400" aria-hidden />
-            <div data-tag className="absolute top-11 -right-7 flex w-[118px] origin-top flex-col items-center gap-0.5 rounded-[10px] bg-amber-200 px-3 pt-4 pb-2.5 text-stone-900 opacity-0 shadow-[0_10px_24px_-10px_rgb(0_0_0/0.6)]">
+            <div data-tag className="absolute top-11 -right-7 flex w-[118px] origin-top flex-col items-center gap-0.5 rounded-[8px] bg-amber-200 px-3 pt-4 pb-2.5 text-stone-900 opacity-0 shadow-[0_10px_24px_-10px_rgb(0_0_0/0.6)]">
               <span className="absolute top-1.5 size-2 rounded-full bg-stone-950/80" aria-hidden />
               <span className="text-[11px] font-medium text-amber-900">Your order</span>
               <span className="text-[16px] font-semibold tracking-tight whitespace-nowrap tabular-nums">

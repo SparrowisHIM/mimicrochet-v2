@@ -35,7 +35,7 @@ const swatch: Record<ColourGroup, string> = {
 
 function HaveItMade() {
   return (
-    <div className="flex aspect-[3/4] flex-col justify-between rounded-[14px] bg-stone-900 p-4 text-orange-50 lg:rounded-[18px] lg:p-7">
+    <div className="flex aspect-[3/4] flex-col justify-between rounded-[18px] bg-stone-900 p-4 text-orange-50 lg:p-7">
       <div className="flex flex-col gap-2.5 lg:gap-3.5">
         <p className="font-serif text-[19px] leading-[1.15] lg:text-[30px]">
           <span className="lg:hidden">Not your size?</span>

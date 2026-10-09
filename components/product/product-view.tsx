@@ -42,7 +42,7 @@ function Accordion({ title, children, defaultOpen = false }: { title: string; ch
 function MadeForYou({ product }: { product: Product }) {
   const quick = Boolean(product.leadTime);
   return (
-    <div className="flex flex-col gap-3 rounded-[18px] border border-orange-200 bg-white px-[22px] py-5">
+    <div className="flex flex-col gap-3 rounded-[22px] border border-orange-200 bg-white px-[22px] py-5">
       <div className="flex items-center justify-between">
         <span className="text-[16px] font-semibold">How Mimi makes it</span>
         <span className="text-[14px] font-semibold text-amber-800">{quick ? "About 3 days" : "About 3 weeks"}</span>
@@ -141,7 +141,7 @@ export function ProductView({ product }: { product: Product }) {
                     onClick={() => setIndex(i)}
                     aria-label={`Photo ${i + 1}`}
                     aria-current={i === index}
-                    className={`relative aspect-[3/4] overflow-hidden rounded-[12px] transition-shadow ${i === index ? "ring-[1.5px] ring-stone-900" : "opacity-80 hover:opacity-100"}`}
+                    className={`relative aspect-[3/4] overflow-hidden rounded-[8px] transition-shadow ${i === index ? "ring-[1.5px] ring-stone-900" : "opacity-80 hover:opacity-100"}`}
                   >
                     <Image src={src} alt="" fill sizes="88px" className="object-cover" />
                   </button>
@@ -150,7 +150,7 @@ export function ProductView({ product }: { product: Product }) {
             )}
             <div className="relative lg:flex-1">
               {/* desktop main photo */}
-              <div className="relative hidden aspect-[3/4] overflow-hidden rounded-[24px] bg-orange-100 lg:block">
+              <div className="relative hidden aspect-[3/4] overflow-hidden rounded-[18px] bg-orange-100 lg:block">
                 <AnimatePresence initial={false}>
                   <motion.div key={product.images[index]} className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
                     <Image src={product.images[index]} alt={`${product.name}, ${product.colour.toLowerCase()}`} fill preload sizes="(min-width: 1024px) 704px, 100vw" className="object-cover" />
@@ -214,7 +214,7 @@ export function ProductView({ product }: { product: Product }) {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.35, ease, delay: 0.25 + Math.abs(i - from) * 0.05 }}
                         whileTap={{ scale: 0.94 }}
-                        className={`h-12 flex-1 rounded-[12px] text-[15px] font-medium transition-colors lg:w-16 lg:flex-none ${
+                        className={`h-12 flex-1 rounded-[14px] text-[15px] font-medium transition-colors lg:w-16 lg:flex-none ${
                           on ? "bg-stone-900 text-orange-50" : "border border-stone-300 bg-white hover:border-stone-900"
                         }`}
                       >
@@ -324,7 +324,7 @@ export function ProductView({ product }: { product: Product }) {
 
       <Sheet open={guide} onClose={() => setGuide(false)} title="Size guide">
         <p className="text-[15px] text-stone-600">Body measurements each size fits, in centimetres.</p>
-        <div className="mt-4 overflow-hidden rounded-[18px] bg-white">
+        <div className="mt-4 overflow-hidden rounded-[22px] bg-white">
           <table className="w-full text-left text-[15px] whitespace-nowrap tabular-nums">
             <thead className="text-stone-500">
               <tr>

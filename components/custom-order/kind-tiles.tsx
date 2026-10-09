@@ -54,7 +54,7 @@ export function KindTiles({ value, onChange, invalid }: { value?: PieceKind; onC
               aria-checked={on}
               onClick={() => onChange(k.key)}
               whileTap={{ scale: 0.97 }}
-              className={`relative flex flex-col items-center gap-1.5 rounded-[16px] bg-white px-1 pt-3 pb-3 transition-[border-color,box-shadow] duration-150 ${
+              className={`relative flex flex-col items-center gap-1.5 rounded-[22px] bg-white px-1 pt-3 pb-3 transition-[border-color,box-shadow] duration-150 ${
                 on ? "border-[1.5px] border-stone-900" : `border hover:border-stone-400 ${invalid ? "border-red-400" : "border-stone-200"}`
               }`}
             >

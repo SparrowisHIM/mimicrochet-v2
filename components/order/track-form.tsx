@@ -50,7 +50,7 @@ export function TrackForm({ compact = false }: { compact?: boolean }) {
         <div className="flex flex-col gap-2 pt-2 text-left">
           <span className="text-[14px] font-medium text-stone-500">Your orders on this phone</span>
           {mine.map((o) => (
-            <Link key={o.id} href={`/t/${o.code}`} className="flex items-center justify-between rounded-[16px] bg-white px-4 py-3 text-[15px] hover:bg-orange-100/60">
+            <Link key={o.id} href={`/t/${o.code}`} className="flex items-center justify-between rounded-[14px] bg-white px-4 py-3 text-[15px] hover:bg-orange-100/60">
               <span className="font-medium">{o.piece.name}</span>
               <span className="text-stone-500">{o.id}</span>
             </Link>

@@ -191,7 +191,7 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
             </button>
           </div>
           {editing ? (
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={5} className="min-h-[136px] w-full resize-none rounded-[12px] border border-stone-300 p-3 text-[15px] leading-[1.5] outline-none field-sizing-content focus:border-stone-900" aria-label="Edit the message" />
+            <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={5} className="min-h-[136px] w-full resize-none rounded-[14px] border border-stone-300 p-3 text-[15px] leading-[1.5] outline-none field-sizing-content focus:border-stone-900" aria-label="Edit the message" />
           ) : (
             <p className="border-l-2 border-stone-200 pl-3 text-[15px] leading-[1.55] text-stone-700">{message}</p>
           )}

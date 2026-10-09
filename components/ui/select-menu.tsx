@@ -101,7 +101,7 @@ export function SelectMenu<T extends string>({
                 close();
               } else if (e.key === "Tab") close(false);
             }}
-            className="absolute top-full right-0 z-40 mt-2 flex min-w-[232px] origin-top-right flex-col rounded-[18px] border border-stone-200 bg-white p-1.5 shadow-[0_24px_60px_-20px_rgb(28_25_23/0.35)] outline-none"
+            className="absolute top-full right-0 z-40 mt-2 flex min-w-[232px] origin-top-right flex-col rounded-[22px] border border-stone-200 bg-white p-2 shadow-[0_24px_60px_-20px_rgb(28_25_23/0.35)] outline-none"
             initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.96, transition: { duration: 0.12 } }}
@@ -117,7 +117,7 @@ export function SelectMenu<T extends string>({
                   aria-selected={on}
                   onPointerMove={() => i !== active && setActive(i)}
                   onClick={() => pick(o)}
-                  className={`flex h-11 items-center justify-between gap-6 rounded-[12px] px-3 text-[15px] transition-colors duration-100 ${i === active ? "bg-stone-100" : ""} ${on ? "text-stone-900" : "text-stone-600"}`}
+                  className={`flex h-11 items-center justify-between gap-6 rounded-[14px] px-3 text-[15px] transition-colors duration-100 ${i === active ? "bg-stone-100" : ""} ${on ? "text-stone-900" : "text-stone-600"}`}
                 >
                   {o.label}
                   <span className={`grid size-5 place-items-center rounded-full transition-opacity duration-150 ${on ? "bg-stone-900 text-orange-50 opacity-100" : "opacity-0"}`} aria-hidden>

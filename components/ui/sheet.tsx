@@ -123,7 +123,7 @@ export function Sheet({
             <div className="pointer-events-none absolute inset-0 grid place-items-center p-6">
               <motion.div
                 data-panel
-                className="pointer-events-auto flex max-h-[90dvh] w-full max-w-[960px] overflow-hidden rounded-[28px] bg-orange-50 shadow-[0_30px_70px_-20px_rgb(28_25_23/0.35)]"
+                className="pointer-events-auto flex max-h-[90dvh] w-full max-w-[960px] overflow-hidden rounded-[22px] bg-orange-50 shadow-[0_30px_70px_-20px_rgb(28_25_23/0.35)]"
                 initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={reduce ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
@@ -141,7 +141,7 @@ export function Sheet({
           {!center && (
           <motion.div
             data-panel
-            className={`absolute inset-x-0 bottom-0 flex max-h-[94dvh] flex-col rounded-t-[28px] bg-orange-50 ${
+            className={`absolute inset-x-0 bottom-0 flex max-h-[94dvh] flex-col rounded-t-[22px] bg-orange-50 ${
               right ? "lg:hidden" : "mx-auto lg:max-w-[560px]"
             }`}
             initial={{ y: "100%" }}

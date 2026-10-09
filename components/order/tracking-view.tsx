@@ -54,7 +54,7 @@ function SpotlightOutline({ show }: { show: boolean }) {
               <stop offset="1" stopColor="#34d399" />
             </linearGradient>
           </defs>
-          <motion.rect x="0" y="0" width="100%" height="100%" rx="24" fill="none" stroke="url(#spot)" strokeWidth="3" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.9, ease: "easeInOut", delay: 0.35 }} />
+          <motion.rect x="0" y="0" width="100%" height="100%" rx="22" fill="none" stroke="url(#spot)" strokeWidth="3" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.9, ease: "easeInOut", delay: 0.35 }} />
         </motion.svg>
       )}
     </AnimatePresence>
@@ -326,7 +326,7 @@ export function TrackingView({ code, justPaid = false }: { code: string; justPai
           <span className="text-[14px] text-stone-500">{latest.at}</span>
         </div>
         {latest.photo && (
-          <div className="relative aspect-[4/5] overflow-hidden rounded-[16px] bg-orange-100">
+          <div className="relative aspect-[4/5] overflow-hidden rounded-[18px] bg-orange-100">
             <Image src={latest.photo} alt="Mimi’s latest progress photo" fill sizes="(min-width: 1024px) 600px, 90vw" className="object-cover" preload />
           </div>
         )}
@@ -421,7 +421,7 @@ export function TrackingView({ code, justPaid = false }: { code: string; justPai
   const photoAsk = (
     <Card className="flex flex-col gap-4">
       {order.piece.image && (
-        <span className="relative block aspect-[4/5] overflow-hidden rounded-[16px] bg-orange-100">
+        <span className="relative block aspect-[4/5] overflow-hidden rounded-[18px] bg-orange-100">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={order.piece.image} alt={order.piece.name} className="size-full object-cover" />
         </span>
@@ -446,7 +446,7 @@ export function TrackingView({ code, justPaid = false }: { code: string; justPai
       <h2 className="text-[16px] font-semibold">Your order</h2>
       <div className="flex items-center gap-3">
         {order.piece.image && (
-          <span className="relative h-[75px] w-14 shrink-0 overflow-hidden rounded-[10px] bg-orange-100">
+          <span className="relative h-[75px] w-14 shrink-0 overflow-hidden rounded-[8px] bg-orange-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={order.piece.image} alt="" className="size-full object-cover" />
           </span>

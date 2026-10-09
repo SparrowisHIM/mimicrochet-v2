@@ -148,7 +148,7 @@ function Combobox({
       <AnimatePresence>
         {open && (
           <motion.div
-            className="absolute inset-x-0 top-full z-40 mt-2 flex origin-top flex-col overflow-hidden rounded-[18px] border border-stone-200 bg-white shadow-[0_28px_70px_-24px_rgb(28_25_23/0.35)]"
+            className="absolute inset-x-0 top-full z-40 mt-2 flex origin-top flex-col overflow-hidden rounded-[22px] border border-stone-200 bg-white shadow-[0_28px_70px_-24px_rgb(28_25_23/0.35)]"
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
@@ -207,7 +207,7 @@ function Combobox({
               </div>
             )}
 
-            <ul id={listId} role="listbox" className="max-h-[min(300px,42svh)] overflow-y-auto overscroll-contain p-1.5">
+            <ul id={listId} role="listbox" className="max-h-[min(300px,42svh)] overflow-y-auto overscroll-contain p-2">
               {flat.length === 0 ? (
                 <li className="px-3 py-6 text-center text-[14px] leading-[1.5] text-stone-500">{empty(query)}</li>
               ) : (
@@ -230,7 +230,7 @@ function Combobox({
                             initial={reduce || i > 10 ? false : { opacity: 0, x: -6 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.015 * i, duration: 0.2 }}
-                            className={`flex cursor-pointer items-center gap-3 rounded-[10px] px-2.5 py-2.5 text-[15px] ${i === active ? "bg-stone-100" : ""}`}
+                            className={`flex cursor-pointer items-center gap-3 rounded-[14px] px-2.5 py-2.5 text-[15px] ${i === active ? "bg-stone-100" : ""}`}
                           >
                             <span className="min-w-0 flex-1 truncate">
                               <span className="font-medium text-stone-900">

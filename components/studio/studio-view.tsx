@@ -64,7 +64,7 @@ function SetPrice({ o, onDone }: { o: Row; onDone: () => void }) {
     <div className="flex flex-col gap-5">
       <label className="flex flex-col gap-2">
         <span className="text-[14px] font-semibold">Price</span>
-        <input inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="₦" className="h-12 rounded-[12px] border border-stone-300 bg-white px-3.5 text-[16px] outline-none focus:border-stone-900" />
+        <input inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="₦" className="h-12 rounded-[14px] border border-stone-300 bg-white px-3.5 text-[16px] outline-none focus:border-stone-900" />
       </label>
       <div className="flex flex-col gap-2.5">
         <span className="text-[14px] font-semibold">Ready by</span>
@@ -90,7 +90,7 @@ function SetPrice({ o, onDone }: { o: Row; onDone: () => void }) {
         <div className="flex justify-between"><dt>Balance when ready (40%)</dt><dd className="font-semibold">{formatNaira(total - deposit)}</dd></div>
         <div className="flex justify-between border-t border-amber-200 pt-1.5"><dt>Or in full now</dt><dd className="font-semibold">{formatNaira(total)}</dd></div>
       </dl>
-      <div className="flex flex-col gap-2 rounded-[14px] bg-white p-4">
+      <div className="flex flex-col gap-2 rounded-[22px] bg-white p-4">
         <span className="flex items-center gap-2 text-[14px] font-semibold"><WhatsAppIcon size={16} /> Message to {o.name} <span className="font-normal text-stone-400">draft</span></span>
         <p className="border-l-2 border-stone-200 pl-3 text-[14px] leading-[1.5] text-stone-600">{msg}</p>
       </div>
@@ -121,12 +121,12 @@ function PostUpdate({ o, onDone }: { o: Row; onDone: () => void }) {
       <input ref={file} type="file" accept="image/*" capture="environment" hidden onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ""; if (!f) return; const c = await checkPhoto(f, { preview: 900 }); if (c.ok && c.preview) { setPhoto(c.preview); setPhotoNote(null); } else setPhotoNote(c.ok ? "That photo can’t be shown here. Try a JPEG or PNG." : c.reason); }} />
       <div className="grid grid-cols-3 gap-2.5">
         {photo ? (
-          <span className="relative aspect-[3/4] overflow-hidden rounded-[12px]">
+          <span className="relative aspect-[3/4] overflow-hidden rounded-[18px]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={photo} alt="Your progress photo" className="size-full object-cover" />
           </span>
         ) : null}
-        <button type="button" onClick={() => file.current?.click()} className="flex aspect-[3/4] flex-col items-center justify-center gap-1 rounded-[12px] border-[1.5px] border-dashed border-stone-300 text-[13px] text-stone-600 hover:border-stone-900">
+        <button type="button" onClick={() => file.current?.click()} className="flex aspect-[3/4] flex-col items-center justify-center gap-1 rounded-[18px] border-[1.5px] border-dashed border-stone-300 text-[13px] text-stone-600 hover:border-stone-900">
           <span className="text-[22px] leading-none">+</span>
           {photo ? "Change" : "Camera or gallery"}
         </button>
@@ -134,14 +134,14 @@ function PostUpdate({ o, onDone }: { o: Row; onDone: () => void }) {
       {photoNote && <p className="-mt-2 text-[13px] text-amber-800" role="status">{photoNote}</p>}
       <label className="flex flex-col gap-2">
         <span className="text-[14px] font-semibold">Note (optional)</span>
-        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. The top is done. Starting the skirt now." className="h-12 rounded-[12px] border border-stone-300 bg-white px-3.5 text-[16px] outline-none focus:border-stone-900" />
+        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. The top is done. Starting the skirt now." className="h-12 rounded-[14px] border border-stone-300 bg-white px-3.5 text-[16px] outline-none focus:border-stone-900" />
       </label>
       <div className="flex flex-wrap gap-2">
         {["Halfway there", "Almost ready", "Ready to send"].map((q) => (
           <Chip key={q} on={note === q} onClick={() => setNote(q)}>{q}</Chip>
         ))}
       </div>
-      <div className="flex items-center justify-between rounded-[14px] bg-white p-4">
+      <div className="flex items-center justify-between rounded-[22px] bg-white p-4">
         <span className="flex flex-col">
           <span className="text-[15px] font-semibold">Also mark as ready</span>
           <span className="text-[13px] text-stone-500">Moves their page to “Ready”</span>
@@ -238,7 +238,7 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="flex flex-col gap-4 rounded-[20px] bg-white p-4">
+      <section className="flex flex-col gap-4 rounded-[22px] bg-white p-4">
         <Stepper stage={o.stage} />
         <div className="flex items-center justify-between gap-3 border-t border-stone-100 pt-3 text-[14px]">
           <span className="text-stone-500">{o.name} sees “{stages[o.stage].label}”</span>
@@ -246,7 +246,7 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
         </div>
       </section>
 
-      <section className="flex flex-col gap-3 rounded-[20px] border border-amber-200 bg-amber-50 p-5">
+      <section className="flex flex-col gap-3 rounded-[22px] border border-amber-200 bg-amber-50 p-5">
         <span className={`self-start rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${urgent ? "bg-amber-200 text-amber-900" : "bg-white text-amber-800"}`}>{urgent ? "Needs you" : "Suggested"}</span>
         <h3 className="font-serif text-[24px] leading-[1.15] text-balance">{next.title}</h3>
         <p className="text-[15px] leading-[1.5] text-stone-600">{next.text}</p>
@@ -257,11 +257,11 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
         <WhatsAppIcon size={16} /> Message {o.name}
       </a>
 
-      <section className="flex flex-col gap-4 rounded-[20px] bg-white p-4">
+      <section className="flex flex-col gap-4 rounded-[22px] bg-white p-4">
         <h3 className="text-[15px] font-semibold">What they asked for</h3>
         <div className="flex items-center gap-3">
           {o.piece.image && (
-            <span className="relative h-[75px] w-14 shrink-0 overflow-hidden rounded-[10px] bg-orange-100">
+            <span className="relative h-[75px] w-14 shrink-0 overflow-hidden rounded-[8px] bg-orange-100">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={o.piece.image} alt="" className="size-full object-cover" />
             </span>
@@ -275,7 +275,7 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
         {o.photos.length > 0 && (
           <div className="flex gap-2">
             {o.photos.slice(0, 4).map((src, i) => (
-              <span key={i} className="relative h-20 w-[60px] overflow-hidden rounded-[10px]">
+              <span key={i} className="relative h-20 w-[60px] overflow-hidden rounded-[8px]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={src} alt={`Their photo ${i + 1}`} className="size-full object-cover" />
               </span>
@@ -295,7 +295,7 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
         )}
       </section>
 
-      <section className="flex flex-col gap-2 rounded-[20px] bg-white p-4 text-[15px]">
+      <section className="flex flex-col gap-2 rounded-[22px] bg-white p-4 text-[15px]">
         <h3 className="pb-1 text-[15px] font-semibold">Money</h3>
         {o.price ? (
           <>
@@ -388,7 +388,7 @@ export function StudioView() {
 
   return (
     <div className="container-page pt-6 pb-24 lg:pt-12">
-      <p className="mb-5 rounded-[12px] border border-dashed border-stone-300 px-4 py-2.5 text-[13px] text-stone-600">
+      <p className="mb-5 rounded-[14px] border border-dashed border-stone-300 px-4 py-2.5 text-[13px] text-stone-600">
         Studio demo: the orders below are made-up samples, plus any request sent from this device. Changes show on each order’s tracking page here. A real sign-in comes later.
       </p>
       <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
@@ -407,7 +407,7 @@ export function StudioView() {
           ["Running late", late, late === 1 ? "order" : "orders", late ? "text-red-700" : ""],
           ["Still to collect", formatNaira(toCollect), "in balances", ""],
         ].map(([k, v, unit, cls]) => (
-          <div key={k as string} className={`flex flex-col gap-1 rounded-[18px] bg-white p-4 lg:p-5 ${k === "Still to collect" || k === "Running late" ? "max-lg:hidden" : ""}`}>
+          <div key={k as string} className={`flex flex-col gap-1 rounded-[22px] bg-white p-4 lg:p-5 ${k === "Still to collect" || k === "Running late" ? "max-lg:hidden" : ""}`}>
             <span className="text-[13px] text-stone-500 lg:text-[14px]">{k}</span>
             <span className="flex items-baseline gap-1.5"><span className={`text-[28px] leading-none font-semibold ${cls}`}>{v}</span><span className="text-[13px] text-stone-500">{unit}</span></span>
           </div>
@@ -419,7 +419,7 @@ export function StudioView() {
         <ul className="flex flex-col gap-2">
           {tasks.map((t) => (
             <li key={t.id}>
-              <button type="button" onClick={() => setOpen(t.id)} className="flex w-full items-center gap-3 rounded-[16px] bg-white p-3.5 text-left">
+              <button type="button" onClick={() => setOpen(t.id)} className="flex w-full items-center gap-3 rounded-[22px] bg-white p-3.5 text-left">
                 <span className="grid size-9 shrink-0 place-items-center rounded-full bg-orange-100 font-serif text-[16px] text-amber-800">{t.name[0]}</span>
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="text-[15px] font-semibold">{nextStep(t)}</span>
@@ -444,7 +444,7 @@ export function StudioView() {
       <ul className="mt-4 flex flex-col gap-2 lg:hidden">
         {shown.map((o) => (
           <li key={o.id}>
-            <button type="button" onClick={() => setOpen(o.id)} className="flex w-full items-center gap-3 rounded-[16px] bg-white p-3 text-left">
+            <button type="button" onClick={() => setOpen(o.id)} className="flex w-full items-center gap-3 rounded-[22px] bg-white p-3 text-left">
               <span className="relative h-[58px] w-11 shrink-0 overflow-hidden rounded-[8px] bg-orange-100">
                 {o.piece.image && <Image src={o.piece.image} alt="" fill sizes="44px" className="object-cover" unoptimized={o.piece.image.startsWith("data:")} />}
               </span>
@@ -471,7 +471,7 @@ export function StudioView() {
                 <td className="px-5 py-3.5 font-medium">{o.name}</td>
                 <td className="px-5 py-3.5">
                   <span className="flex items-center gap-3">
-                    <span className="relative h-[42px] w-8 shrink-0 overflow-hidden rounded-[6px] bg-orange-100">
+                    <span className="relative h-[42px] w-8 shrink-0 overflow-hidden rounded-[8px] bg-orange-100">
                       {o.piece.image && <Image src={o.piece.image} alt="" fill sizes="32px" className="object-cover" unoptimized={o.piece.image.startsWith("data:")} />}
                     </span>
                     {pieceName(o)}{o.size ? ` · ${o.size}` : ""}

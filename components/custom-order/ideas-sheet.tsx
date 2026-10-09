@@ -62,7 +62,7 @@ export function IdeasSheet({ open, onClose, onPick }: { open: boolean; onClose: 
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: fresh ? ((i % ROWS) * 0.04) : 0 }}
             >
               <button type="button" onClick={() => setPicked(on ? null : idea)} aria-pressed={on} className="flex w-full flex-col gap-1.5 text-left">
-                <span className={`relative block aspect-[3/4] overflow-hidden rounded-[12px] bg-orange-100 transition-shadow ${on ? "ring-[2.5px] ring-stone-900 ring-offset-2 ring-offset-orange-50" : ""}`}>
+                <span className={`relative block aspect-[3/4] overflow-hidden rounded-[18px] bg-orange-100 transition-shadow ${on ? "ring-[2.5px] ring-stone-900 ring-offset-2 ring-offset-orange-50" : ""}`}>
                   <Image src={idea.image} alt={idea.name} fill sizes="120px" className="object-cover" />
                 </span>
                 <span className="text-[13px] leading-tight font-medium">{idea.name}</span>
@@ -73,9 +73,9 @@ export function IdeasSheet({ open, onClose, onPick }: { open: boolean; onClose: 
       </ul>
       {shown < list.length && <Hairline label="Show more" onClick={() => setShown((n) => n + ROWS)} className="mt-4" />}
 
-      <div className="mt-6 flex flex-col gap-2.5 rounded-[18px] bg-white p-4">
+      <div className="mt-6 flex flex-col gap-2.5 rounded-[22px] bg-white p-4">
         <p className="text-[15px] font-semibold">More ideas on Pinterest</p>
-        <a href={site.socials.pinterest} target="_blank" rel="noreferrer" className="group flex items-center gap-3 rounded-[14px] border border-stone-200 p-2.5 pr-3.5 transition-colors duration-150 hover:border-stone-900">
+        <a href={site.socials.pinterest} target="_blank" rel="noreferrer" className="group flex items-center gap-3 rounded-[22px] border border-stone-200 p-2.5 pr-3.5 transition-colors duration-150 hover:border-stone-900">
           <CardStack images={["/images/products/lilac-ruffle-tube-dress-1.jpg", "/images/products/red-fringe-beach-set-1.jpg", "/images/products/blossin-loom-earrings-1.jpg"]} />
           <span className="flex flex-1 flex-col">
             <span className="text-[15px] font-semibold">Mimi’s Pinterest</span>

@@ -36,7 +36,7 @@ export function Hero() {
   return (
     <section ref={section} className="lg:container-page flex flex-col lg:flex-row lg:items-center lg:gap-[72px] lg:pt-8 lg:pb-24">
       <motion.div
-        className="relative aspect-[3/4] w-full overflow-hidden max-lg:max-h-[78svh] lg:order-2 lg:w-[min(640px,calc((100dvh-150px)*0.75))] lg:shrink-0 lg:rounded-[28px]"
+        className="relative aspect-[3/4] w-full overflow-hidden max-lg:max-h-[78svh] lg:order-2 lg:w-[min(640px,calc((100dvh-150px)*0.75))] lg:shrink-0 lg:rounded-[18px]"
         style={scrollOut ? { scale: photoScale, y: photoY } : undefined}
         initial={reduce ? false : { clipPath: "inset(10% 10% 10% 10% round 28px)", opacity: 0.3 }}
         animate={{ clipPath: "inset(0% 0% 0% 0% round 0px)", opacity: 1 }}
