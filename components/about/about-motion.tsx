@@ -135,29 +135,3 @@ export function Parallax({ children }: { children: ReactNode }) {
     </div>
   );
 }
-
-/** A yarn thread down the left edge that draws as you scroll; knots light up as you pass each section. Large screens only. */
-export function ThreadRail({ knots }: { knots: number }) {
-  const reduce = useReducedMotion();
-  const { scrollYProgress } = useScroll();
-  const draw = useSpring(scrollYProgress, { stiffness: 120, damping: 28 });
-  if (reduce) return null;
-  return (
-    <div className="pointer-events-none fixed top-0 bottom-0 left-4 z-10 hidden w-6 xl:block" aria-hidden>
-      <svg className="h-full w-full" viewBox="0 0 24 1000" preserveAspectRatio="none">
-        <path d="M12 0 C 4 120, 20 240, 12 360 S 4 600, 12 720 S 20 900, 12 1000" fill="none" stroke="#e7e5e4" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-        <motion.path d="M12 0 C 4 120, 20 240, 12 360 S 4 600, 12 720 S 20 900, 12 1000" fill="none" stroke="#d97706" strokeWidth="2" vectorEffect="non-scaling-stroke" style={{ pathLength: draw }} />
-      </svg>
-      {Array.from({ length: knots }, (_, i) => {
-        const at = (i + 1) / (knots + 1);
-        return <Knot key={i} at={at} progress={draw} />;
-      })}
-    </div>
-  );
-}
-
-function Knot({ at, progress }: { at: number; progress: ReturnType<typeof useSpring> }) {
-  const bg = useTransform(progress, [at - 0.02, at], ["#e7e5e4", "#d97706"]);
-  const scale = useTransform(progress, [at - 0.02, at, at + 0.03], [1, 1.6, 1]);
-  return <motion.span className="absolute left-1/2 size-2.5 -translate-x-1/2 rounded-full" style={{ top: `${at * 100}%`, backgroundColor: bg, scale }} />;
-}

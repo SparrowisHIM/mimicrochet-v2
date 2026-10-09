@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { InViewVideo, Parallax, ThreadRail, VelocityMarquee, Wipe, WordReveal } from "@/components/about/about-motion";
+import { Parallax, VelocityMarquee, Wipe, WordReveal } from "@/components/about/about-motion";
+import { CraftSteps, type Step } from "@/components/about/craft-steps";
 import { FactCard } from "@/components/about/fact-card";
 import { WhatsAppIcon } from "@/components/icons";
 import { ButtonLink, linkClass, linkLightClass } from "@/components/ui/button";
@@ -14,7 +15,6 @@ export const metadata: Metadata = {
 
 // One dress followed from idea to finished: the Neon Granny Square Dress. 03 and 04 are Mimi's own
 // videos (upscaled); 01 is a generated reference picture and 02 a generated picture of its yarn.
-type Step = { n: string; title: string; text: string; src: string; alt: string; tag?: string; video?: string; href?: string };
 const steps: Step[] = [
   { n: "01", title: "Your idea", text: "A saved pin, a photo, or a piece she’s made before. This one began as a neon granny-square dress.", src: "/images/story/neon-dress-reference.jpg", alt: "A reference picture of a neon granny-square dress on a dress form", tag: "Your reference" },
   { n: "02", title: "Yarn & colour", text: "Black to hold it all together, neon to make it glow.", src: "/images/story/neon-dress-yarn.jpg", alt: "Balls of lime, orange, red, purple, pink, yellow and black yarn beside a blue crochet hook" },
@@ -25,8 +25,6 @@ const steps: Step[] = [
 export default function AboutPage() {
   return (
     <>
-      <ThreadRail knots={5} />
-
       <section className="container-page flex flex-col gap-10 pt-8 pb-16 lg:flex-row lg:items-center lg:gap-20 lg:pt-16 lg:pb-24">
         <div className="flex flex-1 flex-col gap-6">
           <WordReveal
@@ -81,30 +79,7 @@ export default function AboutPage() {
             <h2 className="font-serif text-[34px] leading-[1.08] tracking-[-0.02em] lg:text-[48px]">How a piece comes to life</h2>
             <p className="text-[16px] text-stone-600 lg:text-[17px]">One dress, start to finish. No machines, just Mimi, a hook and a lot of yarn.</p>
           </Wipe>
-          <ol className="no-scrollbar -mx-5 flex snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-6 lg:px-0">
-            {steps.map((s) => (
-              <li key={s.n} className="w-[72vw] max-w-[300px] shrink-0 snap-start lg:w-auto lg:max-w-none">
-                <Wipe className="flex flex-col gap-3.5">
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-[18px] bg-orange-100">
-                    {s.video ? (
-                      <InViewVideo src={s.video} poster={s.src} label={s.alt} />
-                    ) : (
-                      <Image src={s.src} alt={s.alt} fill sizes="(min-width: 1024px) 310px, 72vw" className="object-cover" />
-                    )}
-                    {s.tag && <span className="absolute top-3 left-3 rounded-full bg-white/94 px-2.5 py-1 text-[12px] font-semibold">{s.tag}</span>}
-                  </div>
-                  <span className="font-serif text-[20px] text-amber-700">{s.n}</span>
-                  <h3 className="-mt-1.5 text-[19px] font-medium">{s.title}</h3>
-                  <p className="text-[15px] leading-[1.5] text-stone-600">{s.text}</p>
-                  {s.href && (
-                    <Link href={s.href} className={`${linkClass} self-start`}>
-                      See this dress
-                    </Link>
-                  )}
-                </Wipe>
-              </li>
-            ))}
-          </ol>
+          <CraftSteps steps={steps} />
         </div>
       </section>
 
