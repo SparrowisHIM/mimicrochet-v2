@@ -56,7 +56,8 @@ export function Hero() {
             src="/images/story/hero-ruby.jpg"
             alt="The Ruby Dress, a red crochet top and fringed wrap skirt, laid flat with balls of red yarn and a wooden hook"
             fill
-            preload
+            loading="eager"
+            fetchPriority="high"
             sizes="(min-width: 1024px) 640px, 100vw"
             className="object-cover"
           />

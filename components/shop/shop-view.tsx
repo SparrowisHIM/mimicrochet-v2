@@ -174,6 +174,8 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
             </div>
           </div>
         ) : (
+          <>
+          <h2 className="sr-only">All pieces</h2>
           <motion.ul layout className="grid grid-cols-2 gap-x-3 gap-y-7 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-11">
             <AnimatePresence mode="popLayout" initial={false}>
               {cells.map((c) =>
@@ -196,6 +198,7 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
               )}
             </AnimatePresence>
           </motion.ul>
+          </>
         )}
       </section>
 

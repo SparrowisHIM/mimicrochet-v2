@@ -97,8 +97,8 @@ export function Wipe({ children, className = "" }: { children: ReactNode; classN
   return (
     <motion.div
       className={className}
-      initial={reduce ? false : { clipPath: "inset(0 0 100% 0)", opacity: 0.4 }}
-      whileInView={{ clipPath: "inset(0 0 0% 0)", opacity: 1 }}
+      initial={reduce ? false : { clipPath: "inset(0 0 100% 0)" }}
+      whileInView={{ clipPath: "inset(0 0 0% 0)" }}
       viewport={{ once: true, margin: "-12% 0px" }}
       transition={{ duration: 0.95, ease }}
     >
@@ -112,13 +112,15 @@ export function InViewVideo({ src, poster, label }: { src: string; poster: strin
   const ref = useRef<HTMLVideoElement>(null);
   const reduce = useReducedMotion();
   const onScreen = useInView(ref, { amount: 0.4 });
+  // the cover image waits until the clip is about a screen away, so it never competes with the page's first photo
+  const near = useInView(ref, { once: true, margin: "800px 0px" });
   useEffect(() => {
     const v = ref.current;
     if (!v || reduce) return;
     if (onScreen) v.play().catch(() => {});
     else v.pause();
   }, [onScreen, reduce]);
-  return <video ref={ref} className="size-full object-cover" src={src} poster={poster} muted loop playsInline preload="none" aria-label={label} />;
+  return <video ref={ref} className="size-full object-cover" src={src} poster={near ? poster : undefined} muted loop playsInline preload="none" aria-label={label} />;
 }
 
 /** The portrait drifts slowly inside its frame as you scroll; the frame stays put. */

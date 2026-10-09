@@ -120,9 +120,9 @@ function Layer({ i, pos, active, reduce, loop, near, videoRef: video }: LayerPro
     <motion.div className="absolute inset-0 overflow-hidden" style={style} aria-hidden={!showing}>
       <motion.div className="absolute inset-0" style={reduce ? undefined : { scale: zoom }}>
         {s.media.kind === "image" ? (
-          <Image src={s.media.src} alt={s.alt} fill sizes="(min-width: 1024px) 520px, 92vw" className="object-cover" style={{ objectPosition: s.media.position }} preload={i === 0} />
+          <Image src={s.media.src} alt={s.alt} fill sizes="(min-width: 1024px) 520px, 92vw" className="object-cover" style={{ objectPosition: s.media.position }} />
         ) : (
-          <video ref={video} className="size-full object-cover" src={s.media.src} poster={s.media.poster} muted loop={loop} playsInline preload={near ? "auto" : "none"} aria-label={s.alt} />
+          <video ref={video} className="size-full object-cover" src={s.media.src} poster={near ? s.media.poster : undefined} muted loop={loop} playsInline preload={near ? "auto" : "none"} aria-label={s.alt} />
         )}
       </motion.div>
     </motion.div>

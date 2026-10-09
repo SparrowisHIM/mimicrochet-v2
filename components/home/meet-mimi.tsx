@@ -13,6 +13,8 @@ export function MeetMimi() {
   const frame = useRef<HTMLDivElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const onScreen = useInView(frame, { margin: "10% 0px" });
+  // the cover image waits until the section is about a screen away, so it never competes with the hero
+  const near = useInView(frame, { once: true, margin: "800px 0px" });
   const { scrollYProgress } = useScroll({ target: frame, offset: ["start end", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], ["-9%", "9%"]);
   const frameScale = useTransform(scrollYProgress, [0, 0.45], [0.86, 1]);
@@ -37,7 +39,7 @@ export function MeetMimi() {
               ref={video}
               className="size-full object-cover"
               src="/video/hands-crocheting-red.mp4"
-              poster="/video/hands-crocheting-red-poster.jpg"
+              poster={near ? "/video/hands-crocheting-red-poster.jpg" : undefined}
               muted
               loop
               playsInline

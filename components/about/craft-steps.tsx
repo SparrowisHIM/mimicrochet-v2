@@ -26,8 +26,8 @@ const PAD = 12; // space between a number and the first loop
 // watched, not the clipped card: a card clipped to nothing never counts as on screen, so steps
 // swiped in from the side on phones would stay hidden.
 const wipe = {
-  hidden: { clipPath: "inset(0 0 100% 0)", opacity: 0.4 },
-  shown: { clipPath: "inset(0 0 0% 0)", opacity: 1, transition: { duration: 0.95, ease: [0.22, 1, 0.36, 1] as const } },
+  hidden: { clipPath: "inset(0 0 100% 0)" },
+  shown: { clipPath: "inset(0 0 0% 0)", transition: { duration: 0.95, ease: [0.22, 1, 0.36, 1] as const } },
 };
 
 function chainOf(list: HTMLOListElement, nums: (HTMLElement | null)[]): Chain | null {

@@ -8,6 +8,7 @@ import { ShopOnly } from "@/components/site/shop-only";
 import { InputModality } from "@/components/site/input-modality";
 import { Intro } from "@/components/site/intro";
 import { site } from "@/lib/site";
+import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const youngSerif = Young_Serif({
@@ -20,10 +21,6 @@ const figtree = Figtree({
   variable: "--font-figtree",
   subsets: ["latin"],
 });
-
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3020");
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
