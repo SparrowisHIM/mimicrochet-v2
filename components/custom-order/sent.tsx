@@ -7,6 +7,7 @@ import { WhatsAppIcon } from "@/components/icons";
 import { TrackingCard } from "@/components/order/tracking-card";
 import { Button, linkClass } from "@/components/ui/button";
 import { Confetti } from "@/components/ui/confetti";
+import { fitWords } from "@/lib/fit";
 import { updateOrder, type Order } from "@/lib/orders";
 import { whatsappLink } from "@/lib/site";
 
@@ -34,6 +35,8 @@ export function orderMessage(o: Order) {
     const bits = (["bust", "waist", "hips", "length"] as const).filter((k) => m[k]).map((k) => `${k} ${m[k]}cm`);
     if (bits.length) parts.push(`My measurements: ${bits.join(", ")}.`);
   }
+  if (o.height) parts.push(`I'm ${o.height}cm tall.`);
+  if (o.fit) parts.push(`How I'd like it to fit: ${fitWords(o.fit).toLowerCase()}.`);
   if (o.when !== "No rush") parts.push(`I need it ${o.when.toLowerCase()}.`);
   if (o.description) parts.push(o.description);
   if (o.budget) parts.push(`My budget: ${o.budget}.`);

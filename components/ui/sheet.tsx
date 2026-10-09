@@ -1,12 +1,14 @@
 "use client";
 
 import { AnimatePresence, motion, useDragControls, useReducedMotion, type PanInfo } from "motion/react";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useRef, type ReactNode } from "react";
 import { CloseIcon } from "@/components/icons";
 import { lockScroll } from "@/lib/scroll-lock";
+import { useMedia } from "@/lib/use-media";
 
 /**
- * Bottom sheet on phones, side panel on desktop (or a centred bottom sheet with side="bottom").
+ * Bottom sheet on phones, side panel on desktop (or a centred bottom sheet with side="bottom", or a
+ * centred panel with an optional column beside it with side="center").
  * Springs in with a soft overshoot, dims the page, closes on Esc, on the dim, or by dragging the handle down.
  */
 export function Sheet({
@@ -16,6 +18,8 @@ export function Sheet({
   children,
   footer,
   aside,
+  top,
+  beside,
   side = "right",
 }: {
   open: boolean;
@@ -25,11 +29,19 @@ export function Sheet({
   footer?: ReactNode;
   /** Small text beside the title, e.g. a step count. */
   aside?: ReactNode;
-  side?: "right" | "bottom";
+  /** Above the title, e.g. a row of step bars. */
+  top?: ReactNode;
+  /** side="center" on desktop: a column beside the content. */
+  beside?: ReactNode;
+  side?: "right" | "bottom" | "center";
 }) {
   const reduce = useReducedMotion();
   const root = useRef<HTMLDivElement>(null);
   const drag = useDragControls();
+  const desktop = useMedia("(min-width: 1024px)");
+  const center = side === "center" && desktop;
+  // A new onClose every render must not re-run the open effect (that would steal focus back to the first button).
+  const close = useEffectEvent(() => onClose());
 
   useEffect(() => {
     if (!open) return;
@@ -40,7 +52,7 @@ export function Sheet({
       [...(visiblePanel()?.querySelectorAll<HTMLElement>("button, a[href], input, textarea, select") ?? [])].filter((el) => !el.hasAttribute("disabled"));
     const t = setTimeout(() => focusables()[0]?.focus(), 80);
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") close();
       if (e.key === "Tab") {
         const items = focusables();
         if (!items.length) return;
@@ -56,7 +68,7 @@ export function Sheet({
       unlock();
       opener?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   const onDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.y > 110 || info.velocity.y > 600) onClose();
@@ -72,8 +84,9 @@ export function Sheet({
           <span className="h-[5px] w-10 rounded-full bg-stone-300" />
         </div>
       )}
+      {top && <div className={`px-5 lg:px-7 ${handle ? "pt-3" : "pt-7"}`}>{top}</div>}
       <div
-        className={`flex items-center justify-between px-5 pt-3 pb-4 lg:px-7 ${handle ? "touch-none" : "lg:pt-7"}`}
+        className={`flex items-center justify-between px-5 pt-3 pb-4 lg:px-7 ${handle ? "touch-none" : top ? "lg:pt-5" : "lg:pt-7"}`}
         onPointerDown={handle ? (e) => { if (!(e.target as HTMLElement).closest("button")) drag.start(e); } : undefined}
       >
         <h2 className="font-serif text-[24px] leading-tight lg:text-[28px]">{title}</h2>
@@ -106,6 +119,26 @@ export function Sheet({
             onClick={onClose}
           />
 
+          {center && (
+            <div className="pointer-events-none absolute inset-0 grid place-items-center p-6">
+              <motion.div
+                data-panel
+                className="pointer-events-auto flex max-h-[90dvh] w-full max-w-[960px] overflow-hidden rounded-[28px] bg-orange-50 shadow-[0_30px_70px_-20px_rgb(28_25_23/0.35)]"
+                initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={reduce ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
+                transition={reduce ? { duration: 0.2 } : { type: "spring", stiffness: 380, damping: 34 }}
+              >
+                <div className="flex min-w-0 flex-1 flex-col">
+                  {header(false)}
+                  {body}
+                </div>
+                {beside && <div className="flex w-[384px] shrink-0 flex-col overflow-y-auto border-l border-stone-200 bg-white">{beside}</div>}
+              </motion.div>
+            </div>
+          )}
+
+          {!center && (
           <motion.div
             data-panel
             className={`absolute inset-x-0 bottom-0 flex max-h-[94dvh] flex-col rounded-t-[28px] bg-orange-50 ${
@@ -125,6 +158,7 @@ export function Sheet({
             {header(true)}
             {body}
           </motion.div>
+          )}
 
           {right && (
             <motion.div

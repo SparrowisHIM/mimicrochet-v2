@@ -21,6 +21,10 @@ export type Order = {
   description?: string;
   size?: string;
   measurements?: { bust?: number; waist?: number; hips?: number; length?: number; unit: "cm" | "in" };
+  /** Their height in cm, from the fit questions. */
+  height?: number;
+  /** How it should fit: x snug (-2) to relaxed (+2), y shorter (-2) to longer (+2). See lib/fit.ts. */
+  fit?: { x: number; y: number };
   colours: "photo" | "different";
   colourNote?: string;
   when: string; // "No rush" or a date label

@@ -11,6 +11,7 @@ import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
 import { Toggle } from "@/components/ui/toggle";
 import { Stepper } from "@/components/order/tracking-view";
+import { fitWords } from "@/lib/fit";
 import { depositOf, patchOrder, useOrders, type Order } from "@/lib/orders";
 import { checkPhoto } from "@/lib/upload-safety";
 import { formatNaira } from "@/lib/site";
@@ -223,8 +224,13 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
             };
   const urgent = late || (o.stage === 1 && !o.depositPaid && Boolean(o.paymentSent)) || o.dueTone === "soon";
 
+  // How they want it to fit, their height and measurements, in one line for Mimi.
+  const m = o.measurements;
+  const sizes = m ? (["bust", "waist", "hips", "length"] as const).filter((k) => m[k]).map((k) => `${k[0].toUpperCase()}${k.slice(1)} ${m[k]}`) : [];
+  const fit = [o.fit ? fitWords(o.fit) : "", o.height ? `${o.height} cm tall` : "", sizes.length ? `${sizes.join(", ")} cm` : ""].filter(Boolean);
   const rows: [string, string][] = [
-    ["Size", o.size ?? (o.measurements ? "Their measurements" : "—")],
+    ["Size", o.size ?? (fit.length ? "Their fit" : "—")],
+    ...(fit.length ? [["Fit", fit.join(" · ")] as [string, string]] : []),
     ["Colours", o.colours === "photo" ? "As in the photo" : o.colourNote || "To agree"],
     ["When", o.when],
     ["Delivery", `${o.area}, ${o.state}`],

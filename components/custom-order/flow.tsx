@@ -7,8 +7,9 @@ import { useRef, useState } from "react";
 import { ChevronIcon } from "@/components/icons";
 import { IdeasSheet } from "@/components/custom-order/ideas-sheet";
 import { PhotoTile } from "@/components/custom-order/photo-tile";
-import { MeasureSheet, measureSteps, toIn, type MeasureKey, type Measures } from "@/components/custom-order/measure-sheet";
-import { CountingNumber, UnitSwitch } from "@/components/ui/unit-switch";
+import { FitSheet, type FitStep } from "@/components/custom-order/fit-sheet";
+import { MiniMat } from "@/components/custom-order/fit-pad";
+import { toIn, type Measures } from "@/components/custom-order/measure-sheet";
 import { SendingMoment } from "@/components/custom-order/sending";
 import { SentView } from "@/components/custom-order/sent";
 import { VoiceNote, type Voice } from "@/components/custom-order/voice-note";
@@ -18,6 +19,7 @@ import { AreaPicker, StatePicker } from "@/components/form/place-picker";
 import { Button } from "@/components/ui/button";
 import { CardStack } from "@/components/ui/card-stack";
 import { Chip } from "@/components/ui/chip";
+import { fitWords, hasFit, heightLabel, saveFit, useSavedFit, type Fit } from "@/lib/fit";
 import { isLgaOf } from "@/lib/nigeria";
 import { isRequestDate } from "@/lib/request-date";
 import { newOrderIds, saveOrder, type Order } from "@/lib/orders";
@@ -25,6 +27,7 @@ import { checkPhoto, precheckPhoto } from "@/lib/upload-safety";
 import { pieceFromIdea, pieceFromProduct, type Piece } from "@/lib/pieces";
 import { getProduct, type Product } from "@/lib/products";
 import { sizeLabels } from "@/lib/sizes";
+import { useMedia } from "@/lib/use-media";
 import { formatPhone, fullPhone, hasWords, isName, phoneDigits, phoneProblem } from "@/lib/validate";
 
 // Layout follows the Figma frames "v2 · Design · Desktop · 1–3" and the shared "Request summary" component.
@@ -44,6 +47,11 @@ export type Draft = {
   size?: string;
   measures: Measures;
   unit: "cm" | "in";
+  height?: number;
+  /** How it should fit, from the blocking mat in the fit questions. */
+  fit?: Fit;
+  /** "last": filled in from the fit this phone remembers from their last order. */
+  fitFrom?: "last" | "now";
   /** Nothing is chosen for you: these start empty until the customer picks. */
   colours?: "photo" | "different";
   colourNote: string;
@@ -66,6 +74,19 @@ const starter = ["sunflower-crop-cardigan", "noir-bloom-crochet-shirt", "heart-s
   .filter(Boolean) as Product[];
 
 const unsized = (p?: Piece) => p && !p.sized;
+
+/** "165 cm tall · Bust 86 · Waist 70 · Hips 94" in the customer's unit. */
+function fitLine(d: Draft) {
+  const n = (v: number) => (d.unit === "cm" ? v : toIn(v));
+  const parts = [
+    d.height ? `${heightLabel(d.height, d.unit)} tall` : "",
+    d.measures.bust ? `Bust ${n(d.measures.bust)}` : "",
+    d.measures.waist ? `Waist ${n(d.measures.waist)}` : "",
+    d.measures.hips ? `Hips ${n(d.measures.hips)}` : "",
+    d.measures.length ? `Length ${n(d.measures.length)}` : "",
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "No measurements yet";
+}
 
 /* ----------------------------- small building blocks ----------------------------- */
 
@@ -340,7 +361,15 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
   const reduce = useReducedMotion();
   const [step, setStep] = useState(initialPiece ? 1 : 0);
   const [dir, setDir] = useState(1);
-  const [d, setD] = useState<Draft>({
+  // A returning customer's fit (kept on their phone) fills in by itself. The first change they make to
+  // anything takes a copy of it into this order, so from then on it's theirs to edit.
+  const remembered = useSavedFit();
+  const [adopted, setAdopted] = useState(false);
+  const withFit = (cur: Draft): Draft =>
+    remembered && !adopted
+      ? { ...cur, size: cur.size ?? remembered.size, height: remembered.height, measures: remembered.measures, unit: remembered.unit, fit: remembered.fit, fitFrom: "last" }
+      : cur;
+  const [raw, setRaw] = useState<Draft>({
     photos: [],
     piece: initialPiece,
     words: "",
@@ -355,7 +384,13 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
     area: "",
     sizeOk: false,
   });
+  const d = withFit(raw);
+  const setD = (update: (cur: Draft) => Draft) => {
+    setRaw((cur) => update(withFit(cur)));
+    setAdopted(true);
+  };
   const set = (patch: Partial<Draft>) => setD((cur) => ({ ...cur, ...patch }));
+  const desktop = useMedia("(min-width: 1024px)");
   const [today] = useState(() => Date.now());
   const [ideasOpen, setIdeasOpen] = useState(false);
   const [voiceLive, setVoiceLive] = useState(false);
@@ -363,7 +398,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
   const [uploadNote, setUploadNote] = useState<string | null>(null);
   const tiles = [...d.photos.map((p) => ({ id: p.id, src: p.url, name: p.name, ready: true })), ...adding.map((a) => ({ id: a.id, src: a.url, name: "", ready: false }))];
   const [morePieces, setMorePieces] = useState(false);
-  const [measuring, setMeasuring] = useState<MeasureKey | null>(null);
+  const [fitting, setFitting] = useState<FitStep | null>(null);
   const [sending, setSending] = useState<{ order: Order; files: File[] } | null>(null);
   const [sent, setSent] = useState<{ order: Order; files: File[] } | null>(null);
   const [tried, setTried] = useState(0);
@@ -377,7 +412,8 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
   /* What's done, step by step. Nothing counts until the customer chooses it. */
   const hasVisual = d.photos.length > 0 || Boolean(d.piece);
   const hasSource = hasVisual || hasWords(d.words, 4) || Boolean(d.voice);
-  const sizeDone = unsized(d.piece) || Boolean(d.size) || Object.keys(d.measures).length > 0;
+  const fitted = hasFit(d);
+  const sizeDone = unsized(d.piece) || Boolean(d.size) || fitted;
   const coloursDone = d.colours === "photo" || (d.colours === "different" && hasWords(d.colourNote, 3));
   const whenDone = d.when === "none" || (d.when === "date" && isRequestDate(d.date, today));
   const step2Done = sizeDone && coloursDone && whenDone;
@@ -409,7 +445,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       key: "Size",
       step: 1,
       field: "f-size",
-      value: unsized(d.piece) ? "Agreed with Mimi" : Object.keys(d.measures).length ? `${d.size ? d.size + " + " : ""}your measurements` : d.size ?? "",
+      value: unsized(d.piece) ? "Agreed with Mimi" : fitted ? `${d.size ? d.size + " + " : ""}your fit` : d.size ?? "",
       state: sizeDone ? "done" : "todo",
     },
     {
@@ -544,7 +580,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
 
   const send = () => {
     if (sending) return;
-    if (d.when === "date" && !isRequestDate(d.date, Date.now())) {
+    if (d.when === "date" && !isRequestDate(d.date, today)) {
       go(1, "f-when");
       setTried((t) => t + 1);
       return;
@@ -567,6 +603,8 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       description: d.words.trim() || undefined,
       size: d.size,
       measurements: Object.keys(d.measures).length ? { ...d.measures, unit: d.unit } : undefined,
+      height: d.height,
+      fit: d.fit,
       colours: d.colours!,
       colourNote: d.colours === "different" ? d.colourNote.trim() : undefined,
       when: d.when === "date" && d.date ? `By ${shortDate(d.date)}` : "No rush",
@@ -581,6 +619,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       updates: [{ stage: 0, note: "Request prepared. Send the details to Mimi on WhatsApp to confirm.", at: "Today" }],
     };
     saveOrder(order);
+    if (fitted) saveFit({ size: d.size, height: d.height, measures: d.measures, unit: d.unit, fit: d.fit });
     setSending({ order, files: [...d.photos.map((p) => p.file), ...(d.voice ? [d.voice.file] : [])] });
   };
 
@@ -858,35 +897,43 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                           </Chip>
                         ))}
                       </div>
-                      <div className="flex flex-col gap-3 rounded-[18px] bg-white p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <span className="flex flex-col">
-                            <span className="text-[15px] font-semibold">Not sure of your size?</span>
-                            <span className="text-[13px] text-stone-500">Add your measurements and Mimi uses them instead.</span>
+                      {fitted ? (
+                        <div className="flex flex-col gap-3 rounded-[18px] border-[1.5px] border-stone-900 bg-white p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <span className="flex flex-col gap-0.5">
+                              <span className="text-[15px] font-semibold">Your fit</span>
+                              <span className="text-[13px] text-stone-500">
+                                {d.fitFrom ? `Saved ${desktop ? "in this browser" : "on this phone"}${d.fitFrom === "last" ? " from your last order" : ""}` : "Goes to Mimi with this order"}
+                              </span>
+                            </span>
+                            <button type="button" onClick={() => setFitting("height")} className="-mx-1 -my-3 shrink-0 px-1 py-3 text-[14px] font-medium underline decoration-stone-900/30 decoration-[1.5px] underline-offset-4 transition-[text-decoration-color] duration-200 hover:decoration-stone-900">
+                              Change
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-3.5">
+                            <MiniMat fit={d.fit} />
+                            <span className="flex min-w-0 flex-col gap-1">
+                              <span className="font-serif text-[18px] leading-tight">{d.fit ? fitWords(d.fit) : "Fit as pictured"}</span>
+                              <span className="text-[13px] text-stone-600">{fitLine(d)}</span>
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <motion.button
+                          type="button"
+                          whileTap={{ scale: 0.985 }}
+                          onClick={() => setFitting("height")}
+                          className="group flex items-center gap-3.5 rounded-[18px] border border-stone-200 bg-white py-4 pr-3 pl-4 text-left transition-[border-color,box-shadow] duration-200 hover:border-stone-300 hover:shadow-[0_10px_24px_-18px_rgb(28_25_23/0.35)]"
+                        >
+                          <MiniMat />
+                          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <span className="text-[15px] font-semibold">Make it fit you</span>
+                            <span className="text-[13px] leading-[1.4] text-stone-500">Your height, measurements and how you like it to fit. About a minute.</span>
                           </span>
-                          <UnitSwitch size="sm" value={d.unit} onChange={(unit) => set({ unit })} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2.5">
-                          {measureSteps.map((m) => {
-                            const v = d.measures[m.key];
-                            return (
-                              <button key={m.key} type="button" onClick={() => setMeasuring(m.key)} className="flex flex-col gap-1.5 text-left">
-                                <span className="text-[13px] font-medium text-stone-600">{m.label}</span>
-                                <span className={`flex h-12 items-center justify-between rounded-[12px] border px-3.5 text-[16px] transition-colors duration-150 hover:border-stone-500 ${v ? "border-stone-900 font-medium" : "border-stone-300 text-stone-400"}`}>
-                                  {v ? <CountingNumber value={d.unit === "cm" ? v : toIn(v)} countOn={d.unit} /> : "Add"}
-                                  <AnimatePresence mode="popLayout" initial={false}>
-                                    <motion.span key={d.unit} className="text-[13px] text-stone-400" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ type: "spring", duration: 0.3, bounce: 0 }}>
-                                      {d.unit}
-                                    </motion.span>
-                                  </AnimatePresence>
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <p className="text-[13px] text-stone-500">Tip: measure your body over light clothing, with the tape snug but not tight.</p>
-                      </div>
-                      {tried > 0 && !sizeDone && <Problem>Pick a size, or add your measurements.</Problem>}
+                          <ChevronIcon size={20} className="shrink-0 text-stone-400 transition-transform duration-150 group-hover:translate-x-0.5" />
+                        </motion.button>
+                      )}
+                      {tried > 0 && !sizeDone && <Problem>Pick a size, or make it fit you.</Problem>}
                     </Spot>
                   )}
 
@@ -1042,15 +1089,18 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
           go(1);
         }}
       />
-      {measuring && (
-        <MeasureSheet
+      {fitting && (
+        <FitSheet
           open
-          startAt={measuring}
-          values={d.measures}
-          unit={d.unit}
-          onUnit={(unit) => set({ unit })}
-          onSave={(key, cm) => setD((cur) => ({ ...cur, measures: { ...cur.measures, [key]: cm }, sizeOk: false }))}
-          onClose={() => setMeasuring(null)}
+          startAt={fitting}
+          answers={{ size: d.size, height: d.height, measures: d.measures, unit: d.unit, fit: d.fit }}
+          onChange={(patch) => set({ ...patch, sizeOk: false })}
+          onSave={() => {
+            saveFit({ size: d.size, height: d.height, measures: d.measures, unit: d.unit, fit: d.fit });
+            set({ fitFrom: "now" });
+            setFitting(null);
+          }}
+          onClose={() => setFitting(null)}
         />
       )}
     </div>
