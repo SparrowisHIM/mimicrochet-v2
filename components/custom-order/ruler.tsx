@@ -1,7 +1,7 @@
 "use client";
 
 import { animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useSpring, useTransform, useVelocity, type AnimationPlaybackControls } from "motion/react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef } from "react";
 import { primeTick, tick } from "@/lib/tick-sound";
 
 // A measuring tape you drag, flick, scroll or step with the arrow keys. It follows the SparrowisHIM
@@ -22,6 +22,7 @@ export function Ruler({
   max,
   step = 1,
   label,
+  jumpTo,
 }: {
   value: number;
   onChange: (v: number) => void;
@@ -29,6 +30,8 @@ export function Ruler({
   max: number;
   step?: number;
   label: string;
+  /** A number typed in elsewhere: each new id rolls the tape to it (it reports the numbers on the way). */
+  jumpTo?: { value: number; id: number };
 }) {
   const reduce = Boolean(useReducedMotion());
   const box = useRef<HTMLDivElement>(null);
@@ -108,6 +111,16 @@ export function Ruler({
     tick(Math.round(next / step) % 5 === 0 ? 1.5 : 1);
     onChange(next);
   });
+
+  // A typed number rolls the tape to it. Kept apart from `value`, which follows the tape's own reports:
+  // comparing against it races the roll (a late report looks like a new number and stops it halfway).
+  const jumped = useRef(jumpTo?.id);
+  const roll = useEffectEvent((to: number) => settle(clamp(to)));
+  useEffect(() => {
+    if (!jumpTo || jumpTo.id === jumped.current) return;
+    jumped.current = jumpTo.id;
+    roll(jumpTo.value);
+  }, [jumpTo]);
 
   useEffect(() => {
     const el = box.current;

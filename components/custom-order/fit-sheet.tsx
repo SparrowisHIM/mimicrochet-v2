@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useMotionValue } from "motion/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { FitPad, FitPicture } from "@/components/custom-order/fit-pad";
 import { measureSteps, toIn, type MeasureKey, type Measures } from "@/components/custom-order/measure-sheet";
 import { Ruler } from "@/components/custom-order/ruler";
@@ -16,13 +16,19 @@ import { useMedia } from "@/lib/use-media";
 
 // "Make it fit you": the custom order's fit questions, one at a time (Figma "v2 · Design · Mobile ·
 // 2 Make it yours · Fit · 1–7" and the desktop fit panel). Height, the four measurements on the tape,
-// how it should fit on the blocking mat, then a check of every answer. Every question can be skipped.
-// On desktop it opens as a wider panel with the answers filling in beside the question.
+// how it should fit on the blocking mat, then a check of every answer. On desktop it opens as a wider
+// panel with the answers filling in beside the question.
+//
+// Nothing is filled in for them: every tape starts at 0 (or at the number they gave before). 0 means
+// not measured, so Next at 0 skips the question and nothing is sent for it; a ready-made number would
+// let someone tap through and send Mimi measurements they never took. Back is on every question, and
+// the number can be typed as well as dragged.
 
 export type FitStep = "height" | MeasureKey | "fit" | "check";
 export type FitAnswers = { size?: string; height?: number; measures: Measures; unit: "cm" | "in"; fit?: Fit };
 
-const HEIGHT = { start: 165, min: 120, max: 210 };
+/** Usual range for height; the tape runs from 0 to max. */
+const HEIGHT = { min: 120, max: 210 };
 const steps: FitStep[] = ["height", ...measureSteps.map((m) => m.key), "fit", "check"];
 const measure = (s: FitStep) => measureSteps.find((m) => m.key === s);
 const title = (s: FitStep) => (s === "height" ? "Height" : s === "fit" ? "How it fits" : s === "check" ? "Your fit" : measure(s)!.label);
@@ -60,9 +66,12 @@ export function FitSheet({
   const desktop = useMedia("(min-width: 1024px)");
   const [i, setI] = useState(() => Math.max(0, steps.indexOf(startAt)));
   const step = steps[i];
-  const startOf = (s: FitStep) => (s === "height" ? (answers.height ?? HEIGHT.start) : measure(s) ? (answers.measures[s as MeasureKey] ?? measure(s)!.start) : 0);
+  // What the tape shows: their own number if they've given one, otherwise 0 (not measured).
+  const startOf = (s: FitStep) => (s === "height" ? (answers.height ?? 0) : measure(s) ? (answers.measures[s as MeasureKey] ?? 0) : 0);
   const [cm, setCm] = useState(() => startOf(steps[Math.max(0, steps.indexOf(startAt))]));
   const [skipped, setSkipped] = useState<FitStep[]>([]);
+  // A number typed into the big figure: the tape rolls to it and reports the numbers on the way.
+  const [jump, setJump] = useState<{ value: number; id: number }>();
   const [why, setWhy] = useState(false);
   // Where the pin is right now, for the drawing under the mat.
   const pinX = useMotionValue(answers.fit?.x ?? 0);
@@ -71,19 +80,32 @@ export function FitSheet({
   const goTo = (n: number) => {
     setI(n);
     setCm(startOf(steps[n]));
+    setJump(undefined);
     setWhy(false);
   };
-  /** Keep this step's answer, then move on. On the mat, moving on without dragging means "like the picture". */
+  /** Keep what's on the tape: a number they set, or nothing at all when it's at 0. */
+  const keep = () => {
+    if (step === "height") onChange({ height: cm > 0 ? cm : undefined });
+    else if (measure(step)) {
+      const measures = { ...answers.measures };
+      if (cm > 0) measures[step as MeasureKey] = cm;
+      else delete measures[step as MeasureKey];
+      onChange({ measures });
+    }
+  };
+  /** Next: at 0 the question counts as skipped. On the mat, moving on without dragging means "like the picture". */
   const next = () => {
-    if (step === "height") onChange({ height: cm });
-    else if (measure(step)) onChange({ measures: { ...answers.measures, [step]: cm } });
-    else if (step === "fit" && !answers.fit) onChange({ fit: { x: 0, y: 0 } });
-    setSkipped((s) => s.filter((k) => k !== step));
+    keep();
+    if (step === "fit" && !answers.fit) onChange({ fit: { x: 0, y: 0 } });
+    const empty = (step === "height" || Boolean(measure(step))) && cm === 0;
+    setSkipped((s) => (empty ? (s.includes(step) ? s : [...s, step]) : s.filter((k) => k !== step)));
     goTo(i + 1);
   };
-  const skip = () => {
-    setSkipped((s) => (s.includes(step) ? s : [...s, step]));
-    goTo(i + 1);
+  /** Back keeps what they've set here; from the first question it returns to the order. */
+  const back = () => {
+    keep();
+    if (i === 0) onClose();
+    else goTo(i - 1);
   };
 
   /** What each answer says, or empty if there's none yet. */
@@ -163,20 +185,14 @@ export function FitSheet({
     }
     const m = measure(step);
     const isHeight = step === "height";
-    const min = isHeight ? HEIGHT.min : m!.min;
+    const usual = isHeight ? HEIGHT.min : m!.min;
     const max = isHeight ? HEIGHT.max : m!.max;
     return (
       <>
-        <Ruler key={step + answers.unit} label={`${title(step)} in centimetres`} value={cm} min={min} max={max} onChange={setCm} />
-        <p className="flex items-baseline justify-center gap-1.5" aria-live="polite">
-          {isHeight && answers.unit === "in" ? (
-            <span className="font-serif text-[56px] leading-none">{heightLabel(cm, "in").replace(" ft ", "′ ").replace(" in", "″")}</span>
-          ) : (
-            <>
-              <CountingNumber value={answers.unit === "cm" ? cm : toIn(cm)} countOn={answers.unit} className="font-serif text-[64px] leading-none" />
-              <span className="text-[18px] font-medium text-stone-500">{answers.unit}</span>
-            </>
-          )}
+        <Ruler key={step + answers.unit} label={`${title(step)} in centimetres`} value={cm} min={0} max={max} onChange={setCm} jumpTo={jump} />
+        <Entry key={step} cm={cm} unit={answers.unit} height={isHeight} max={max} label={title(step)} onEnter={(v) => setJump((j) => ({ value: v, id: (j?.id ?? 0) + 1 }))} />
+        <p className={`-mt-2 min-h-[38px] text-center text-[13px] leading-[1.45] text-balance ${cm > 0 && cm < usual ? "text-amber-800" : "text-stone-500"}`} aria-live="polite">
+          {cm === 0 ? "Drag the tape or tap the number to type it. Leave it at 0 to skip." : cm < usual ? "That’s smaller than most. Measure again to be sure." : ""}
         </p>
         {unitSwitch}
         {isHeight ? (
@@ -211,21 +227,22 @@ export function FitSheet({
     );
   };
 
-  const footer =
-    step === "check" ? (
-      <Button className="w-full" onClick={onSave}>
-        Save my fit
-      </Button>
-    ) : (
-      <div className="flex items-center gap-4">
-        <button type="button" className={`${linkClass} px-3`} onClick={skip}>
-          Skip
-        </button>
+  const footer = (
+    <div className="flex items-center gap-4">
+      <button type="button" className={`${linkClass} px-3`} onClick={back}>
+        Back
+      </button>
+      {step === "check" ? (
+        <Button className="flex-1" onClick={onSave}>
+          Save my fit
+        </Button>
+      ) : (
         <Button className="flex-1" onClick={next}>
           Next: {steps[i + 1] === "check" ? "Check" : title(steps[i + 1])}
         </Button>
-      </div>
-    );
+      )}
+    </div>
+  );
 
   // Desktop: the answers fill in beside the question.
   const beside = (
@@ -278,6 +295,87 @@ export function FitSheet({
       </AnimatePresence>
     </Sheet>
   );
+}
+
+/**
+ * The big number. Tap it to type a number instead of dragging the tape (the tape then rolls to it).
+ * 0 is shown faded: nothing measured yet.
+ */
+function Entry({ cm, unit, height, max, label, onEnter }: { cm: number; unit: "cm" | "in"; height: boolean; max: number; label: string; onEnter: (cm: number) => void }) {
+  const [typing, setTyping] = useState(false);
+  const [text, setText] = useState("");
+  const cancel = useRef(false);
+  const feetInches = height && unit === "in";
+  const unitWord = unit === "cm" ? "cm" : feetInches ? "ft in" : "in";
+  const start = () => {
+    cancel.current = false;
+    setText(cm === 0 ? "" : feetInches ? heightLabel(cm, "in").replace(" ft ", " ").replace(" in", "") : String(unit === "cm" ? cm : toIn(cm)));
+    setTyping(true);
+  };
+  const done = () => {
+    setTyping(false);
+    if (cancel.current) return;
+    const v = parseEntry(text, unit, height);
+    if (v !== null) onEnter(Math.min(max, Math.max(0, v)));
+  };
+  if (typing)
+    return (
+      <p className="flex h-[72px] items-center justify-center gap-1.5">
+        <input
+          autoFocus
+          inputMode="decimal"
+          enterKeyHint="done"
+          aria-label={`${label} in ${unit === "cm" ? "centimetres" : feetInches ? "feet and inches, like 5 7" : "inches"}`}
+          value={text}
+          placeholder={feetInches ? "5 7" : "0"}
+          onFocus={(e) => e.currentTarget.select()}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={done}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+            if (e.key === "Escape") {
+              // cancel the typing only, not the whole sheet (it closes on Escape too)
+              e.stopPropagation();
+              cancel.current = true;
+              e.currentTarget.blur();
+            }
+          }}
+          className="w-[3.4ch] border-b-2 border-stone-900 bg-transparent text-center font-serif text-[64px] leading-none outline-none placeholder:text-stone-300"
+        />
+        <span className="text-[18px] font-medium text-stone-500">{unitWord}</span>
+      </p>
+    );
+  const empty = cm === 0;
+  return (
+    <button
+      type="button"
+      onClick={start}
+      className="group mx-auto flex h-[72px] items-center justify-center gap-1.5 rounded-[14px] px-4 transition-colors duration-150 hover:bg-orange-100/60"
+      aria-label={`${label}: ${empty ? "not measured" : feetInches ? heightLabel(cm, "in") : `${unit === "cm" ? cm : toIn(cm)} ${unit}`}. Tap to type it`}
+    >
+      {feetInches && !empty ? (
+        <span className="font-serif text-[56px] leading-none">{heightLabel(cm, "in").replace(" ft ", "′ ").replace(" in", "″")}</span>
+      ) : (
+        <span className={empty ? "text-stone-300" : ""}>
+          <CountingNumber value={unit === "cm" ? cm : toIn(cm)} countOn={unit} className="font-serif text-[64px] leading-none" />
+        </span>
+      )}
+      {!(feetInches && !empty) && <span className="text-[18px] font-medium text-stone-500">{unit}</span>}
+    </button>
+  );
+}
+
+/** A typed number in the unit on screen, as centimetres. Feet and inches: "5 7", "5'7", "5" (feet) or "67" (inches). Empty is 0. */
+function parseEntry(text: string, unit: "cm" | "in", height: boolean): number | null {
+  const nums = (text.match(/\d+(?:[.,]\d+)?/g) ?? []).map((n) => parseFloat(n.replace(",", ".")));
+  if (!nums.length) return text.trim() === "" ? 0 : null;
+  if (unit === "cm") return Math.round(nums[0]);
+  if (height) {
+    const [a, b] = nums;
+    const inches = b !== undefined ? a * 12 + b : a <= 8 ? a * 12 : a;
+    return Math.round(inches * 2.54);
+  }
+  return Math.round(nums[0] * 2.54);
 }
 
 function Kept({ desktop }: { desktop: boolean }) {

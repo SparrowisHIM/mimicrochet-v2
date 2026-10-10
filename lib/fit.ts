@@ -28,7 +28,8 @@ export const heightLabel = (cm: number, unit: "cm" | "in") => {
   return `${Math.floor(inches / 12)} ft ${inches % 12} in`;
 };
 
-const KEY = "mimi:fit";
+// v2: fits saved before 10 Oct could hold the tape's old ready-made numbers (tapped through, never measured).
+const KEY = "mimi:fit:v2";
 const listeners = new Set<() => void>();
 let seen: string | null | undefined;
 let cached: SavedFit | null = null;
