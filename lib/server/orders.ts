@@ -99,6 +99,17 @@ export async function orderForTracking(code: string): Promise<Order | null> {
   };
 }
 
+/**
+ * Track an order from any phone: the order number alone never opens an order (numbers count up, so
+ * they're easy to guess); it must come with the last 4 digits of the phone number on the order.
+ */
+export async function codeForOrder(number: string, last4: string) {
+  const digits = number.replace(/\D/g, "");
+  if (!/^\d{3,7}$/.test(digits) || !/^\d{4}$/.test(last4)) return null;
+  const [row] = await db()`select code from orders where number = ${`MIMI-${digits}`} and phone_last4 = ${last4}`;
+  return (row?.code as string | undefined) ?? null;
+}
+
 /** The customer tapped Send on WhatsApp: Mimi has the request now. */
 export async function markSent(code: string) {
   if (!isOrderCode(code)) return false;

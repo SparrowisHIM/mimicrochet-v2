@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { confirmSent } from "@/app/actions/orders";
 import { WhatsAppIcon } from "@/components/icons";
 import { TrackingCard } from "@/components/order/tracking-card";
@@ -14,8 +14,6 @@ import { updateOrder, type Order } from "@/lib/orders";
 import { whatsappLink } from "@/lib/site";
 
 const ease = [0.22, 1, 0.36, 1] as const;
-const origin = () => window.location.origin;
-const useOrigin = () => useSyncExternalStore(() => () => {}, origin, () => "");
 
 export function orderMessage(o: Order) {
   const parts = [`Hi Mimi! I'd like to discuss this custom request: ${o.id}`];
@@ -49,11 +47,8 @@ export function orderMessage(o: Order) {
 
 export function SentView({ order, files }: { order: Order; files: File[] }) {
   const reduce = useReducedMotion();
-  const base = useOrigin();
-  const link = `${base}/t/${order.code}`;
   const [message, setMessage] = useState(() => orderMessage(order));
   const [editing, setEditing] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   // Mimi only gets the request once it's sent on WhatsApp, so nothing celebrates until then.
   const [sent, setSent] = useState(Boolean(order.sent));
@@ -89,16 +84,6 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
       };
       document.addEventListener("visibilitychange", back);
     }, 250);
-  };
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      setHint("Couldn’t copy. Press and hold the link to copy it.");
-    }
   };
 
   const send = async () => {
@@ -145,7 +130,7 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
                   She’ll agree the price and timing with you there. Your request number is <span className="whitespace-nowrap">{order.id}</span>.
                 </p>
               </div>
-              <TrackingCard orderId={order.id} piece={order.piece.name} stage={0} note="Sent on WhatsApp. Mimi usually replies the same day." noteFrom="Just now" />
+              <TrackingCard orderId={order.id} piece={order.piece.name} stage={0} note="Sent on WhatsApp. Mimi usually replies the same day." noteFrom="Just now" href={`/t/${order.code}`} />
             </motion.div>
           ) : (
             <motion.div key="unsent" className="flex flex-col gap-6" exit={reduce ? { opacity: 0 } : { opacity: 0, y: -12 }} transition={{ duration: 0.25 }}>
@@ -164,27 +149,14 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
                 </p>
               </motion.div>
               <motion.div {...rise(0.2)}>
-                <TrackingCard orderId={order.id} piece={order.piece.name} stage={-1} status="Not sent yet" note="Tap Send on WhatsApp below, and Mimi gets your idea." noteFrom="Next step" />
+                <TrackingCard orderId={order.id} piece={order.piece.name} stage={-1} status="Not sent yet" note="Tap Send on WhatsApp below, and Mimi gets your idea." noteFrom="Next step" href={`/t/${order.code}`} />
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* The tracking page, named rather than shown as a raw web address. */}
-        <motion.div {...rise(0.3)} className="flex flex-col gap-1.5 rounded-[22px] border border-stone-200 bg-white p-5">
-          <span className="text-[15px] font-semibold">Your tracking page</span>
-          <span className="text-[14px] text-stone-500">Every step, from Mimi’s first reply to your door. It’s in your WhatsApp message too.</span>
-          <div className="mt-1.5 flex items-center justify-between gap-3">
-            <Link href={`/t/${order.code}`} className={linkClass}>
-              Track this order
-            </Link>
-            <Button variant="secondary" size="sm" onClick={copy} className="shrink-0">
-              {copied ? "Copied" : "Copy link"}
-            </Button>
-          </div>
-        </motion.div>
 
-        <motion.div {...rise(0.4)} className="flex flex-col gap-3 rounded-[22px] border border-stone-200 bg-white p-5">
+        <motion.div {...rise(0.3)} className="flex flex-col gap-3 rounded-[22px] border border-stone-200 bg-white p-5">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-2 text-[15px] font-semibold">
               <WhatsAppIcon size={17} /> Message to Mimi <span className="text-[13px] font-normal text-stone-400">draft</span>
@@ -219,7 +191,7 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
           )}
         </motion.div>
 
-        <motion.div ref={actions} {...rise(0.5)} className="flex flex-col gap-3">
+        <motion.div ref={actions} {...rise(0.4)} className="flex flex-col gap-3">
           <Button onClick={send} arrow={false}>
             <WhatsAppIcon size={18} /> {sent ? "Open WhatsApp again" : "Send on WhatsApp"}
           </Button>

@@ -49,7 +49,7 @@ export default function ContactPage() {
       <section className="container-page grid gap-4 pb-16 lg:grid-cols-3 lg:gap-6 lg:pb-24">
         <div className="flex flex-col gap-2 rounded-[22px] border border-stone-200 bg-white p-6">
           <h2 className="font-serif text-[24px]">Track an order</h2>
-          <p className="text-[15px] text-stone-600">Already ordered? Pop in your order number.</p>
+          <p className="text-[15px] text-stone-600">Already ordered? Use your order number and the last 4 digits of your phone.</p>
           <TrackForm compact />
         </div>
         <div className="flex flex-col gap-2 rounded-[22px] border border-stone-200 bg-white p-6">

@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
+import { ChevronIcon } from "@/components/icons";
 import { stages } from "@/lib/stages";
 
 export function TrackingCard({
@@ -10,6 +12,7 @@ export function TrackingCard({
   note,
   noteFrom = "Latest from Mimi",
   status,
+  href,
   className = "",
 }: {
   orderId: string;
@@ -20,15 +23,16 @@ export function TrackingCard({
   status?: string;
   note: string;
   noteFrom?: string;
+  /** Where the order opens: the whole card becomes a link, ending in a "View your order" row. */
+  href?: string;
   className?: string;
 }) {
   const s = stages[Math.max(0, stage)];
   const emerald = !status && s.tone === "emerald";
 
-  return (
-    <div
-      className={`flex flex-col gap-4 rounded-[22px] border border-stone-200 bg-white px-[22px] pt-5 pb-[22px] shadow-[0_24px_48px_-12px_rgb(28_25_23/0.18)] ${className}`}
-    >
+  const card = `flex flex-col gap-4 rounded-[22px] border border-stone-200 bg-white px-[22px] pt-5 pb-[22px] shadow-[0_24px_48px_-12px_rgb(28_25_23/0.18)] ${className}`;
+  const body = (
+    <>
       <div className="flex items-center justify-between">
         <span className="text-[13px] font-medium text-stone-500">Order {orderId}</span>
         <AnimatePresence mode="popLayout" initial={false}>
@@ -85,6 +89,24 @@ export function TrackingCard({
           </AnimatePresence>
         </div>
       </div>
-    </div>
+
+      {href && (
+        <span className="flex items-center justify-between border-t border-stone-100 pt-3.5 text-[15px] font-semibold text-stone-900">
+          <span className="underline decoration-transparent decoration-[1.5px] underline-offset-[5px] transition-[text-decoration-color] duration-200 ease-out group-hover:decoration-stone-900/40">
+            View your order
+          </span>
+          <ChevronIcon size={18} className="text-stone-500 transition-[translate,color] duration-200 ease-out group-hover:translate-x-0.5 group-hover:text-stone-900 motion-reduce:transition-none" />
+        </span>
+      )}
+    </>
+  );
+
+  // The card is the order: tapping anywhere on it opens the order's page.
+  return href ? (
+    <Link href={href} className={`group ${card} transition-[border-color,box-shadow] duration-200 ease-out hover:border-stone-300 hover:shadow-[0_28px_56px_-14px_rgb(28_25_23/0.24)]`}>
+      {body}
+    </Link>
+  ) : (
+    <div className={card}>{body}</div>
   );
 }
