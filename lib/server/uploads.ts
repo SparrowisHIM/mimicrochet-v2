@@ -1,5 +1,6 @@
 import "server-only";
 import sharp from "sharp";
+import { MAX_UPLOAD_BYTES } from "@/lib/order-files";
 
 // The server's own check of every uploaded file (the browser's checks in lib/upload-safety.ts can be
 // skipped by anyone posting directly). A file is judged by its first bytes, never its name or the type
@@ -7,8 +8,7 @@ import sharp from "sharp";
 // in the file (scripts, extra data, the GPS position in EXIF). Voice notes can't be redrawn, so only
 // real audio containers are kept, under a fixed type.
 
-/** Netlify functions take request bodies up to about 4.5 MB of binary data. */
-export const MAX_UPLOAD_BYTES = 4_400_000;
+export { MAX_UPLOAD_BYTES };
 const MAX_PIXELS = 100_000_000;
 /** Photos are kept at most this many pixels on their long side: plenty for Mimi to see the detail. */
 const KEEP_SIZE = 2048;

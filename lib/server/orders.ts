@@ -146,18 +146,24 @@ export async function orderTakingFiles(code: string) {
   return o ? { id: o.id as string, photoCount: (o.photo_count as number) ?? 0, hasVoice: Boolean(o.has_voice) } : null;
 }
 
-/** Stores a checked file and records it. A retry of the same photo or voice note is a no-op. */
+/** Stores a checked file and records it. A retry of the same photo or voice note changes nothing. */
 export async function saveOrderFile(f: { orderId: string; kind: "photo" | "voice"; position: number; data: Buffer; contentType: string; width?: number; height?: number }) {
   // Random names: a file's key says nothing about the customer and can't be guessed.
   const key = `orders/${f.orderId}/${f.kind}-${f.position}-${randomBytes(12).toString("hex")}`;
   await putFile(key, f.data, f.contentType);
-  const rows = await db()`
-    insert into order_files (order_id, kind, position, key, content_type, bytes, width, height)
-    values (${f.orderId}, ${f.kind}, ${f.position}, ${key}, ${f.contentType}, ${f.data.length}, ${f.width ?? null}, ${f.height ?? null})
-    on conflict (order_id, kind, position) do nothing
-    returning id`;
-  if (!rows.length) await deleteFile(key);
-  return true;
+  try {
+    const rows = await db()`
+      insert into order_files (order_id, kind, position, key, content_type, bytes, width, height)
+      values (${f.orderId}, ${f.kind}, ${f.position}, ${key}, ${f.contentType}, ${f.data.length}, ${f.width ?? null}, ${f.height ?? null})
+      on conflict (order_id, kind, position) do nothing
+      returning id`;
+    // Already there (a retry): the copy just stored isn't needed.
+    if (!rows.length) await deleteFile(key);
+  } catch (e) {
+    // Never leave a stored file that no order points to.
+    await deleteFile(key).catch(() => {});
+    throw e;
+  }
 }
 
 /** A customer's file, looked up through their order's code, or null. */

@@ -299,10 +299,14 @@ export function TrackingView({ code, saved, justPaid = false }: { code: string; 
   const orders = useOrders();
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const local = findOrder(orders, code);
-  // The server's copy is the real one. This phone's copy fills in what the server doesn't hold yet
-  // (photo previews) and covers orders made offline or before the server, and the example order.
+  // The server's copy is the real one. This phone's copy fills in while the customer's photos are still
+  // uploading (its small previews), and covers orders the server couldn't save and the example order.
   // Kept as one object until either copy changes: the spotlight below restarts whenever the order changes.
-  const order = useMemo(() => (saved ? { ...saved, photos: saved.photos.length ? saved.photos : (local?.photos ?? []) } : local), [saved, local]);
+  const order = useMemo(() => {
+    if (!saved) return local;
+    const photos = saved.photos.length ? saved.photos : (local?.photos ?? []);
+    return { ...saved, photos, piece: saved.piece.image ? saved.piece : { ...saved.piece, image: local?.piece.image ?? photos[0] } };
+  }, [saved, local]);
   const latestRef = useRef<HTMLDivElement>(null);
   const phase = useSpotlight(order, latestRef);
   const [showAll, setShowAll] = useState(false);
