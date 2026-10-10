@@ -1,0 +1,12 @@
+# Netlify builds the site from GitHub on Linux (the share cards use sharp, whose native parts must match
+# the server). Netlify adds its Next.js adapter on its own; nothing else needs configuring here.
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# On the free plan each production deploy costs 15 credits and test builds (branch deploys) cost none,
+# so the backend is built on branch deploys of feat/backend; production waits for go-live.
