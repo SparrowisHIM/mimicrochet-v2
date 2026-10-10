@@ -57,6 +57,8 @@ const nextConfig: NextConfig = {
       // Private pages: order tracking links and Mimi's own page stay out of search engines.
       { source: "/t/:code*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
       { source: "/studio", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+      // Customers' photos and voice notes are never indexed.
+      { source: "/api/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
       ...(netlifyHidden ? [{ source: "/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] }] : []),
     ];
   },

@@ -26,6 +26,7 @@ import { isLgaOf } from "@/lib/nigeria";
 import { isRequestDate } from "@/lib/request-date";
 import { submitCustomOrder } from "@/app/actions/orders";
 import { budgetOptions, type CustomOrderInput } from "@/lib/order-input";
+import { uploadOrderFiles } from "@/lib/order-files";
 import { newOrderIds, saveOrder, type Order } from "@/lib/orders";
 import { checkPhoto, precheckPhoto } from "@/lib/upload-safety";
 import { pieceFromIdea, pieceFromProduct, type Piece } from "@/lib/pieces";
@@ -676,6 +677,8 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       new Promise<null>((r) => setTimeout(() => r(null), 12_000)),
     ]);
     if (saved && !saved.ok) console.warn("The server didn't accept this order:", saved.error);
+    // The photos and voice note follow in the background, so they open on any phone and in Mimi's page.
+    if (saved?.ok) uploadOrderFiles(saved.code, d.photos.map((p) => p.file), d.voice?.file).then((all) => all || console.warn("Some files didn't reach the server; Mimi still gets them on WhatsApp."));
     // If the server can't be reached, the order still goes to Mimi on WhatsApp, tracked on this phone only.
     const order: Order = saved?.ok ? { ...draft, id: saved.id, code: saved.code, createdAt: saved.createdAt } : { ...draft, ...newOrderIds() };
     saveOrder(order);

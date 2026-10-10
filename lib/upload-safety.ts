@@ -18,7 +18,7 @@ export type PhotoKind = "jpeg" | "png" | "gif" | "webp" | "bmp" | "tiff" | "heic
 export const MAX_PHOTO_BYTES = 25 * 1024 * 1024;
 export const MAX_PHOTO_PIXELS = 100_000_000;
 /** The long side of the copy that's kept: plenty for Mimi to see the detail, small enough to send. */
-const KEEP_SIZE = 2560;
+const KEEP_SIZE = 2048;
 
 const HEIF_BRANDS = ["heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs", "mif1", "msf1"];
 

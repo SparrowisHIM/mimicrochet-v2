@@ -1,6 +1,7 @@
 import "server-only";
-import { randomInt } from "node:crypto";
+import { randomBytes, randomInt } from "node:crypto";
 import { db } from "@/lib/server/db";
+import { deleteFile, putFile } from "@/lib/server/files";
 import type { CleanCustomOrder } from "@/lib/server/order-input";
 import { isOrderCode, makeCode } from "@/lib/order-code";
 import type { Order } from "@/lib/orders";
@@ -53,10 +54,13 @@ export async function orderForTracking(code: string): Promise<Order | null> {
   const [o] = await db()`
     select number, code, kind, stage, sent, details, name, state, area, price, ready_by, deposit_paid, paid_in_full, payment_sent, created_at,
       coalesce((select json_agg(json_build_object('stage', u.stage, 'note', u.note, 'photo', u.photo, 'at', u.created_at) order by u.created_at, u.id)
-                from order_updates u where u.order_id = orders.id), '[]') as updates
+                from order_updates u where u.order_id = orders.id), '[]') as updates,
+      coalesce((select json_agg(f.position order by f.position) from order_files f where f.order_id = orders.id and f.kind = 'photo'), '[]') as photos
     from orders where code = ${code}`;
   if (!o) return null;
   const updates = o.updates as { stage: number; note: string; photo: string | null; at: string }[];
+  // The customer's photos, served only through their own order's link (see orderFile below).
+  const photos = (o.photos as number[]).map((n) => `/api/orders/${code}/files/photo/${n}`);
   const d = o.details as Omit<CleanCustomOrder, "name" | "phone" | "state" | "area">;
   return {
     onServer: true,
@@ -64,9 +68,10 @@ export async function orderForTracking(code: string): Promise<Order | null> {
     id: o.number,
     code: o.code,
     createdAt: new Date(o.created_at).toISOString(),
-    piece: d.piece,
+    // An order from the customer's own photo shows that photo as the piece.
+    piece: d.piece.source === "photo" && !d.piece.image && photos[0] ? { ...d.piece, image: photos[0] } : d.piece,
     pieceKind: d.pieceKind,
-    photos: [],
+    photos,
     hasVoiceNote: d.hasVoiceNote,
     description: d.description,
     size: d.size,
@@ -124,4 +129,42 @@ export async function reportPayment(code: string, which: "deposit" | "full") {
     where code = ${code} and stage = 1 and price is not null and not deposit_paid
     returning id`;
   return rows.length > 0;
+}
+
+/* -------------------------------- files --------------------------------- */
+
+/**
+ * The order a customer's photos and voice note may be added to: their own order (the code is the key),
+ * only within 3 hours of placing it and before Mimi has set a price, and only as many files as the
+ * order said it had.
+ */
+export async function orderTakingFiles(code: string) {
+  if (!isOrderCode(code)) return null;
+  const [o] = await db()`
+    select id, (details->>'photoCount')::int as photo_count, (details->>'hasVoiceNote')::boolean as has_voice
+    from orders where code = ${code} and kind = 'custom' and stage = 0 and created_at > now() - interval '3 hours'`;
+  return o ? { id: o.id as string, photoCount: (o.photo_count as number) ?? 0, hasVoice: Boolean(o.has_voice) } : null;
+}
+
+/** Stores a checked file and records it. A retry of the same photo or voice note is a no-op. */
+export async function saveOrderFile(f: { orderId: string; kind: "photo" | "voice"; position: number; data: Buffer; contentType: string; width?: number; height?: number }) {
+  // Random names: a file's key says nothing about the customer and can't be guessed.
+  const key = `orders/${f.orderId}/${f.kind}-${f.position}-${randomBytes(12).toString("hex")}`;
+  await putFile(key, f.data, f.contentType);
+  const rows = await db()`
+    insert into order_files (order_id, kind, position, key, content_type, bytes, width, height)
+    values (${f.orderId}, ${f.kind}, ${f.position}, ${key}, ${f.contentType}, ${f.data.length}, ${f.width ?? null}, ${f.height ?? null})
+    on conflict (order_id, kind, position) do nothing
+    returning id`;
+  if (!rows.length) await deleteFile(key);
+  return true;
+}
+
+/** A customer's file, looked up through their order's code, or null. */
+export async function orderFile(code: string, kind: string, position: number) {
+  if (!isOrderCode(code) || (kind !== "photo" && kind !== "voice") || !Number.isInteger(position) || position < 0 || position > 19) return null;
+  const [f] = await db()`
+    select f.key, f.content_type from order_files f join orders o on o.id = f.order_id
+    where o.code = ${code} and f.kind = ${kind} and f.position = ${position}`;
+  return f ? { key: f.key as string, contentType: f.content_type as string } : null;
 }

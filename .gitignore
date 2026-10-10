@@ -49,3 +49,6 @@ next-env.d.ts
 # netlify
 .netlify
 !.env.example
+
+# local stand-in for Netlify Blobs (order photos and voice notes in development)
+/.data
