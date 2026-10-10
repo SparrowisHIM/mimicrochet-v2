@@ -6,7 +6,7 @@ import { site } from "@/lib/site";
 // button (the site isn't an offline app, so it shouldn't pretend to be one).
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: site.name,
+    name: site.shortName,
     short_name: site.shortName,
     description: site.description,
     start_url: "/",

@@ -1,6 +1,9 @@
 // Real contact details from v1 (lib/socials.ts, lib/site.ts). Never invent these.
 export const site = {
+  /** The wordmark, in capitals as on the logo (header, footer). */
   name: "MIMICROCHET.NG",
+  /** How the site is named outside the page: browser tabs, link previews, home screens. Written like other
+   *  sites' tab names (capital first letters), because the all-caps wordmark looks loud in a tab. */
   shortName: "Mimi Crochet",
   description:
     "Handmade crochet from Port Harcourt. Shop one-of-one pieces, order your own, and follow it from the first stitch to your door.",

@@ -25,11 +25,11 @@ const figtree = Figtree({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   // Share pictures come from app/opengraph-image.tsx (every page) and app/shop/[slug]/opengraph-image.tsx (each piece).
-  openGraph: { siteName: site.name },
+  openGraph: { siteName: site.shortName },
   twitter: { card: "summary_large_image" },
   title: {
-    default: `${site.name} · Handmade crochet from Port Harcourt`,
-    template: `%s · ${site.name}`,
+    default: `${site.shortName} · Handmade crochet from Port Harcourt`,
+    template: `%s · ${site.shortName}`,
   },
   description: site.description,
   // Icons live in public/ (made from Mimi's logo by design-assets/brand/build_icons.py). Listed here rather
