@@ -1,7 +1,7 @@
 import { serifStyle, shareCard, shareSize, shareType } from "@/components/share/share-card";
 
 // The card for every page that isn't a single piece: the Home hero in miniature.
-export const alt = "Mimi Crochet: crochet pieces worth being seen in, handmade by Mimi in Port Harcourt";
+export const alt = "Mimicrochet: crochet pieces worth being seen in, handmade by Mimi in Port Harcourt";
 export const size = shareSize;
 export const contentType = shareType;
 

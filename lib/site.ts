@@ -2,9 +2,9 @@
 export const site = {
   /** The wordmark, in capitals as on the logo (header, footer). */
   name: "MIMICROCHET.NG",
-  /** How the site is named outside the page: browser tabs, link previews, home screens. Written like other
+  /** How the site is named outside the page: browser tabs, link previews, home screens. One word, written like other
    *  sites' tab names (capital first letters), because the all-caps wordmark looks loud in a tab. */
-  shortName: "Mimi Crochet",
+  shortName: "Mimicrochet",
   description:
     "Handmade crochet from Port Harcourt. Shop one-of-one pieces, order your own, and follow it from the first stitch to your door.",
   email: "Miracleemenike50@yahoo.com",
