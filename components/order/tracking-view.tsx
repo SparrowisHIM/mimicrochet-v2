@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import { confirmPaymentSent } from "@/app/actions/orders";
 import { WhatsAppIcon } from "@/components/icons";
 import { ShopOrderCard } from "@/components/cart/shop-order-card";
 import { Confetti } from "@/components/ui/confetti";
@@ -147,10 +149,22 @@ export function Stepper({ stage, lifted = false }: { stage: number; lifted?: boo
 
 /** The price is agreed: pay the 60% deposit (40% when it's ready) or the whole price now, by bank transfer. */
 function PayCard({ order, price }: { order: Order; price: number }) {
+  const router = useRouter();
   const reduce = useReducedMotion();
   const [full, setFull] = useState(false);
+  const [saving, setSaving] = useState(false);
   const deposit = depositOf(price);
   const now = full ? price : deposit;
+  const paid = async () => {
+    const which = full ? "full" : "deposit";
+    updateOrder(order.id, { paymentSent: which });
+    if (!order.onServer) return;
+    // The server holds the order: tell it, then show the page as it now stands.
+    setSaving(true);
+    await confirmPaymentSent(order.code, which).catch(() => false);
+    router.refresh();
+    setSaving(false);
+  };
   return (
     <Card className="flex flex-col gap-4 border border-amber-200 bg-amber-50">
       <div className="flex flex-wrap gap-2" role="group" aria-label="How much to pay now">
@@ -175,7 +189,7 @@ function PayCard({ order, price }: { order: Order; price: number }) {
         </span>
       </div>
       <p className="text-[15px] leading-[1.5] text-stone-700">Pay by bank transfer to the account Mimi sent with your price on WhatsApp, then tap below. She checks her bank and starts.</p>
-      <Button onClick={() => updateOrder(order.id, { paymentSent: full ? "full" : "deposit" })} disabled={order.sample}>
+      <Button onClick={paid} disabled={order.sample || saving}>
         {full ? "I’ve paid in full" : "I’ve paid the deposit"}
       </Button>
       <p className="text-[13px] text-amber-800">
@@ -280,10 +294,15 @@ function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) 
   );
 }
 
-export function TrackingView({ code, justPaid = false }: { code: string; justPaid?: boolean }) {
+/** `saved` is the server's copy of the order, when it has one; otherwise the order is looked up on this phone. */
+export function TrackingView({ code, saved, justPaid = false }: { code: string; saved?: Order | null; justPaid?: boolean }) {
   const orders = useOrders();
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
-  const order = findOrder(orders, code);
+  const local = findOrder(orders, code);
+  // The server's copy is the real one. This phone's copy fills in what the server doesn't hold yet
+  // (photo previews) and covers orders made offline or before the server, and the example order.
+  // Kept as one object until either copy changes: the spotlight below restarts whenever the order changes.
+  const order = useMemo(() => (saved ? { ...saved, photos: saved.photos.length ? saved.photos : (local?.photos ?? []) } : local), [saved, local]);
   const latestRef = useRef<HTMLDivElement>(null);
   const phase = useSpotlight(order, latestRef);
   const [showAll, setShowAll] = useState(false);

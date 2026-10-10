@@ -47,6 +47,8 @@ export type Order = {
   /** The customer tapped "I've paid" on their page, and which amount they sent. Mimi still confirms it. */
   paymentSent?: "deposit" | "full";
   sample?: boolean;
+  /** Saved on the server, so its tracking link opens on any phone (not only this device). */
+  onServer?: boolean;
   /** Custom requests: false until the customer taps Send on WhatsApp (Mimi only gets it then). */
   sent?: boolean;
 };

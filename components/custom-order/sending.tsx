@@ -38,18 +38,29 @@ export function SendingMoment({
   const [path, setPath] = useState("");
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
   const done = useRef(onDone);
+  // The order number comes from the server while the card is being stitched; it's "" until then.
+  // The animation runs on regardless and only waits for it at the moment it's typed onto the tag.
+  const id = useRef(orderId);
+  const idArrived = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     done.current = onDone;
   }, [onDone]);
 
   useEffect(() => {
+    id.current = orderId;
+    if (orderId) idArrived.current?.();
+  }, [orderId]);
+
+  useEffect(() => {
     let alive = true;
     const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const numberReady = () =>
+      id.current ? Promise.resolve() : new Promise<void>((r) => { idArrived.current = r; setTimeout(r, 10_000); });
 
     async function run() {
       if (reduce) {
-        await wait(150);
+        await Promise.all([wait(150), numberReady()]);
         if (alive) done.current();
         return;
       }
@@ -70,8 +81,10 @@ export function SendingMoment({
       setBeat(1);
       animate("[data-tag-string]", { scaleY: [0, 1] }, { duration: 0.3, ease: "easeOut" });
       await animate("[data-tag]", { opacity: [0, 1], y: [-46, 0], rotate: [-38, 16, -9, 5, -2, 0] }, { duration: 1.05, ease: "easeOut" });
+      await numberReady();
+      if (!alive) return;
       await new Promise<void>((resolve) =>
-        animateValue(0, orderId.length, { duration: 0.55, ease: "linear", onUpdate: (v) => setTyped(Math.round(v)), onComplete: resolve }),
+        animateValue(0, id.current.length, { duration: 0.55, ease: "linear", onUpdate: (v) => setTyped(Math.round(v)), onComplete: resolve }),
       );
       await wait(420);
       if (!alive) return;
@@ -128,7 +141,7 @@ export function SendingMoment({
     return () => {
       alive = false;
     };
-  }, [animate, orderId, reduce, scope]);
+  }, [animate, reduce, scope]);
 
   return (
     <motion.div

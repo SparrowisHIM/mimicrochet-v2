@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { confirmSent } from "@/app/actions/orders";
 import { WhatsAppIcon } from "@/components/icons";
 import { TrackingCard } from "@/components/order/tracking-card";
 import { Button, linkClass } from "@/components/ui/button";
@@ -70,6 +71,8 @@ export function SentView({ order, files }: { order: Order; files: File[] }) {
 
   const markSent = () => {
     updateOrder(order.id, { sent: true, updates: [{ stage: 0, note: "Request sent to Mimi on WhatsApp.", at: "Today" }] });
+    // The server copy too, so the tracking page says it was sent on any phone.
+    confirmSent(order.code).catch(() => {});
     setBarVisible(false);
     const celebrate = () => {
       setSent(true);

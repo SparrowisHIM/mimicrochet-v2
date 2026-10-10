@@ -24,6 +24,8 @@ import { fitWords, hasFit, heightLabel, saveFit, useSavedFit, type Fit } from "@
 import { isFitKind, kindLabel, type PieceKind } from "@/lib/fit-outline";
 import { isLgaOf } from "@/lib/nigeria";
 import { isRequestDate } from "@/lib/request-date";
+import { submitCustomOrder } from "@/app/actions/orders";
+import { budgetOptions, type CustomOrderInput } from "@/lib/order-input";
 import { newOrderIds, saveOrder, type Order } from "@/lib/orders";
 import { checkPhoto, precheckPhoto } from "@/lib/upload-safety";
 import { pieceFromIdea, pieceFromProduct, type Piece } from "@/lib/pieces";
@@ -71,6 +73,30 @@ export type Draft = {
   town?: string;
   sizeOk: boolean;
 };
+
+/** What goes to the server: the customer's answers, with the piece named by its slug so the server looks it up itself. */
+function orderInput(d: Draft, o: Order): CustomOrderInput {
+  return {
+    piece: d.piece ? { source: d.piece.source, slug: d.piece.slug, name: d.piece.name, image: d.piece.image, note: d.piece.note } : null,
+    pieceKind: o.pieceKind,
+    photoCount: d.photos.length,
+    hasVoiceNote: Boolean(o.hasVoiceNote),
+    description: o.description,
+    size: o.size,
+    measurements: o.measurements,
+    height: o.height,
+    fit: o.fit,
+    colours: o.colours,
+    colourNote: o.colourNote,
+    when: o.when,
+    budget: o.budget,
+    notes: o.notes,
+    name: o.name,
+    phone: phoneDigits(d.phone),
+    state: o.state,
+    area: o.area,
+  };
+}
 
 // First row is what shows; the second row opens with "View more pieces" (desktop) or by swiping (phones).
 const starter = ["sunflower-crop-cardigan", "noir-bloom-crochet-shirt", "heart-sweater", "monochrome-crochet-shirt", "red-fringe-beach-set", "royal-wave-crochet-shirt", "lilac-ruffle-tube-dress", "candy-bloom-ruffle-set"]
@@ -589,7 +615,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
     set({ photos: d.photos.filter((x) => x.id !== id) });
   };
 
-  const send = () => {
+  const send = async () => {
     if (sending) return;
     if (d.when === "date" && !isRequestDate(d.date, today)) {
       go(1, "f-when");
@@ -601,10 +627,9 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       setTried((t) => t + 1);
       return focusField(firstMissing(2), true);
     }
-    const { id, code } = newOrderIds();
-    const order: Order = {
-      id,
-      code,
+    const draft: Order = {
+      id: "",
+      code: "",
       createdAt: new Date().toISOString(),
       piece: d.piece
         ? { name: d.piece.name, image: d.piece.image, slug: d.piece.slug, source: d.piece.source, price: d.piece.price, note: d.piece.note }
@@ -634,9 +659,18 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       sent: false,
       updates: [{ stage: 0, note: "Request prepared. Send the details to Mimi on WhatsApp to confirm.", at: "Today" }],
     };
-    saveOrder(order);
     if (fitted && !noSize(d)) saveFit({ size: d.size, height: d.height, measures: d.measures, unit: d.unit, fit: d.fit });
-    setSending({ order, files: [...d.photos.map((p) => p.file), ...(d.voice ? [d.voice.file] : [])] });
+    const files = [...d.photos.map((p) => p.file), ...(d.voice ? [d.voice.file] : [])];
+    // The sending moment starts at once; the order number arrives from the server while it plays.
+    setSending({ order: draft, files });
+    const saved = await Promise.race([
+      submitCustomOrder(orderInput(d, draft)).catch(() => null),
+      new Promise<null>((r) => setTimeout(() => r(null), 8000)),
+    ]);
+    // If the server can't be reached, the order still goes to Mimi on WhatsApp, tracked on this phone only.
+    const order: Order = saved?.ok ? { ...draft, id: saved.id, code: saved.code, createdAt: saved.createdAt } : { ...draft, ...newOrderIds() };
+    saveOrder(order);
+    setSending((cur) => cur && { ...cur, order });
   };
 
   // The step change, per the brief.
@@ -1008,7 +1042,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
                         Your budget <span className="font-normal text-stone-500">(optional)</span>
                       </span>
                       <div className="flex flex-wrap gap-2">
-                        {["Under ₦30k", "₦30k–60k", "₦60k–100k", "Over ₦100k"].map((b) => (
+                        {budgetOptions.map((b) => (
                           <Chip key={b} on={d.budget === b} onClick={() => set({ budget: d.budget === b ? undefined : b })}>
                             {b}
                           </Chip>
