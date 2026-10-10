@@ -5,7 +5,7 @@ export function GET() {
     {
       id: "/studio",
       name: "Mimi’s orders",
-      short_name: "Orders",
+      short_name: "Mimi’s orders",
       start_url: "/studio",
       scope: "/studio",
       display: "standalone",
