@@ -3,8 +3,8 @@ import type { NextConfig } from "next";
 const dev = process.env.NODE_ENV === "development";
 // Vercel preview deployments show Vercel's feedback toolbar, which loads from vercel.live.
 const preview = process.env.VERCEL_ENV === "preview";
-// A Netlify test build (a branch or preview, not the live site) stays out of search engines.
-const netlifyTest = process.env.NETLIFY === "true" && process.env.CONTEXT !== "production";
+// Netlify builds stay out of search engines until go-live (same rule as hiddenFromSearch in lib/site-url.ts).
+const netlifyHidden = process.env.NETLIFY === "true" && (process.env.CONTEXT !== "production" || process.env.MIMI_LIVE !== "true");
 const toolbar = preview ? " https://vercel.live" : "";
 
 /**
@@ -57,7 +57,7 @@ const nextConfig: NextConfig = {
       // Private pages: order tracking links and Mimi's own page stay out of search engines.
       { source: "/t/:code*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
       { source: "/studio", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
-      ...(netlifyTest ? [{ source: "/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] }] : []),
+      ...(netlifyHidden ? [{ source: "/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] }] : []),
     ];
   },
 };

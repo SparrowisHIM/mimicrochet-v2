@@ -7,5 +7,10 @@ export const siteUrl =
   process.env.URL ??
   (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3020");
 
-/** A Netlify test build (a branch or preview, not the live site): kept out of search engines. */
-export const isTestBuild = process.env.NETLIFY === "true" && process.env.CONTEXT !== "production";
+/**
+ * Netlify builds stay out of search engines until go-live (MIMI_LIVE=true in Netlify's settings), so
+ * the copy being built there never competes with the site friends are testing. Test builds (branches,
+ * previews) always stay out.
+ */
+export const hiddenFromSearch =
+  process.env.NETLIFY === "true" && (process.env.CONTEXT !== "production" || process.env.MIMI_LIVE !== "true");
