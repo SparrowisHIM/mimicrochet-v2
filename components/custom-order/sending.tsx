@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { animate as animateValue, motion, stagger, useAnimate, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Confetti } from "@/components/ui/confetti";
 
 // The moment a custom order is sent, told in four beats:
@@ -41,7 +41,12 @@ export function SendingMoment({
   // The order number comes from the server while the card is being stitched; it's "" until then.
   // The animation runs on regardless and only waits for it at the moment it's typed onto the tag.
   const id = useRef(orderId);
-  const idArrived = useRef<(() => void) | null>(null);
+  const waiting = useRef<(() => void)[]>([]);
+  // Resolves once the number is in (or after 15s, so nothing can hang on it; the form always has one by 12s).
+  const numberReady = useCallback(
+    () => (id.current ? Promise.resolve() : new Promise<void>((r) => { waiting.current.push(r); setTimeout(r, 15_000); })),
+    [],
+  );
 
   useEffect(() => {
     done.current = onDone;
@@ -49,14 +54,14 @@ export function SendingMoment({
 
   useEffect(() => {
     id.current = orderId;
-    if (orderId) idArrived.current?.();
+    if (!orderId) return;
+    waiting.current.forEach((r) => r());
+    waiting.current = [];
   }, [orderId]);
 
   useEffect(() => {
     let alive = true;
     const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-    const numberReady = () =>
-      id.current ? Promise.resolve() : new Promise<void>((r) => { idArrived.current = r; setTimeout(r, 10_000); });
 
     async function run() {
       if (reduce) {
@@ -141,7 +146,7 @@ export function SendingMoment({
     return () => {
       alive = false;
     };
-  }, [animate, reduce, scope]);
+  }, [animate, numberReady, reduce, scope]);
 
   return (
     <motion.div
@@ -156,7 +161,7 @@ export function SendingMoment({
       aria-label="Preparing your request"
       onKeyDown={(e) => { if (e.key === "Escape") done.current(); }}
     >
-      <button autoFocus type="button" onClick={() => done.current()} className="absolute top-5 right-5 z-10 rounded-full border border-white/30 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white" aria-label="Skip the animation">Skip</button>
+      <button autoFocus type="button" onClick={() => numberReady().then(() => done.current())} className="absolute top-5 right-5 z-10 rounded-full border border-white/30 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white" aria-label="Skip the animation">Skip</button>
       {/* The yarn thread from the parcel to Mimi */}
       <svg className="pointer-events-none absolute inset-0 size-full" aria-hidden>
         {path && <motion.path data-thread d={path} fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" initial={{ pathLength: 0, opacity: 0 }} />}

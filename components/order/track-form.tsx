@@ -6,13 +6,12 @@ import { useState } from "react";
 import { findOrderCode } from "@/app/actions/orders";
 import { Field, inputClass } from "@/components/form/fields";
 import { Button } from "@/components/ui/button";
+import { isOrderCode } from "@/lib/order-code";
 import { findOrder, useOrders } from "@/lib/orders";
 
 // Find an order from any phone with its number and the last 4 digits of the phone number on it.
 // Orders kept only on this phone (and the example order) are found here first; the rest are asked
 // of the server, which never opens an order from its number alone.
-
-const codeShape = /^[a-hj-km-np-z2-9]{8}$/;
 
 export function TrackForm({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
@@ -26,15 +25,15 @@ export function TrackForm({ compact = false }: { compact?: boolean }) {
   const mine = orders.filter((o) => !o.sample).slice(0, 3);
   // A tracking link or code pasted into the number box opens straight away.
   const pasted = number.trim().replace(/^.*\/t\//, "").replace(/[/?#].*$/, "").toLowerCase();
-  const numberMissing = !codeShape.test(pasted) && !/\d{3,}/.test(number);
-  const last4Missing = !codeShape.test(pasted) && !/^\d{4}$/.test(last4);
+  const numberMissing = !isOrderCode(pasted) && !/\d{3,}/.test(number);
+  const last4Missing = !isOrderCode(pasted) && !/^\d{4}$/.test(last4);
   const show = tried > 0;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (looking) return;
     setNotFound(false);
-    if (codeShape.test(pasted)) return router.push(`/t/${pasted}`);
+    if (isOrderCode(pasted)) return router.push(`/t/${pasted}`);
     setTried((t) => t + 1);
     if (numberMissing || last4Missing) return;
     const digits = number.replace(/\D/g, "");

@@ -2,22 +2,15 @@ import "server-only";
 import { randomInt } from "node:crypto";
 import { db } from "@/lib/server/db";
 import type { CleanCustomOrder } from "@/lib/server/order-input";
+import { isOrderCode, makeCode } from "@/lib/order-code";
 import type { Order } from "@/lib/orders";
+import { fullPhone } from "@/lib/validate";
 
 // Orders on the server. A tracking code is the key to one order's page, so it's random, long enough
 // that guessing is hopeless, and checked for shape before any query. What leaves here for a tracking
 // page is only what that page shows: never the phone number or a street address.
 
-const alphabet = "abcdefghjkmnpqrstuvwxyz23456789";
-const codeShape = /^[a-hj-km-np-z2-9]{8}$/;
-
-function newCode() {
-  let code = "";
-  for (let i = 0; i < 8; i++) code += alphabet[randomInt(alphabet.length)];
-  return code;
-}
-
-export const isOrderCode = (code: string) => codeShape.test(code);
+const newCode = () => makeCode(randomInt);
 
 /** "Today", "Yesterday" or "2 Oct", in Nigerian time, as the tracking page and Mimi's page show it. */
 function dayLabel(at: Date) {
@@ -31,7 +24,6 @@ function dayLabel(at: Date) {
 export async function createCustomOrder(o: CleanCustomOrder) {
   const sql = db();
   const { name, phone, state, area, ...details } = o;
-  const phoneShown = `+234 ${phone.slice(0, 3)} ${phone.slice(3, 6)} ${phone.slice(6)}`;
   const note = "Request prepared. Send the details to Mimi on WhatsApp to confirm.";
   // A clash between two random codes is all but impossible; try again if it ever happens.
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -39,7 +31,7 @@ export async function createCustomOrder(o: CleanCustomOrder) {
       const [row] = await sql`
         with o as (
           insert into orders (code, kind, details, name, phone, phone_last4, state, area)
-          values (${newCode()}, 'custom', ${JSON.stringify(details)}::jsonb, ${name}, ${phoneShown}, ${phone.slice(-4)}, ${state}, ${area})
+          values (${newCode()}, 'custom', ${JSON.stringify(details)}::jsonb, ${name}, ${fullPhone(phone)}, ${phone.slice(-4)}, ${state}, ${area})
           returning id, number, code, created_at
         ), u as (
           insert into order_updates (order_id, stage, note) select id, 0, ${note} from o
@@ -57,12 +49,14 @@ export async function createCustomOrder(o: CleanCustomOrder) {
 /** The order behind a tracking link, shaped like the page's own Order, or null. */
 export async function orderForTracking(code: string): Promise<Order | null> {
   if (!isOrderCode(code)) return null;
-  const sql = db();
-  const [o] = await sql`
-    select id, number, code, kind, stage, sent, details, name, state, area, price, ready_by, deposit_paid, paid_in_full, payment_sent, created_at
+  // One round trip: the order with its updates, oldest first.
+  const [o] = await db()`
+    select number, code, kind, stage, sent, details, name, state, area, price, ready_by, deposit_paid, paid_in_full, payment_sent, created_at,
+      coalesce((select json_agg(json_build_object('stage', u.stage, 'note', u.note, 'photo', u.photo, 'at', u.created_at) order by u.created_at, u.id)
+                from order_updates u where u.order_id = orders.id), '[]') as updates
     from orders where code = ${code}`;
   if (!o) return null;
-  const updates = await sql`select stage, note, photo, created_at from order_updates where order_id = ${o.id} order by created_at, id`;
+  const updates = o.updates as { stage: number; note: string; photo: string | null; at: string }[];
   const d = o.details as Omit<CleanCustomOrder, "name" | "phone" | "state" | "area">;
   return {
     onServer: true,
@@ -95,7 +89,7 @@ export async function orderForTracking(code: string): Promise<Order | null> {
     depositPaid: o.deposit_paid,
     paidInFull: o.paid_in_full,
     paymentSent: o.payment_sent ?? undefined,
-    updates: updates.map((u) => ({ stage: u.stage, note: u.note, at: dayLabel(new Date(u.created_at)), ...(u.photo ? { photo: u.photo } : {}) })),
+    updates: updates.map((u) => ({ stage: u.stage, note: u.note, at: dayLabel(new Date(u.at)), ...(u.photo ? { photo: u.photo } : {}) })),
   };
 }
 

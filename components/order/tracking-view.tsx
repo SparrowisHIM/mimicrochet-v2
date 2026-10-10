@@ -288,7 +288,7 @@ function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) 
             Back to the shop
           </Link>
         )}
-        <p className="text-center text-[13px] text-stone-400">Only people with this link can see this page.</p>
+        <p className="text-center text-[13px] text-stone-400">Keep this link to yourself: it shows your order details.</p>
       </div>
     </div>
   );
@@ -311,15 +311,15 @@ export function TrackingView({ code, saved, justPaid = false }: { code: string; 
   if (!order)
     return (
       <div className="container-page flex min-h-[60vh] flex-col items-start justify-center gap-4 py-16">
-        <h1 className="font-serif text-[36px] leading-tight lg:text-[48px]">We can’t find that order on this phone</h1>
-        <p className="max-w-[520px] text-[17px] text-stone-600">Open the tracking link Mimi sent you on WhatsApp, or ask her for it. Tracking links look like mimicrochet.ng/t/k7x2p9.</p>
+        <h1 className="font-serif text-[36px] leading-tight lg:text-[48px]">We can’t find that order</h1>
+        <p className="max-w-[520px] text-[17px] text-stone-600">Check the link, or find your order with its number and the last 4 digits of your phone. Tracking links look like mimicrochet.ng/t/k7x2p9.</p>
         <div className="flex flex-wrap items-center gap-x-7 gap-y-2">
-          <a href={whatsappLink("Hi Mimi! Could you send me my tracking link?")} target="_blank" rel="noreferrer" className={buttonClass("primary")}>
+          <Link href="/track" className={buttonClass("primary")}>
+            Find your order
+          </Link>
+          <a href={whatsappLink("Hi Mimi! Could you send me my tracking link?")} target="_blank" rel="noreferrer" className={linkClass}>
             <WhatsAppIcon size={18} /> Ask Mimi
           </a>
-          <Link href="/t/k7x2p9" className={linkClass}>
-            See an example order
-          </Link>
         </div>
       </div>
     );
@@ -532,7 +532,7 @@ export function TrackingView({ code, saved, justPaid = false }: { code: string; 
           {money}
           {details}
           {contact}
-          <p className="pt-1 text-center text-[13px] text-stone-400">Only people with this link can see this page.</p>
+          <p className="pt-1 text-center text-[13px] text-stone-400">Keep this link to yourself: it shows your order details.</p>
         </div>
       </div>
 

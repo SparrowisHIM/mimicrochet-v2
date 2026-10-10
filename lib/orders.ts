@@ -2,9 +2,11 @@
 
 import { useSyncExternalStore } from "react";
 import type { PieceKind } from "@/lib/fit-outline";
+import { makeCode } from "@/lib/order-code";
 
-// Prototype order store: orders live on this device (no backend yet). The demo order
-// MIMI-2406 is always available so the tracking page and Mimi's page can be explored.
+// The orders this device knows: a copy of each order made here (the server holds the real one, see
+// lib/server/orders.ts), orders the server couldn't save, and the example order MIMI-2406, which is
+// always available so the tracking page and Mimi's page can be explored.
 
 export type OrderUpdate = { stage: number; note: string; at: string; photo?: string };
 
@@ -134,22 +136,23 @@ export function updateOrder(id: string, patch: Partial<Order>) {
   write(read().map((o) => (o.id === id ? { ...o, ...patch } : o)));
 }
 
-export function newOrderIds() {
-  const n = 2412 + Math.floor(Math.random() * 400);
-  // The tracking code is the key to a private page (name, phone, address), so it comes from the
-  // browser's secure random source, never Math.random, and is long enough that guessing one is hopeless.
-  // Letters and numbers that look alike (i, l, o, 0, 1) are left out so it's easy to read out.
-  const alphabet = "abcdefghjkmnpqrstuvwxyz23456789";
-  let code = "";
-  while (code.length < 8) {
-    for (const b of crypto.getRandomValues(new Uint8Array(16))) {
-      // Bytes past the last whole run of the alphabet are skipped, so every character is equally likely.
-      if (b < 256 - (256 % alphabet.length) && code.length < 8) code += alphabet[b % alphabet.length];
-    }
+/** One unbiased random number below n from the browser's secure random source (never Math.random). */
+function randomBelow(n: number) {
+  const limit = 256 - (256 % n);
+  for (;;) {
+    const [b] = crypto.getRandomValues(new Uint8Array(1));
+    if (b < limit) return b % n;
   }
-  return { id: `MIMI-${n}`, code };
 }
 
-export const trackingUrl = (code: string) => `mimicrochet.ng/t/${code}`;
+/**
+ * Numbers for an order the server couldn't save (it still goes to Mimi on WhatsApp, tracked on this
+ * phone only). They come from 9000 up, far past the server's own count (from 2412), so a phone-only
+ * order can never share a number with a real one.
+ */
+export function newOrderIds() {
+  const n = randomBelow(250) * 4 + randomBelow(4); // 0 to 999, every number equally likely
+  return { id: `MIMI-${9000 + n}`, code: makeCode(randomBelow) };
+}
 
 export { nigerianStates } from "@/lib/nigeria";

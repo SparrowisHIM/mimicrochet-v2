@@ -431,6 +431,9 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
   const [morePieces, setMorePieces] = useState(false);
   const [fitting, setFitting] = useState<FitStep | null>(null);
   const [sending, setSending] = useState<{ order: Order; files: File[] } | null>(null);
+  // Set the moment Send is accepted: `sending` only updates on the next render, so a quick double tap
+  // would otherwise slip through and make two orders.
+  const sendStarted = useRef(false);
   const [sent, setSent] = useState<{ order: Order; files: File[] } | null>(null);
   const [tried, setTried] = useState(0);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -616,7 +619,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
   };
 
   const send = async () => {
-    if (sending) return;
+    if (sending || sendStarted.current) return;
     if (d.when === "date" && !isRequestDate(d.date, today)) {
       go(1, "f-when");
       setTried((t) => t + 1);
@@ -662,11 +665,17 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
     if (fitted && !noSize(d)) saveFit({ size: d.size, height: d.height, measures: d.measures, unit: d.unit, fit: d.fit });
     const files = [...d.photos.map((p) => p.file), ...(d.voice ? [d.voice.file] : [])];
     // The sending moment starts at once; the order number arrives from the server while it plays.
+    sendStarted.current = true;
     setSending({ order: draft, files });
+    // 12s covers a sleeping database and a cold server function (which gives up at 10s itself).
     const saved = await Promise.race([
-      submitCustomOrder(orderInput(d, draft)).catch(() => null),
-      new Promise<null>((r) => setTimeout(() => r(null), 8000)),
+      submitCustomOrder(orderInput(d, draft)).catch((e) => {
+        console.warn("Couldn't reach the server for this order", e);
+        return null;
+      }),
+      new Promise<null>((r) => setTimeout(() => r(null), 12_000)),
     ]);
+    if (saved && !saved.ok) console.warn("The server didn't accept this order:", saved.error);
     // If the server can't be reached, the order still goes to Mimi on WhatsApp, tracked on this phone only.
     const order: Order = saved?.ok ? { ...draft, id: saved.id, code: saved.code, createdAt: saved.createdAt } : { ...draft, ...newOrderIds() };
     saveOrder(order);
