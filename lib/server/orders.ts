@@ -109,26 +109,28 @@ export async function codeForOrder(number: string, last4: string) {
   return (row?.code as string | undefined) ?? null;
 }
 
-/** The customer tapped Send on WhatsApp: Mimi has the request now. */
+/** The customer tapped Send on WhatsApp: Mimi has the request now. Returns what her notification says. */
 export async function markSent(code: string) {
-  if (!isOrderCode(code)) return false;
-  const rows = await db()`
+  if (!isOrderCode(code)) return null;
+  const [o] = await db()`
     with o as (
-      update orders set sent = true, updated_at = now() where code = ${code} and kind = 'custom' and not sent returning id
+      update orders set sent = true, updated_at = now() where code = ${code} and kind = 'custom' and not sent
+      returning id, number, name, details->'piece'->>'name' as piece
+    ), u as (
+      update order_updates set note = 'Request sent to Mimi on WhatsApp.' where stage = 0 and order_id in (select id from o)
     )
-    update order_updates set note = 'Request sent to Mimi on WhatsApp.' where stage = 0 and order_id in (select id from o)
-    returning order_id`;
-  return rows.length > 0;
+    select number, name, piece from o`;
+  return (o as { number: string; name: string; piece: string } | undefined) ?? null;
 }
 
 /** The customer says they've paid the deposit or the full price. Mimi still confirms it. */
 export async function reportPayment(code: string, which: "deposit" | "full") {
-  if (!isOrderCode(code)) return false;
-  const rows = await db()`
+  if (!isOrderCode(code)) return null;
+  const [o] = await db()`
     update orders set payment_sent = ${which}, updated_at = now()
-    where code = ${code} and stage = 1 and price is not null and not deposit_paid
-    returning id`;
-  return rows.length > 0;
+    where code = ${code} and stage = 1 and price is not null and not deposit_paid and payment_sent is distinct from ${which}
+    returning number, name, price`;
+  return (o as { number: string; name: string; price: number } | undefined) ?? null;
 }
 
 /* -------------------------------- files --------------------------------- */
@@ -166,9 +168,9 @@ export async function saveOrderFile(f: { orderId: string; kind: "photo" | "voice
   }
 }
 
-/** A customer's file, looked up through their order's code, or null. */
+/** One of an order's files (the customer's photos and voice note, Mimi's progress photos), looked up through the order's code. */
 export async function orderFile(code: string, kind: string, position: number) {
-  if (!isOrderCode(code) || (kind !== "photo" && kind !== "voice") || !Number.isInteger(position) || position < 0 || position > 19) return null;
+  if (!isOrderCode(code) || !["photo", "voice", "progress"].includes(kind) || !Number.isInteger(position) || position < 0 || position > 19) return null;
   const [f] = await db()`
     select f.key, f.content_type from order_files f join orders o on o.id = f.order_id
     where o.code = ${code} and f.kind = ${kind} and f.position = ${position}`;

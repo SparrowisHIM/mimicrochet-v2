@@ -138,9 +138,10 @@ function LiveWave({ session, reduce, onHeard }: { session: Session; reduce: bool
 
 /* ------------------------------ the kept note, as a player ------------------------------ */
 
-/** Squeeze the recording's levels into n bars (the loudest moment of each slice). */
+/** Squeeze the recording's levels into n bars (the loudest moment of each slice). A note recorded on
+ *  another phone has no levels here, so it gets a calm, varied shape that's the same on every view. */
 function resample(levels: number[], n: number) {
-  if (!levels.length) return Array.from({ length: n }, () => 0.3);
+  if (!levels.length) return Array.from({ length: n }, (_, i) => 0.22 + 0.5 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.6)));
   return Array.from({ length: n }, (_, i) => {
     const a = Math.floor((i * levels.length) / n);
     const b = Math.max(a + 1, Math.floor(((i + 1) * levels.length) / n));
@@ -148,7 +149,25 @@ function resample(levels: number[], n: number) {
   });
 }
 
-function VoicePlayer({ voice, onRemove, autoFocus }: { voice: Voice; onRemove: () => void; autoFocus: boolean }) {
+/**
+ * Plays a voice note: the customer's own recording while they order (with Delete), or, in Mimi's studio,
+ * the one they sent (no Delete; its length comes from the file).
+ */
+export function VoicePlayer({
+  url,
+  seconds: knownSeconds,
+  levels,
+  onRemove,
+  autoFocus = false,
+  whose = "your",
+}: {
+  url: string;
+  seconds?: number;
+  levels?: number[];
+  onRemove?: () => void;
+  autoFocus?: boolean;
+  whose?: "your" | "their";
+}) {
   const reduce = useReducedMotion();
   const audio = useRef<HTMLAudioElement>(null);
   const track = useRef<HTMLDivElement>(null);
@@ -156,10 +175,13 @@ function VoicePlayer({ voice, onRemove, autoFocus }: { voice: Voice; onRemove: (
   const [playing, setPlaying] = useState(false);
   const [now, setNow] = useState(0);
   const [count, setCount] = useState(36);
+  const [loadedSeconds, setLoadedSeconds] = useState(0);
+  const seconds = knownSeconds ?? loadedSeconds;
+  const voice = { seconds: Math.max(1, seconds) };
   const progress = useMotionValue(0);
   const hidden = useTransform(progress, (p) => (1 - p) * 100);
   const clip = useMotionTemplate`inset(0 ${hidden}% 0 0)`;
-  const bars = useMemo(() => resample(voice.levels ?? [], count), [voice.levels, count]);
+  const bars = useMemo(() => resample(levels ?? [], count), [levels, count]);
 
   useEffect(() => {
     if (autoFocus) play.current?.focus();
@@ -211,7 +233,7 @@ function VoicePlayer({ voice, onRemove, autoFocus }: { voice: Voice; onRemove: (
     <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-full bg-stone-100 py-1 pr-1 pl-1">
       <audio
         ref={audio}
-        src={voice.url}
+        src={url}
         preload="metadata"
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
@@ -225,15 +247,15 @@ function VoicePlayer({ voice, onRemove, autoFocus }: { voice: Voice; onRemove: (
           const a = e.currentTarget;
           if (a.duration === Infinity) {
             a.currentTime = 1e101;
-            a.addEventListener("timeupdate", () => (a.currentTime = 0), { once: true });
-          }
+            a.addEventListener("timeupdate", () => { if (Number.isFinite(a.duration)) setLoadedSeconds(Math.round(a.duration)); a.currentTime = 0; }, { once: true });
+          } else if (Number.isFinite(a.duration)) setLoadedSeconds(Math.round(a.duration));
         }}
       />
       <button
         ref={play}
         type="button"
         onClick={toggle}
-        aria-label={playing ? "Pause your voice note" : "Play your voice note"}
+        aria-label={`${playing ? "Pause" : "Play"} ${whose} voice note`}
         className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full bg-stone-900 text-orange-50 transition-transform duration-150 active:scale-90"
       >
         <AnimatePresence mode="popLayout" initial={false}>
@@ -301,15 +323,17 @@ function VoicePlayer({ voice, onRemove, autoFocus }: { voice: Voice; onRemove: (
         ))}
       </div>
 
-      <span className="w-8 shrink-0 text-right text-[13px] text-stone-500 tabular-nums">{clock(playing || now > 0 ? now : voice.seconds)}</span>
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label="Delete your voice note"
-        className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-stone-500 transition-colors duration-150 hover:bg-stone-200 hover:text-stone-900"
-      >
-        <CloseIcon size={16} />
-      </button>
+      <span className={`w-8 shrink-0 text-right text-[13px] text-stone-500 tabular-nums ${onRemove ? "" : "mr-2.5"}`}>{seconds || playing || now > 0 ? clock(playing || now > 0 ? now : seconds) : ""}</span>
+      {onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="Delete your voice note"
+          className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-stone-500 transition-colors duration-150 hover:bg-stone-200 hover:text-stone-900"
+        >
+          <CloseIcon size={16} />
+        </button>
+      )}
     </div>
   );
 }
@@ -488,7 +512,9 @@ export function VoiceNote({
             >
               {leading}
               <VoicePlayer
-                voice={value}
+                url={value.url}
+                seconds={value.seconds}
+                levels={value.levels}
                 autoFocus={justKept}
                 onRemove={() => {
                   setJustKept(false);

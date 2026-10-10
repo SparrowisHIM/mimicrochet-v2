@@ -51,12 +51,13 @@ export type Order = {
   sample?: boolean;
   /** Saved on the server, so its tracking link opens on any phone (not only this device). */
   onServer?: boolean;
+  /** Mimi's studio: where the customer's voice note plays from. */
+  voiceNote?: string;
   /** Custom requests: false until the customer taps Send on WhatsApp (Mimi only gets it then). */
   sent?: boolean;
 };
 
-/** Custom orders start with a 60% deposit and the other 40% when it's ready, or the full price up front. */
-export const depositOf = (price: number) => Math.round(price * 0.6);
+export { depositOf } from "@/lib/order-code";
 
 const KEY = "mimi:orders";
 const listeners = new Set<() => void>();

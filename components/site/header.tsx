@@ -67,7 +67,8 @@ export function Header() {
             </Link>
             <span className="rounded-full bg-stone-900 px-2 py-0.5 text-[11px] font-semibold text-orange-50">Studio</span>
           </div>
-          <span className="grid size-9 place-items-center rounded-full bg-orange-100 font-serif text-[16px] text-amber-800" role="img" aria-label="Signed in as Mimi">
+          {/* Only once she's signed in: the studio marks the page with data-studio="in" (studio-view.tsx). */}
+          <span className="hidden size-9 place-items-center rounded-full bg-orange-100 font-serif text-[16px] text-amber-800 [html[data-studio=in]_&]:grid" role="img" aria-label="Signed in as Mimi">
             M
           </span>
         </div>

@@ -350,7 +350,7 @@ export function TrackingView({ code, saved, justPaid = false }: { code: string; 
         </div>
         {latest.photo && (
           <div className="relative aspect-[4/5] overflow-hidden rounded-[18px] bg-orange-100">
-            <Image src={latest.photo} alt="Mimi’s latest progress photo" fill sizes="(min-width: 1024px) 600px, 90vw" className="object-cover" preload />
+            <Image src={latest.photo} alt="Mimi’s latest progress photo" fill sizes="(min-width: 1024px) 600px, 90vw" className="object-cover" preload unoptimized={latest.photo.startsWith("/api/")} />
           </div>
         )}
         <div className="flex gap-3">

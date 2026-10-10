@@ -125,3 +125,13 @@ export function RulerIcon(props: IconProps) {
     </svg>
   );
 }
+
+/** A bell, for Mimi's notifications (drawn on the 24 grid, like the Figma Ping card). */
+export function BellIcon(props: IconProps) {
+  return (
+    <svg {...base(props)} viewBox="0 0 24 24">
+      <path d="M12 3.5a5 5 0 0 0-5 5v3.2c0 .8-.25 1.55-.72 2.2L5 15.75h14l-1.28-1.85A3.9 3.9 0 0 1 17 11.7V8.5a5 5 0 0 0-5-5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M10 18.75a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
