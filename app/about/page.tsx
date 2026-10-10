@@ -47,7 +47,7 @@ export default function AboutPage() {
           <div className="absolute inset-0 translate-x-4 translate-y-4 rounded-[18px] bg-orange-200" aria-hidden />
           <div className="relative aspect-[4/5] overflow-hidden rounded-[18px] bg-amber-900">
             <Parallax>
-              <Image src="/images/story/mimi-portrait.jpg" alt="Mimi, the maker behind Mimi Crochet" fill preload sizes="(min-width: 1024px) 484px, 90vw" className="object-cover object-top" />
+              <Image src="/images/story/mimi-portrait.jpg" alt="Mimi, the maker behind Mimicrochet" fill preload sizes="(min-width: 1024px) 484px, 90vw" className="object-cover object-top" />
             </Parallax>
           </div>
         </div>
@@ -64,7 +64,7 @@ export default function AboutPage() {
           </h2>
         </Wipe>
         <Wipe className="flex max-w-[520px] flex-col gap-5 text-[17px] leading-[1.6] text-stone-600 lg:text-[19px]">
-          <p>Mimi Crochet started with the joy of turning yarn into outfits people remember: beach sets, bright mini dresses, soft tops and shirts that start conversations.</p>
+          <p>Mimicrochet started with the joy of turning yarn into outfits people remember: beach sets, bright mini dresses, soft tops and shirts that start conversations.</p>
           <p>It grew into a studio built on care, detail and colour. Shop what’s ready, ask for a piece she’s made before, or bring your own idea and let Mimi shape it around you.</p>
           <blockquote className="border-l-2 border-amber-600 pl-5">
             <p className="font-serif text-[24px] leading-[1.3] text-stone-900 lg:text-[28px]">“If Mimi wouldn’t wear it out, it doesn’t leave the studio.”</p>

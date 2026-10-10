@@ -2,7 +2,7 @@ import { serifStyle, shareCard, shareSize, shareType } from "@/components/share/
 import { getProduct, priceLabel, products, tagLabel } from "@/lib/products";
 
 // The card when someone sends one piece: its own photo, label, name and price, in the product page's order.
-export const alt = "A piece by Mimi Crochet, with its name and price";
+export const alt = "A piece by Mimicrochet, with its name and price";
 export const size = shareSize;
 export const contentType = shareType;
 
