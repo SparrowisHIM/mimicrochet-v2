@@ -84,8 +84,8 @@ export function ProductView({ product }: { product: Product }) {
   const sold = stock === "sold";
   const otherSize = Boolean(stockSize && size && size !== stockSize);
   const buyable = product.checkout === "bag" && !otherSize && !sold;
+  const ask = whatsappLink(`Hi Mimi! I’m looking at the ${product.name} (${priceLabel(product)}). ${product.kind === "ready" && !sold ? "Is it still available?" : "Can you make it for me?"}`);
   const requestHref = `/custom-order?piece=${product.slug}${size ? `&size=${size}` : ""}`;
-  const ask = whatsappLink(`Hi Mimi! I’m looking at the ${product.name} (${priceLabel(product)}). ${product.kind === "ready" ? "Is it still available?" : "Can you make it for me?"}`);
 
   useEffect(() => {
     const el = actionsRef.current;
@@ -188,7 +188,7 @@ export function ProductView({ product }: { product: Product }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease }}
             >
-              <p className={`text-[14px] font-semibold ${product.kind === "ready" ? "text-emerald-800" : "text-amber-800"}`}>{tagLabel(product)}</p>
+              <p className={`text-[14px] font-semibold ${sold ? "text-stone-500" : product.kind === "ready" ? "text-emerald-800" : "text-amber-800"}`}>{sold ? "Sold" : tagLabel(product)}</p>
               <h1 className="font-serif text-[32px] leading-[1.1] tracking-[-0.01em] lg:text-[44px]">{product.name}</h1>
               <p className="text-[20px] font-medium lg:text-[24px]">{priceLabel(product)}</p>
               <p className="text-[16px] leading-[1.55] text-stone-600 lg:text-[17px]">{product.description}</p>
