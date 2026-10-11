@@ -3,15 +3,18 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 // Paystack, server side only. The customer is sent to Paystack's own checkout page (card, bank transfer,
 // USSD) and comes back to their order page; nothing from Paystack runs on the site. Every payment is
-// checked here with Paystack before anything is marked paid. Mimi's subaccount takes the whole payment,
-// and Paystack's fee comes out of her share (bearer: subaccount), so the site's main account keeps nothing.
+// checked here with Paystack before anything is marked paid. The keys are Mimi's own Paystack business, so
+// the money goes straight to her. (Testing on another account? Set PAYSTACK_SUBACCOUNT to her subaccount and
+// each payment is passed to it whole, Paystack's fee coming out of her share.)
 // API: POST /transaction/initialize, GET /transaction/verify/:reference (amounts in kobo).
 
 const api = "https://api.paystack.co";
 const secret = () => process.env.PAYSTACK_SECRET_KEY ?? "";
 
-/** Both settings are in place (Netlify's settings, or .env.local on this computer). */
-export const paystackReady = () => /^sk_(test|live)_/.test(secret()) && /^ACCT_/.test(process.env.PAYSTACK_SUBACCOUNT ?? "");
+const subaccount = () => process.env.PAYSTACK_SUBACCOUNT ?? "";
+
+/** The key is in place (Netlify's settings, or .env.local on this computer), and a subaccount, if one is set, looks right. */
+export const paystackReady = () => /^sk_(test|live)_/.test(secret()) && (!subaccount() || /^ACCT_/.test(subaccount()));
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${api}${path}`, {
@@ -36,8 +39,7 @@ export async function startPaystack(p: { email: string; naira: number; reference
       reference: p.reference,
       callback_url: p.callbackUrl,
       channels: ["card", "bank_transfer", "ussd", "bank"],
-      subaccount: process.env.PAYSTACK_SUBACCOUNT,
-      bearer: "subaccount",
+      ...(subaccount() ? { subaccount: subaccount(), bearer: "subaccount" } : {}),
       // cancel_action: where Paystack's "Cancel payment" sends them.
       metadata: { ...p.metadata, cancel_action: p.cancelUrl },
     }),
