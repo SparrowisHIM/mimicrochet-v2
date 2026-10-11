@@ -153,6 +153,16 @@ function resample(levels: number[], n: number) {
  * Plays a voice note: the customer's own recording while they order (with Delete), or, in Mimi's studio,
  * the one they sent (no Delete; its length comes from the file).
  */
+function MicOffIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 22 22" fill="none" aria-hidden className="shrink-0">
+      <path d="M8 6a3 3 0 0 1 6 0v4.5M14 13.2A3 3 0 0 1 8 11V9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M5.5 10.5a5.5 5.5 0 0 0 9.4 3.9M16.5 10.5c0 .5-.06 1-.18 1.45M11 16v2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="m3.5 3.5 15 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function VoicePlayer({
   url,
   seconds: knownSeconds,
@@ -176,6 +186,8 @@ export function VoicePlayer({
   const [now, setNow] = useState(0);
   const [count, setCount] = useState(36);
   const [loadedSeconds, setLoadedSeconds] = useState(0);
+  // A voice note on the server can go missing (deleted two months after delivery, or an upload that failed).
+  const [missing, setMissing] = useState<string | null>(null);
   const seconds = knownSeconds ?? loadedSeconds;
   const voice = { seconds: Math.max(1, seconds) };
   const progress = useMotionValue(0);
@@ -186,6 +198,12 @@ export function VoicePlayer({
   useEffect(() => {
     if (autoFocus) play.current?.focus();
   }, [autoFocus]);
+
+  // An error before the page is interactive never reaches onError, so check once it's mounted.
+  useEffect(() => {
+    const a = audio.current;
+    if (a && (a.error || a.networkState === HTMLMediaElement.NETWORK_NO_SOURCE)) setMissing(url);
+  }, [url]);
 
   useEffect(() => {
     const el = track.current;
@@ -229,12 +247,21 @@ export function VoicePlayer({
     if (r) seekTo((clientX - r.left) / r.width);
   };
 
+  if (missing === url)
+    return (
+      <p className="flex min-w-0 flex-1 items-center gap-2.5 rounded-full bg-stone-100 py-2.5 pr-4 pl-3 text-[14px] text-stone-500">
+        <MicOffIcon />
+        This voice note isn’t available any more
+      </p>
+    );
+
   return (
     <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-full bg-stone-100 py-1 pr-1 pl-1">
       <audio
         ref={audio}
         src={url}
         preload="metadata"
+        onError={() => setMissing(url)}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => {
