@@ -40,7 +40,7 @@ export function BagDrawer() {
     >
       {items.length === 0 ? (
         <div className="flex flex-col items-start gap-4 py-6">
-          <p className="text-[16px] text-stone-600">Your bag is empty. Every piece is one of one, so grab yours before it’s gone.</p>
+          <p className="text-[16px] text-stone-600">Your bag is empty. Pieces that are ready now exist once, so grab yours before it’s gone.</p>
           <ButtonLink href="/shop" onClick={bagUi.close}>
             Shop the collection
           </ButtonLink>

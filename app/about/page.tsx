@@ -100,7 +100,7 @@ export default function AboutPage() {
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-7">
             <ButtonLink href="/shop" variant="light">
-              Shop the one-of-ones
+              Shop her pieces
             </ButtonLink>
             <a href={whatsappLink("Hi Mimi! I’d love to talk about a piece.")} target="_blank" rel="noreferrer" className={linkLightClass}>
               <WhatsAppIcon size={18} /> Chat with Mimi

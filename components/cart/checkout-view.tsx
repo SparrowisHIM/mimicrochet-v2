@@ -98,7 +98,7 @@ export function CheckoutView() {
     return (
       <div className="container-page flex min-h-[60vh] flex-col items-start justify-center gap-4 py-16 lg:items-center lg:text-center">
         <h1 className="font-serif text-[40px] leading-tight lg:text-[56px]">Your bag is empty</h1>
-        <p className="text-[17px] text-stone-600">Every piece is one of one. Find yours, then come back here to pay.</p>
+        <p className="text-[17px] text-stone-600">Find a piece you love, then come back here to pay.</p>
         <ButtonLink href="/shop">Shop the collection</ButtonLink>
       </div>
     );
