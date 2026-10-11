@@ -73,7 +73,7 @@ export function ProductView({ product }: { product: Product }) {
   const otherSize = Boolean(stockSize && size && size !== stockSize);
   const buyable = product.checkout === "bag" && !otherSize;
   const requestHref = `/custom-order?piece=${product.slug}${size ? `&size=${size}` : ""}`;
-  const ask = whatsappLink(`Hi Mimi! I’m looking at the ${product.name} (${priceLabel(product)}). Is it still available?`);
+  const ask = whatsappLink(`Hi Mimi! I’m looking at the ${product.name} (${priceLabel(product)}). ${product.kind === "ready" ? "Is it still available?" : "Can you make it for me?"}`);
 
   useEffect(() => {
     const el = actionsRef.current;
@@ -253,7 +253,7 @@ export function ProductView({ product }: { product: Product }) {
               <li>Delivery anywhere in Nigeria. You pay the rider on arrival.</li>
               <li>
                 {product.kind === "ready" ? "Want it in another colour? " : "Have something else in mind? "}
-                <Link href="/custom-order" className="text-stone-900 underline underline-offset-4">
+                <Link href={product.kind === "ready" ? `/custom-order?piece=${product.slug}` : "/custom-order"} className="text-stone-900 underline underline-offset-4">
                   Start a custom order
                 </Link>
               </li>
