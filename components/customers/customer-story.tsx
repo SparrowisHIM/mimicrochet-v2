@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronIcon, CloseIcon } from "@/components/icons";
 import { ButtonLink, linkClass } from "@/components/ui/button";
 import type { Customer } from "@/lib/customers";
+import { useBackCloses } from "@/lib/history";
 import { lockScroll } from "@/lib/scroll-lock";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -265,6 +266,8 @@ export function CustomerStory({
     if (!customer) return;
     return lockScroll();
   }, [customer]);
+  // The phone's Back closes the story (moving to the next story isn't a new step).
+  useBackCloses(Boolean(customer), onClose);
 
   return (
     <AnimatePresence>

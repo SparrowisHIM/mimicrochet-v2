@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useDragControls, useReducedMotion, type PanInfo } from "motion/react";
 import { useEffect, useEffectEvent, useRef, type ReactNode } from "react";
 import { CloseIcon } from "@/components/icons";
+import { useBackCloses } from "@/lib/history";
 import { lockScroll } from "@/lib/scroll-lock";
 import { useMedia } from "@/lib/use-media";
 
@@ -42,6 +43,8 @@ export function Sheet({
   const center = side === "center" && desktop;
   // A new onClose every render must not re-run the open effect (that would steal focus back to the first button).
   const close = useEffectEvent(() => onClose());
+  // The phone's Back closes the sheet instead of leaving the page.
+  useBackCloses(open, onClose);
 
   useEffect(() => {
     if (!open) return;

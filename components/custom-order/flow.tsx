@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { CardStack } from "@/components/ui/card-stack";
 import { Chip } from "@/components/ui/chip";
 import { fitWords, hasFit, heightLabel, saveFit, useSavedFit, type Fit } from "@/lib/fit";
+import { useBack, useBackLink } from "@/lib/history";
 import { isFitKind, kindLabel, type PieceKind } from "@/lib/fit-outline";
 import { isLgaOf } from "@/lib/nigeria";
 import { isRequestDate } from "@/lib/request-date";
@@ -177,11 +178,13 @@ function Label({ children, hint }: { children: React.ReactNode; hint?: string })
 
 /** The step and the way out, under the site header. Without a step it's the confirmation. */
 function StepBar({ step }: { step?: number }) {
+  // Exit returns to the page they came from (a review, a piece, the shop), or home when they arrived here first.
+  const exit = useBackLink("/");
   return (
     <div className="container-page flex flex-col gap-3 pt-5 lg:pt-8">
       <div className="flex items-center justify-between text-[14px]">
         <span className="font-medium text-stone-500 tabular-nums">{step === undefined ? "Custom order" : `Custom order · Step ${step + 1} of 3`}</span>
-        <Link href="/" className="font-medium underline underline-offset-4">
+        <Link {...exit} className="font-medium underline underline-offset-4 transition-colors hover:text-stone-600">
           Exit
         </Link>
       </div>
@@ -364,7 +367,8 @@ function Summary({ draft, rows, step, onJump, compact }: { draft: Draft; rows: R
 
 export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: Piece; initialSize?: string }) {
   const reduce = useReducedMotion();
-  const [step, setStep] = useState(initialPiece ? 1 : 0);
+  const entryStep = initialPiece ? 1 : 0;
+  const [step, setStep] = useState(entryStep);
   const [dir, setDir] = useState(1);
   // A returning customer's fit (kept on their phone) fills in by itself. The first change they make to
   // anything takes a copy of it into this order, so from then on it's theirs to edit.
@@ -664,8 +668,10 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
     "She’ll message you on WhatsApp to agree the price. Nothing is charged today.",
   ][step];
 
+  // Back on the step they started on (a piece already chosen) leaves, like Exit; otherwise it's the step before.
+  const leave = useBack("/");
   const backButton = step > 0 && (
-    <button type="button" onClick={() => go(step - 1)} className="px-1 text-[16px] font-semibold underline underline-offset-4">
+    <button type="button" onClick={() => (step === entryStep ? leave() : go(step - 1))} className="px-1 text-[16px] font-semibold underline underline-offset-4">
       Back
     </button>
   );

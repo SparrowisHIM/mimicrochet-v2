@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { BagIcon, CloseIcon, HeartIcon, MenuIcon, SearchIcon } from "@/components/icons";
 import { bagUi } from "@/lib/bag";
 import { bagStore, savedStore } from "@/lib/local-store";
+import { useBackCloses } from "@/lib/history";
 import { navLinks, site } from "@/lib/site";
 import { lockScroll } from "@/lib/scroll-lock";
 
@@ -44,6 +45,8 @@ export function Header() {
     setMenuOpen(false);
   }
   const closeMenu = () => setMenuOpen(false);
+  // The phone's Back closes the menu instead of leaving the page.
+  useBackCloses(menuOpen, closeMenu);
 
   useEffect(() => {
     if (!menuOpen) return;
