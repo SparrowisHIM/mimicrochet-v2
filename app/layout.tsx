@@ -6,6 +6,7 @@ import { Footer } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
 import { ShopOnly } from "@/components/site/shop-only";
 import { InputModality } from "@/components/site/input-modality";
+import { NavMemory } from "@/components/site/nav-memory";
 import { Intro } from "@/components/site/intro";
 import { site } from "@/lib/site";
 import { siteUrl } from "@/lib/site-url";
@@ -76,6 +77,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </ShopOnly>
         <BagDrawer />
         <InputModality />
+        <NavMemory />
       </body>
     </html>
   );
