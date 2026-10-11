@@ -13,7 +13,7 @@ import { AreaPicker, StatePicker } from "@/components/form/place-picker";
 import { isLgaOf, isNigerianState } from "@/lib/nigeria";
 import { newOrderIds, saveOrder, type Order } from "@/lib/orders";
 import type { Product } from "@/lib/products";
-import { formatNaira } from "@/lib/site";
+import { formatNaira, paymentsLive } from "@/lib/site";
 import { fullPhone, hasWords, isEmail, isName, phoneDigits, phoneProblem } from "@/lib/validate";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -84,7 +84,7 @@ export function CheckoutView() {
       notes: f.note.trim() || undefined,
       stage: 0,
       price: total,
-      updates: [{ stage: 0, note: "Paid. Mimi is packing your order.", at: "Today" }],
+      updates: [{ stage: 0, note: paymentsLive ? "Paid. Mimi is packing your order." : "Test order: nothing was charged and Mimi hasn’t been told.", at: "Today" }],
     };
     saveOrder(order);
     setHeld(items);
