@@ -15,6 +15,7 @@ import { Chip } from "@/components/ui/chip";
 import { SafeImage } from "@/components/ui/safe-image";
 import { depositOf, findOrder, useOrders, type Order } from "@/lib/orders";
 import { bagStore } from "@/lib/local-store";
+import { useFreshOnReturn } from "@/lib/use-fresh-on-return";
 import { isEmail } from "@/lib/validate";
 import { formatNaira, paymentsLive, whatsappLink } from "@/lib/site";
 import { stages } from "@/lib/stages";
@@ -469,6 +470,8 @@ function usePaymentWatch(code: string, payment: Payment) {
 
 export function TrackingView({ code, saved, justPaid = false, payment = null }: { code: string; saved?: Order | null; justPaid?: boolean; payment?: Payment }) {
   const paymentNow = usePaymentWatch(code, payment);
+  // Orders on the server: coming back to the page shows what changed meanwhile (Mimi set it ready, say).
+  useFreshOnReturn(Boolean(saved));
   const orders = useOrders();
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const local = findOrder(orders, code);

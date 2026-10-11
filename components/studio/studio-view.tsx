@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
@@ -20,6 +19,7 @@ import { depositOf } from "@/lib/order-code";
 import type { Order } from "@/lib/orders";
 import type { StudioOrder } from "@/lib/server/studio";
 import { checkPhoto } from "@/lib/upload-safety";
+import { useFreshOnReturn } from "@/lib/use-fresh-on-return";
 import { formatNaira } from "@/lib/site";
 import { shopStages, stages } from "@/lib/stages";
 
@@ -65,6 +65,16 @@ const stageTone = ["bg-amber-100 text-amber-800", "bg-stone-100 text-stone-700",
 const stageName = ["New", "Price agreed", "In progress", "Ready", "Delivered"];
 const dueClass = { normal: "text-stone-500", soon: "font-semibold text-amber-700", late: "font-semibold text-red-700" };
 const waTo = (phone: string, text: string) => `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
+
+/** The customer's page, in a browser tab of its own: from the home-screen app it would open inside the studio,
+ *  where there's no pull-to-refresh, and it always loads fresh this way. */
+function TheirPage({ code }: { code: string }) {
+  return (
+    <a href={`/t/${code}`} target="_blank" rel="noopener" className={`${linkClass} shrink-0 whitespace-nowrap`}>
+      View their page
+    </a>
+  );
+}
 
 /** Ready, paid by deposit, and the 40% still to come (they pay it on their page). */
 const balanceDue = (o: Order) => o.kind !== "shop" && o.stage === 3 && Boolean(o.depositPaid) && !o.paidInFull && !o.balancePaid;
@@ -323,7 +333,7 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
         <Stepper stage={o.stage} />
         <div className="flex items-center justify-between gap-3 border-t border-stone-100 pt-3 text-[14px]">
           <span className="text-stone-500">{o.name} sees “{stages[o.stage].label}”</span>
-          <Link href={`/t/${o.code}`} className={`${linkClass} shrink-0 whitespace-nowrap`}>View their page</Link>
+          <TheirPage code={o.code} />
         </div>
       </section>
 
@@ -446,7 +456,7 @@ function ShopDetail({ o }: { o: Row }) {
     <div className="flex flex-col gap-4">
       <section className="flex items-center justify-between gap-3 rounded-[22px] bg-white p-4 text-[14px]">
         <span className="text-stone-500">{o.name} sees “{shopStages[o.stage]}”</span>
-        <Link href={`/t/${o.code}`} className={`${linkClass} shrink-0 whitespace-nowrap`}>View their page</Link>
+        <TheirPage code={o.code} />
       </section>
 
       <section className="flex flex-col gap-3 rounded-[22px] border border-amber-200 bg-amber-50 p-5">
@@ -542,6 +552,8 @@ function OrderPanel({ o, onClose }: { o: Row; onClose: () => void }) {
 
 export function StudioView({ orders, publicKey }: { orders: Row[]; publicKey: string }) {
   const router = useRouter();
+  // Back in the studio after a ping or another app: show the latest (a payment that came in, say).
+  useFreshOnReturn();
   const hello = useGreeting();
   const [filter, setFilter] = useState<number | "all" | "late" | "shop">("all");
   const [open, setOpen] = useState<string | null>(null);
