@@ -21,7 +21,7 @@ import type { StudioOrder } from "@/lib/server/studio";
 import { checkPhoto } from "@/lib/upload-safety";
 import { useFreshOnReturn } from "@/lib/use-fresh-on-return";
 import { formatNaira } from "@/lib/site";
-import { shopStages, stages } from "@/lib/stages";
+import { shopStages, shopStep, stages } from "@/lib/stages";
 
 // Mimi's studio: her real orders from the server (app/studio/page.tsx), and every change she makes saved
 // there, so the customer's page shows it at once. Signed in only (the server checks every action).
@@ -79,7 +79,7 @@ function TheirPage({ code }: { code: string }) {
 /** Ready, paid by deposit, and the 40% still to come (they pay it on their page). */
 const balanceDue = (o: Order) => o.kind !== "shop" && o.stage === 3 && Boolean(o.depositPaid) && !o.paidInFull && !o.balancePaid;
 /** The stage chip: shop orders have their own steps (Paid, On its way). */
-const stageLabel = (o: Order) => (o.kind === "shop" ? shopStages[o.stage] : stageName[o.stage]);
+const stageLabel = (o: Order) => (o.kind === "shop" ? shopStages[shopStep(o.stage)] : stageName[o.stage]);
 
 function nextStep(o: Row) {
   if (o.kind === "shop") return o.stage === 0 ? "Pack the order" : "Waiting for them to get it";
@@ -497,7 +497,7 @@ function ShopDetail({ o }: { o: Row }) {
   return (
     <div className="flex flex-col gap-4">
       <section className="flex items-center justify-between gap-3 rounded-[22px] bg-white p-4 text-[14px]">
-        <span className="text-stone-500">{o.name} sees “{shopStages[o.stage]}”</span>
+        <span className="text-stone-500">{o.name} sees “{shopStages[shopStep(o.stage)]}”</span>
         <TheirPage code={o.code} />
       </section>
 

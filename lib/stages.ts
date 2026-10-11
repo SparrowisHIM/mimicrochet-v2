@@ -15,3 +15,6 @@ export function stageIndex(key: StageKey) {
 
 // Ready pieces bought at checkout move through four steps instead.
 export const shopStages = ["Paid", "Packing", "On its way", "Delivered"] as const;
+
+/** The step a shop order is on: paid means Mimi is already packing it (one tap later it's with the rider). */
+export const shopStep = (stage: number) => (stage === 0 ? 1 : stage);
