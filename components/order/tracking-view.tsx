@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { checkPayment, confirmReceived, payForOrder } from "@/app/actions/orders";
 import { WhatsAppIcon } from "@/components/icons";
 import { ShopOrderCard } from "@/components/cart/shop-order-card";
+import { PaidMoment } from "@/components/order/paid-moment";
 import { Confetti } from "@/components/ui/confetti";
 import { StageIcon } from "@/components/order/stage-icons";
 import { Button, ButtonChip, buttonClass, linkClass } from "@/components/ui/button";
@@ -75,12 +76,12 @@ function SpotlightOutline({ show }: { show: boolean }) {
 
 const seenKey = (code: string) => `mimi:seen:${code}`;
 
-function useSpotlight(o: Order | undefined, target: RefObject<HTMLDivElement | null>) {
+function useSpotlight(o: Order | undefined, target: RefObject<HTMLDivElement | null>, hold = false) {
   const reduce = useReducedMotion();
   // settle: the blur is fading out and the cards still sit above it, so they never sink under it.
   const [phase, setPhase] = useState<"idle" | "lift" | "settle" | "done">("idle");
   useEffect(() => {
-    if (!o) return;
+    if (!o || hold) return;
     let seen = o.stage;
     const markSeen = () => {
       try {
@@ -121,7 +122,7 @@ function useSpotlight(o: Order | undefined, target: RefObject<HTMLDivElement | n
       }, 700),
     );
     return () => timers.forEach(clearTimeout);
-  }, [o, reduce, target]);
+  }, [o, reduce, target, hold]);
   return phase;
 }
 
@@ -357,6 +358,8 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 
 function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) {
   const reduce = useReducedMotion();
+  const [moment, setMoment] = useState(justPaid);
+  const endMoment = useCallback(() => setMoment(false), []);
   // Until payments are live every shop checkout is a test: say so, and let them send the order to Mimi for real.
   const test = !paymentsLive;
   const sendForReal = whatsappLink(
@@ -390,6 +393,7 @@ function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) 
 
   return (
     <div className="container-page flex justify-center pt-8 pb-24 lg:pt-14">
+      {moment && !test && order.price && <PaidMoment title="Paid! It’s all yours." amount={order.price} note="Mimi is packing your order. Your receipt is in your email." onDone={endMoment} />}
       <div className="flex w-full max-w-[560px] flex-col gap-5">
         <div className="flex flex-col items-center gap-3 text-center">
           {justPaid && !test ? (
@@ -533,10 +537,14 @@ export function TrackingView({
     return { ...saved, photos, piece: saved.piece.image ? saved.piece : { ...saved.piece, image: local?.piece.image ?? photos[0] } };
   }, [saved, local]);
   const latestRef = useRef<HTMLDivElement>(null);
-  const phase = useSpotlight(order, latestRef);
+  // Back from Paystack: the paid moment plays first, then the spotlight on what changed.
+  const [moment, setMoment] = useState(justPaid);
+  const endMoment = useCallback(() => setMoment(false), []);
+  const phase = useSpotlight(order, latestRef, moment);
   const [showAll, setShowAll] = useState(false);
 
-  if (!hydrated) return <div className="min-h-[70vh]" />;
+  // Straight back from Paystack, the paid moment's backdrop is already up while the page wakes, so the order never flashes first.
+  if (!hydrated) return <div className="min-h-[70vh]">{justPaid && <div className="fixed inset-0 z-[70] bg-orange-50 motion-reduce:hidden" />}</div>;
   // A shop order only exists once Paystack confirms it: until then, say where the payment stands.
   if (!order && (paymentNow === "pending" || paymentNow === "failed"))
     return (
@@ -584,6 +592,16 @@ export function TrackingView({
     );
 
   if (order.kind === "shop") return <ShopTracking order={order} justPaid={justPaid} />;
+
+  const word = pieceWord(order.piece.name);
+  const paidNow =
+    moment && order.price && (order.stage === 2 || (order.stage === 3 && order.balancePaid))
+      ? order.balancePaid
+        ? { title: "Balance paid", amount: order.price - depositOf(order.price), note: "Mimi is booking your rider. Your receipt is in your email." }
+        : order.paidInFull
+          ? { title: "Paid in full", amount: order.price, note: `Mimi is starting on your ${word}. Your receipt is in your email.` }
+          : { title: "Deposit paid", amount: depositOf(order.price), note: `Mimi is starting on your ${word}. Your receipt is in your email.` }
+      : null;
 
   const h = headline(order, justPaid);
   const latest = order.updates[order.updates.length - 1];
@@ -756,6 +774,7 @@ export function TrackingView({
 
   return (
     <div className="relative pb-28 lg:pb-24">
+      {paidNow && <PaidMoment title={paidNow.title} amount={paidNow.amount} note={paidNow.note} onDone={endMoment} />}
       <AnimatePresence>
         {lifted && (
           <motion.div className="fixed inset-0 z-30 bg-orange-50/50 backdrop-blur-[6px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.5 } }} aria-hidden />
