@@ -47,11 +47,15 @@ export async function startPaystack(p: { email: string; naira: number; reference
 
 export type Verified = { paid: boolean; failed: boolean; kobo: number; currency: string; channel: string | null };
 
-/** What Paystack says about a payment. `paid` only for a finished, successful charge. */
+/** What Paystack says about a payment. `paid` only for a finished, successful charge. `kobo` is the amount the
+ *  site asked for: when the account passes Paystack's fee on to customers, `amount` also includes the fee, and
+ *  `requested_amount` is the original. */
 export async function verifyPaystack(reference: string): Promise<Verified> {
-  const d = await call<{ status: string; amount: number; currency: string; reference: string; channel?: string }>(`/transaction/verify/${encodeURIComponent(reference)}`);
+  const d = await call<{ status: string; amount: number; requested_amount?: number; currency: string; reference: string; channel?: string }>(
+    `/transaction/verify/${encodeURIComponent(reference)}`,
+  );
   if (d.reference !== reference) throw new Error("Paystack answered for another payment");
-  return { paid: d.status === "success", failed: d.status === "failed" || d.status === "reversed", kobo: d.amount, currency: d.currency, channel: d.channel ?? null };
+  return { paid: d.status === "success", failed: d.status === "failed" || d.status === "reversed", kobo: d.requested_amount ?? d.amount, currency: d.currency, channel: d.channel ?? null };
 }
 
 /** Paystack signs each webhook with the secret key (HMAC-SHA512 of the raw body, hex). */
