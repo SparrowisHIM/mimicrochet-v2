@@ -29,7 +29,7 @@ export function FreshOffTheHook({ pieces }: { pieces: Product[] }) {
               transition={{ duration: 0.3, ease: [0.19, 1, 0.22, 1] }}
               className={i >= 6 ? "max-lg:hidden" : ""}
             >
-              <Curtain index={i}>
+              <Curtain index={i} className="h-full">
                 <ProductCard product={p} />
               </Curtain>
             </motion.li>

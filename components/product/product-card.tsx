@@ -14,9 +14,11 @@ export function ProductCard({
   preload?: boolean;
 }) {
   const [main, second] = product.images;
+  // Pieces that go in the bag are bought; the rest are requested and made.
+  const action = product.checkout === "bag" ? "Buy now" : "Have it made";
 
   return (
-    <article className="group relative flex flex-col gap-3 lg:gap-3.5">
+    <article className="group relative flex h-full flex-col gap-3 lg:gap-3.5">
       <div className="relative">
         <Link
           href={`/shop/${product.slug}`}
@@ -48,12 +50,17 @@ export function ProductCard({
         <SaveButton slug={product.slug} name={product.name} className="absolute top-2 right-2 lg:top-3 lg:right-3" />
       </div>
 
-      <Link href={`/shop/${product.slug}`} className="flex flex-col gap-1">
-        <h3 className="text-[15px] leading-snug font-medium text-stone-900 lg:text-[17px] lg:leading-[1.3]">{product.name}</h3>
-        <p className="text-[14px] leading-[1.3] text-stone-600 lg:text-[16px]">{priceLabel(product)}</p>
-        <p className={`text-[13px] leading-[1.3] font-semibold ${product.kind === "ready" ? "text-emerald-800" : "text-amber-800"}`}>
+      {/* Availability first, then a name that always has room for two lines on phones (so every row lines up), the
+          price, and the action pinned to the bottom of the card. */}
+      <Link href={`/shop/${product.slug}`} className="flex flex-1 flex-col gap-1">
+        <p className={`text-[12px] leading-[1.3] font-semibold lg:text-[13px] ${product.kind === "ready" ? "text-emerald-800" : "text-amber-800"}`}>
           {tagLabel(product)}
         </p>
+        <h3 className="line-clamp-2 min-h-[2.6em] text-[15px] leading-[1.3] font-medium text-stone-900 lg:min-h-0 lg:text-[17px]">{product.name}</h3>
+        <p className="text-[14px] leading-[1.3] text-stone-600 lg:text-[16px]">{priceLabel(product)}</p>
+        <span className="card-cta mt-auto pt-2.5 pb-px text-[14px] leading-[1.3] font-semibold text-stone-900 lg:pt-3 lg:text-[15px]">
+          {action}
+        </span>
       </Link>
     </article>
   );
