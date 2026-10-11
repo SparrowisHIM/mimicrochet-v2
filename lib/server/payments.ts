@@ -1,5 +1,7 @@
 import "server-only";
 import { randomBytes, randomInt } from "node:crypto";
+import { headers } from "next/headers";
+import { cloudflareHost } from "@/lib/front-door";
 import { db } from "@/lib/server/db";
 import { paystackReady, startPaystack, verifyPaystack } from "@/lib/server/paystack";
 import { notifyMimi } from "@/lib/server/push";
@@ -25,6 +27,12 @@ const newReference = (tag: string) => `${tag}-${randomBytes(9).toString("base64u
 const isReference = (r: string) => /^[A-Za-z0-9.=-]{8,64}$/.test(r);
 
 /** Pay for a custom order: the 60% deposit or the full price once Mimi has set it, or the 40% balance when it's ready. */
+/** Where Paystack sends them back: the Cloudflare test link if that's where they are, else the site's own address. */
+async function returnBase() {
+  const host = (await headers()).get("x-mimi-host");
+  return host === cloudflareHost ? `https://${host}` : siteUrl;
+}
+
 export async function startOrderPayment(code: string, purpose: OrderPurpose, emailInput: string | null): Promise<Started> {
   if (!paystackReady()) return notReady;
   if (!isOrderCode(code)) return moved;
@@ -49,7 +57,8 @@ export async function startOrderPayment(code: string, purpose: OrderPurpose, ema
     sql`update orders set email = ${email}, updated_at = now() where id = ${o.id}`,
   ]);
   try {
-    const url = await startPaystack({ email, naira, reference, callbackUrl: `${siteUrl}/t/${code}`, cancelUrl: `${siteUrl}/t/${code}`, metadata: { order: o.number as string, purpose } });
+    const base = await returnBase();
+    const url = await startPaystack({ email, naira, reference, callbackUrl: `${base}/t/${code}`, cancelUrl: `${base}/t/${code}`, metadata: { order: o.number as string, purpose } });
     return { ok: true, url };
   } catch (e) {
     console.error("startOrderPayment", e);
@@ -113,7 +122,8 @@ export async function startShopCheckout(input: unknown): Promise<Started> {
   };
   await db()`insert into payments (reference, purpose, order_code, amount, email, cart) values (${reference}, 'shop', ${code}, ${total}, ${email}, ${JSON.stringify(cart)}::jsonb)`;
   try {
-    const url = await startPaystack({ email, naira: total, reference, callbackUrl: `${siteUrl}/t/${code}`, cancelUrl: `${siteUrl}/checkout`, metadata: { purpose: "shop" } });
+    const base = await returnBase();
+    const url = await startPaystack({ email, naira: total, reference, callbackUrl: `${base}/t/${code}`, cancelUrl: `${base}/checkout`, metadata: { purpose: "shop" } });
     return { ok: true, url };
   } catch (e) {
     console.error("startShopCheckout", e);

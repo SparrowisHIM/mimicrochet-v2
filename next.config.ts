@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { cloudflareHost } from "./lib/front-door";
 
 const dev = process.env.NODE_ENV === "development";
 // Vercel preview deployments show Vercel's feedback toolbar, which loads from vercel.live.
@@ -51,6 +52,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Orders, payments and the studio also work when the site is opened through Cloudflare (lib/front-door.ts).
+  experimental: { serverActions: { allowedOrigins: [cloudflareHost] } },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
