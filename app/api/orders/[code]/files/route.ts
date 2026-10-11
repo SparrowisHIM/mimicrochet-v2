@@ -1,4 +1,6 @@
+import { fromThisSite } from "@/lib/server/same-site";
 import { orderTakingFiles, saveOrderFile } from "@/lib/server/orders";
+import { tooMany } from "@/lib/server/rate-limit";
 import { checkPhoto, checkVoice, MAX_UPLOAD_BYTES } from "@/lib/server/uploads";
 
 // Adds one of the customer's photos (?kind=photo&position=0…5) or their voice note (?kind=voice&position=0)
@@ -8,8 +10,7 @@ const answer = (status: number, reason?: string) => Response.json(reason ? { ok:
 
 export async function POST(request: Request, ctx: RouteContext<"/api/orders/[code]/files">) {
   // Only this site's own pages may post here (a server action gets this check from Next.js).
-  const origin = request.headers.get("origin");
-  if (origin && new URL(origin).host !== request.headers.get("host")) return answer(403, "wrong site");
+  if (!fromThisSite(request)) return answer(403, "wrong site");
 
   const { code } = await ctx.params;
   const url = new URL(request.url);
@@ -19,6 +20,8 @@ export async function POST(request: Request, ctx: RouteContext<"/api/orders/[cod
   if (Number(request.headers.get("content-length") ?? 0) > MAX_UPLOAD_BYTES) return answer(413, "too big");
 
   try {
+    // A whole order is at most 6 photos and a voice note; this leaves room for retries on a weak connection.
+    if (await tooMany("upload", { perVisitor: [60, 60], overall: [600, 60] })) return answer(429, "too many uploads");
     const order = await orderTakingFiles(code);
     if (!order) return answer(404, "no order taking files");
     const allowed = kind === "photo" ? position >= 0 && position < order.photoCount : order.hasVoice && position === 0;

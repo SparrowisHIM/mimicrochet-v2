@@ -1,3 +1,4 @@
+import { fromThisSite } from "@/lib/server/same-site";
 import { putFile, deleteFile } from "@/lib/server/files";
 import { db } from "@/lib/server/db";
 import { isStudio } from "@/lib/server/session";
@@ -11,8 +12,7 @@ import { randomBytes } from "node:crypto";
 const answer = (status: number, reason?: string) => Response.json(reason ? { ok: false, reason } : { ok: true }, { status });
 
 export async function POST(request: Request, ctx: RouteContext<"/api/studio/orders/[code]/updates">) {
-  const origin = request.headers.get("origin");
-  if (origin && new URL(origin).host !== request.headers.get("host")) return answer(403, "wrong site");
+  if (!fromThisSite(request)) return answer(403, "wrong site");
   if (!(await isStudio())) return answer(401, "not signed in");
   if (Number(request.headers.get("content-length") ?? 0) > MAX_UPLOAD_BYTES + 20_000) return answer(413, "too big");
 

@@ -22,6 +22,8 @@ const worker = {
     const headers = new Headers(request.headers);
     // The site builds its own links (Paystack's return trip) from this, so customers stay on this address.
     headers.set("x-mimi-host", url.host);
+    // Netlify sees every request coming from Cloudflare, so its spam limits need the visitor's own address.
+    headers.set("x-mimi-client-ip", request.headers.get("cf-connecting-ip") ?? "");
     headers.delete("host");
 
     const ttl = request.method === "GET" ? keepFor(url.pathname) : 0;
