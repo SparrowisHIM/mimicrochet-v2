@@ -88,6 +88,8 @@ export function categoryCounts() {
 }
 
 export function relatedProducts(product: Product, n = 4) {
+  // Earrings are made to order, so they'd never match the ready pieces below: show the other earrings.
+  if (product.category === "Earrings") return products.filter((p) => p.slug !== product.slug && p.category === "Earrings").slice(0, n);
   const ready = products.filter((p) => p.slug !== product.slug && p.kind === "ready");
   const same = ready.filter((p) => p.category === product.category);
   return [...same, ...ready.filter((p) => p.category !== product.category)].slice(0, n);
