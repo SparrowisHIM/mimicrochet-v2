@@ -10,7 +10,14 @@ export const metadata: Metadata = {
   description: "Talk to Mimi on WhatsApp about a piece, your size, or that idea in your head.",
 };
 
-const questions = ["Is this piece still available?", "Can you make this in my size?", "How much for a custom piece?", "Where’s my order?"];
+// Each message stops where only the customer can finish it (which piece, their idea, their order number),
+// so Mimi never has to ask back.
+const questions = [
+  { label: "Ask about a piece", text: "Hi Mimi! I’d like to ask about this piece: " },
+  { label: "Can you make a piece in my size?", text: "Hi Mimi! Can you make this piece in my size? The piece: " },
+  { label: "How much for a custom piece?", text: "Hi Mimi! How much would a custom piece cost? Here’s my idea: " },
+  { label: "Where’s my order?", text: "Hi Mimi! Where’s my order? My order number is MIMI-" },
+];
 
 export default function ContactPage() {
   return (
@@ -27,14 +34,14 @@ export default function ContactPage() {
             </span>
             <span className="flex flex-col">
               <span className="font-serif text-[22px] leading-tight lg:text-[24px]">Chat on WhatsApp</span>
-              <span className="text-[13px] text-stone-400">Tap a question to start. It’s already typed for you.</span>
+              <span className="text-[13px] text-stone-400">Tap a question and WhatsApp opens with it typed. Add the piece’s name or a screenshot.</span>
             </span>
           </div>
           <ul className="flex flex-col gap-2">
-            {questions.map((q) => (
-              <li key={q}>
-                <a href={whatsappLink(`Hi Mimi! ${q}`)} target="_blank" rel="noreferrer" className="group flex items-center justify-between rounded-[14px] border border-white/15 bg-white/5 px-4 py-3.5 text-[16px] transition-colors hover:border-white/40 hover:bg-white/10">
-                  {q}
+            {questions.map(({ label, text }) => (
+              <li key={label}>
+                <a href={whatsappLink(text)} target="_blank" rel="noreferrer" className="group flex items-center justify-between rounded-[14px] border border-white/15 bg-white/5 px-4 py-3.5 text-[16px] transition-colors hover:border-white/40 hover:bg-white/10">
+                  {label}
                   <ChevronIcon size={18} className="text-amber-300 transition-transform group-hover:translate-x-1" />
                 </a>
               </li>
