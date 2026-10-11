@@ -18,6 +18,7 @@ import { PriceRange } from "@/components/shop/price-range";
 import { ShadePicker } from "@/components/shop/shade-picker";
 import { hsvToHex, matchShade } from "@/lib/colour-match";
 import { applyFilters, defaultFilters, priceDomain, sorts, type ShopFilters } from "@/lib/shop-filter";
+import { useLiveProducts } from "@/lib/stock";
 import { hasSizes } from "@/lib/sizes";
 
 const PAGE = 15;
@@ -81,10 +82,12 @@ export function ShopView({ initial }: { initial: Partial<ShopFilters> & { search
     setShown(PAGE);
   };
 
-  const results = useMemo(() => applyFilters(f), [f]);
+  // Sold one-of-ones count as made for you, so "Ready now only" and the counts only show what can be bought today.
+  const live = useLiveProducts();
+  const results = useMemo(() => applyFilters(f, undefined, live), [f, live]);
   const visible = results.slice(0, shown);
-  const catCount = (c: string) => applyFilters(f, "category").filter((p) => c === "all" || p.category === c).length;
-  const typeCount = (t: "ready" | "made") => applyFilters(f, "type").filter((p) => p.kind === t).length;
+  const catCount = (c: string) => applyFilters(f, "category", live).filter((p) => c === "all" || p.category === c).length;
+  const typeCount = (t: "ready" | "made") => applyFilters(f, "type", live).filter((p) => p.kind === t).length;
   const activeExtras = (f.price ? 1 : 0) + f.colours.length + (f.sort !== "newest" ? 1 : 0);
 
   const categoryChips = (

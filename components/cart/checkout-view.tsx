@@ -209,7 +209,7 @@ export function CheckoutView() {
               {gone.map((g) => (
                 <p key={g.slug}>
                   {g.sold
-                    ? `${getProduct(g.slug)?.name ?? "A piece"} just sold, so it’s been taken out of your bag. Mimi can make you one like it.`
+                    ? `The ${getProduct(g.slug)?.name ?? "piece"} found a home, so it’s out of your bag. Mimi can make you one.`
                     : `Someone is paying for the ${getProduct(g.slug)?.name ?? "piece"} right now. If they don’t finish, it’s yours to buy in 15 minutes.`}
                 </p>
               ))}

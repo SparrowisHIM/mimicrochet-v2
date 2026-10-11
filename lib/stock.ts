@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { stockFor } from "@/app/actions/orders";
-import { products } from "@/lib/products";
+import { asMadeForYou, products, type Product } from "@/lib/products";
 
-// Which one-of-one pieces have sold, for the cards in the shop and on Home. Asked once for the whole
-// page (not once per card), and again when the customer comes back to the tab a while later.
+// Which one-of-one pieces have sold, so the shop and Home can show them as made for you instead of
+// Ready now. Asked once for the whole page (not once per card), and again when the customer comes back
+// to the tab a while later.
 
 const oneOfOnes = products.filter((p) => p.kind === "ready").map((p) => p.slug);
-let sold = new Set<string>();
+let sold: ReadonlySet<string> = new Set();
 let askedAt = 0;
 const listeners = new Set<() => void>();
+const none: ReadonlySet<string> = new Set();
 
 /** Asks the server, at most every 30 seconds; every card on the page updates from the one answer. */
 function ask() {
@@ -34,8 +36,20 @@ function subscribe(onChange: () => void) {
   };
 }
 
-/** True once the server says this piece has sold (false while asking, and on the server). */
-export function useSold(slug: string) {
+/** The slugs the server says have sold (empty while asking, and on the server). */
+export function useSoldSlugs() {
   useEffect(ask, []);
-  return useSyncExternalStore(subscribe, () => sold.has(slug), () => false);
+  return useSyncExternalStore(subscribe, () => sold, () => none);
+}
+
+/** This piece as customers should see it now: a sold one-of-one becomes made for you. */
+export function useLiveProduct(p: Product) {
+  const soldNow = useSoldSlugs().has(p.slug) && p.kind === "ready";
+  return useMemo(() => (soldNow ? asMadeForYou(p) : p), [p, soldNow]);
+}
+
+/** A list of pieces as customers should see them now (for filters, counts and the Ready now toggle). */
+export function useLiveProducts(list: Product[] = products) {
+  const soldNow = useSoldSlugs();
+  return useMemo(() => (soldNow.size ? list.map((p) => (p.kind === "ready" && soldNow.has(p.slug) ? asMadeForYou(p) : p)) : list), [list, soldNow]);
 }

@@ -102,6 +102,14 @@ export function priceLabel(p: Pick<Product, "price" | "priceFrom">) {
   return p.priceFrom ? `From ${n}` : n;
 }
 
+/**
+ * A one-of-one that has sold stays in the shop as a piece Mimi makes to order: no size in stock, and the
+ * price agreed on WhatsApp (a remake can cost more). Nothing says "sold": to a new visitor it's simply made for you.
+ */
+export function asMadeForYou(p: Product): Product {
+  return { ...p, kind: "made", price: null, priceFrom: false, checkout: "request", size: undefined };
+}
+
 export function tagLabel(p: Product) {
   if (p.kind === "ready") return "Ready now";
   return p.leadTime ?? "Made for you";

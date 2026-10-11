@@ -3,7 +3,8 @@ import { CustomOrderFlow } from "@/components/custom-order/flow";
 import { getCustomer } from "@/lib/customers";
 import { getIdea } from "@/lib/ideas";
 import { pieceFromCustomer, pieceFromIdea, pieceFromProduct } from "@/lib/pieces";
-import { getProduct } from "@/lib/products";
+import { asMadeForYou, getProduct } from "@/lib/products";
+import { pieceStatus } from "@/lib/server/payments";
 
 export const metadata: Metadata = {
   title: "Custom order",
@@ -16,7 +17,9 @@ export default async function CustomOrderPage({ searchParams }: PageProps<"/cust
   const product = getProduct(one(q.piece) ?? "");
   const idea = getIdea(one(q.idea) ?? "");
   const customer = getCustomer(one(q.story) ?? "");
-  const piece = product ? pieceFromProduct(product) : idea ? pieceFromIdea(idea) : customer ? pieceFromCustomer(customer) : undefined;
+  // A ready piece that has sold is made for you now: no "From ₦…", Mimi prices the remake on WhatsApp.
+  const sold = product?.kind === "ready" && (await pieceStatus([product.slug]).then((r) => r.sold.includes(product.slug)).catch(() => false));
+  const piece = product ? pieceFromProduct(sold ? asMadeForYou(product) : product) : idea ? pieceFromIdea(idea) : customer ? pieceFromCustomer(customer) : undefined;
 
   return <CustomOrderFlow initialPiece={piece} initialSize={one(q.size)} />;
 }

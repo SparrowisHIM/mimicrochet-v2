@@ -9,13 +9,15 @@ import { SaveButton } from "@/components/product/save-button";
 import { Button, ButtonLink, buttonClass, linkClass } from "@/components/ui/button";
 import { addToBag, bagUi } from "@/lib/bag";
 import { bagStore, savedStore } from "@/lib/local-store";
-import { getProduct, priceLabel, type Product } from "@/lib/products";
+import { asMadeForYou, getProduct, priceLabel, type Product } from "@/lib/products";
+import { useSoldSlugs } from "@/lib/stock";
 import { whatsappLink } from "@/lib/site";
 
 type Row = { p: Product; status: "available" | "made" | "sold"; line: string };
 
-function rowFor(p: Product): Row {
-  if (p.kind === "ready" && p.sold) return { p, status: "sold", line: "Sold. Mimi can make it for you." };
+/** A saved piece that has sold is shown as made for you (price on request); only here, where they saved it, does it say so. */
+function rowFor(p: Product, sold: boolean): Row {
+  if (p.kind === "ready" && (sold || p.sold)) return { p: asMadeForYou(p), status: "sold", line: "Found a home. Mimi can make you one." };
   if (p.kind === "ready") return { p, status: "available", line: p.size === "One size" ? "Still available" : `Still available in ${p.size}` };
   return { p, status: "made", line: p.leadTime ?? "Made for you" };
 }
@@ -24,7 +26,8 @@ export function SavedView() {
   const slugs = savedStore.useList();
   const bag = bagStore.useList();
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
-  const rows = slugs.map((s) => getProduct(s)).filter((p): p is Product => Boolean(p)).map(rowFor);
+  const soldNow = useSoldSlugs();
+  const rows = slugs.map((s) => getProduct(s)).filter((p): p is Product => Boolean(p)).map((p) => rowFor(p, soldNow.has(p.slug)));
   const origin = hydrated ? window.location.origin : "";
   const message = `Hi Mimi! These are the pieces I saved:\n${rows.map((r) => `• ${r.p.name} (${priceLabel(r.p)}) ${origin}/shop/${r.p.slug}`).join("\n")}\nCan you tell me more?`;
 
@@ -91,7 +94,7 @@ export function SavedView() {
             <AnimatePresence initial={false}>
               {rows.map((r) => (
                 <motion.li key={r.p.slug} layout exit={{ opacity: 0, x: -40 }} className="flex gap-3.5 border-b border-stone-200 py-[18px]">
-                  <Link href={`/shop/${r.p.slug}`} className={`relative h-32 w-24 shrink-0 overflow-hidden rounded-[8px] bg-orange-100 ${r.status === "sold" ? "opacity-55" : ""}`}>
+                  <Link href={`/shop/${r.p.slug}`} className="relative h-32 w-24 shrink-0 overflow-hidden rounded-[8px] bg-orange-100">
                     <Image src={r.p.images[0]} alt="" fill sizes="96px" className="object-cover" />
                   </Link>
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -99,7 +102,7 @@ export function SavedView() {
                       <Link href={`/shop/${r.p.slug}`} className="text-[16px] leading-snug font-semibold">{r.p.name}</Link>
                       <SaveButton slug={r.p.slug} name={r.p.name} className="relative -mt-1 shadow-none" />
                     </div>
-                    <span className={`text-[15px] ${r.status === "sold" ? "text-stone-400 line-through" : "text-stone-600"}`}>{priceLabel(r.p)}</span>
+                    <span className="text-[15px] text-stone-600">{priceLabel(r.p)}</span>
                     <span className={`flex items-center gap-1.5 text-[13px] font-medium ${tone(r)}`}>
                       <span className={`size-[7px] rounded-full ${dot(r)}`} />
                       {r.line}
@@ -119,14 +122,12 @@ export function SavedView() {
                   <div className="relative">
                     <Link href={`/shop/${r.p.slug}`} className="relative block aspect-[3/4] overflow-hidden rounded-[18px] bg-orange-100">
                       <Image src={r.p.images[0]} alt="" fill sizes="310px" className="object-cover" />
-                      {r.status === "sold" && <span className="absolute inset-0 bg-orange-50/45" />}
                     </Link>
-                    {r.status === "sold" && <span className="absolute top-3 left-3 rounded-full bg-stone-900 px-3 py-1 text-[13px] font-semibold text-orange-50">Sold</span>}
                     <SaveButton slug={r.p.slug} name={r.p.name} className="absolute top-3 right-3" />
                   </div>
                   <div className="flex flex-col gap-1">
                     <span className="text-[17px] font-medium">{r.p.name}</span>
-                    <span className={`text-[16px] ${r.status === "sold" ? "text-stone-400 line-through" : "text-stone-600"}`}>{priceLabel(r.p)}</span>
+                    <span className="text-[16px] text-stone-600">{priceLabel(r.p)}</span>
                     <span className={`text-[13px] font-semibold ${tone(r)}`}>{r.line}</span>
                   </div>
                   <div>{action(r)}</div>

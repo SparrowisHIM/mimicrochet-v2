@@ -7,10 +7,13 @@ import { ProductCard } from "@/components/product/product-card";
 import { Hairline } from "@/components/ui/hairline";
 import { Toggle } from "@/components/ui/toggle";
 import type { Product } from "@/lib/products";
+import { useLiveProducts } from "@/lib/stock";
 
 export function FreshOffTheHook({ pieces }: { pieces: Product[] }) {
   const [readyOnly, setReadyOnly] = useState(false);
-  const shown = (readyOnly ? pieces.filter((p) => p.kind === "ready") : pieces).slice(0, 8);
+  // A sold one-of-one is made for you now, so "Ready now only" leaves it out.
+  const live = useLiveProducts(pieces);
+  const shown = (readyOnly ? live.filter((p) => p.kind === "ready") : live).slice(0, 8);
 
   return (
     <section className="container-page flex flex-col gap-6 py-16 lg:gap-10 lg:py-24">

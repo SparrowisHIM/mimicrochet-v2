@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { RulerIcon, WhatsAppIcon } from "@/components/icons";
 import { SaveButton } from "@/components/product/save-button";
 import { Button, ButtonLink, buttonClass, linkClass } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { stockFor } from "@/app/actions/orders";
 import { addToBag, bagUi } from "@/lib/bag";
 import { bagStore } from "@/lib/local-store";
-import { priceLabel, tagLabel, type Product } from "@/lib/products";
+import { asMadeForYou, priceLabel, tagLabel, type Product } from "@/lib/products";
 import { hasSizes, sizeChart, sizeLabels, stockLine } from "@/lib/sizes";
 import { whatsappLink } from "@/lib/site";
 
@@ -59,8 +59,21 @@ function Making({ product, className = "" }: { product: Product; className?: str
   );
 }
 
-export function ProductView({ product }: { product: Product }) {
+export function ProductView({ product: listed }: { product: Product }) {
   const reduce = useReducedMotion();
+  // One-of-one pieces: has it sold, or is someone on Paystack paying for it right now? A sold piece is
+  // shown as made for you (price on request, any size), the same as Mimi's other made-to-order pieces.
+  const [stock, setStock] = useState<"sold" | "held" | null>(null);
+  useEffect(() => {
+    if (listed.kind !== "ready") return;
+    let live = true;
+    stockFor([listed.slug]).then((r) => live && setStock(r.sold.includes(listed.slug) ? "sold" : r.held.includes(listed.slug) ? "held" : null));
+    return () => {
+      live = false;
+    };
+  }, [listed.kind, listed.slug]);
+  const sold = stock === "sold";
+  const product = useMemo(() => (sold ? asMadeForYou(listed) : listed), [sold, listed]);
   const [index, setIndex] = useState(0);
   const sized = hasSizes(product);
   const stockSize = product.kind === "ready" ? product.size : undefined;
@@ -70,21 +83,16 @@ export function ProductView({ product }: { product: Product }) {
   const actionsRef = useRef<HTMLDivElement>(null);
   const strip = useRef<HTMLDivElement>(null);
   const inBag = bagStore.useList().includes(product.slug);
+  // Once it turns out to be sold, the size the stock piece came in isn't picked for them any more.
+  const [shownSold, setShownSold] = useState(false);
+  if (shownSold !== sold) {
+    setShownSold(sold);
+    if (sold) setSize(null);
+  }
 
-  // One-of-one pieces: has it sold, or is someone on Paystack paying for it right now?
-  const [stock, setStock] = useState<"sold" | "held" | null>(null);
-  useEffect(() => {
-    if (product.kind !== "ready") return;
-    let live = true;
-    stockFor([product.slug]).then((r) => live && setStock(r.sold.includes(product.slug) ? "sold" : r.held.includes(product.slug) ? "held" : null));
-    return () => {
-      live = false;
-    };
-  }, [product.kind, product.slug]);
-  const sold = stock === "sold";
   const otherSize = Boolean(stockSize && size && size !== stockSize);
-  const buyable = product.checkout === "bag" && !otherSize && !sold;
-  const ask = whatsappLink(`Hi Mimi! I’m looking at the ${product.name} (${priceLabel(product)}). ${product.kind === "ready" && !sold ? "Is it still available?" : "Can you make it for me?"}`);
+  const buyable = product.checkout === "bag" && !otherSize;
+  const ask = whatsappLink(`Hi Mimi! I’m looking at the ${product.name} (${priceLabel(product)}). ${product.kind === "ready" ? "Is it still available?" : "Can you make it for me?"}`);
   const requestHref = `/custom-order?piece=${product.slug}${size ? `&size=${size}` : ""}`;
 
   useEffect(() => {
@@ -188,7 +196,7 @@ export function ProductView({ product }: { product: Product }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease }}
             >
-              <p className={`text-[14px] font-semibold ${sold ? "text-stone-500" : product.kind === "ready" ? "text-emerald-800" : "text-amber-800"}`}>{sold ? "Sold" : tagLabel(product)}</p>
+              <p className={`text-[14px] font-semibold ${product.kind === "ready" ? "text-emerald-800" : "text-amber-800"}`}>{tagLabel(product)}</p>
               <h1 className="font-serif text-[32px] leading-[1.1] tracking-[-0.01em] lg:text-[44px]">{product.name}</h1>
               <p className="text-[20px] font-medium lg:text-[24px]">{priceLabel(product)}</p>
               <p className="text-[16px] leading-[1.55] text-stone-600 lg:text-[17px]">{product.description}</p>
@@ -230,19 +238,17 @@ export function ProductView({ product }: { product: Product }) {
                 {product.kind === "made" && <Making product={product} />}
                 {stockSize && (
                   <AnimatePresence mode="wait" initial={false}>
-                    <motion.div key={sold ? "sold" : otherSize ? "other" : stock ?? "stock"} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }} className="flex flex-col gap-1.5">
+                    <motion.div key={otherSize ? "other" : stock ?? "stock"} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }} className="flex flex-col gap-1.5">
                       <p className="flex items-center gap-2.5 text-[15px] font-medium">
-                        <span className={`size-2 rounded-full ${sold ? "bg-stone-400" : otherSize || stock === "held" ? "bg-amber-600" : "bg-emerald-600"}`} />
-                        {sold ? "Sold" : otherSize ? `${size} is made for you, in about 3 weeks` : stock === "held" ? "Someone is paying for this right now" : stockLine(stockSize)}
+                        <span className={`size-2 rounded-full ${otherSize || stock === "held" ? "bg-amber-600" : "bg-emerald-600"}`} />
+                        {otherSize ? `${size} is made for you, in about 3 weeks` : stock === "held" ? "Someone is paying for this right now" : stockLine(stockSize)}
                       </p>
                       <p className="text-[14px] text-stone-500">
-                        {sold
-                          ? "Mimi can make it again in your size, in about 3 weeks."
-                          : otherSize
-                            ? `Only ${stockSize} is in stock right now. Mimi confirms the price on WhatsApp before she starts.`
-                            : stock === "held"
-                              ? "If they don’t finish, it’s yours to buy in 15 minutes."
-                              : "Other sizes are made for you, in about 3 weeks."}
+                        {otherSize
+                          ? `Only ${stockSize} is in stock right now. Mimi confirms the price on WhatsApp before she starts.`
+                          : stock === "held"
+                            ? "If they don’t finish, it’s yours to buy in 15 minutes."
+                            : "Other sizes are made for you, in about 3 weeks."}
                       </p>
                     </motion.div>
                   </AnimatePresence>
