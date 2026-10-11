@@ -103,7 +103,7 @@ export function PingCard({ publicKey }: { publicKey: string }) {
     );
 
   const body = {
-    off: "Your phone tells you the moment a request comes in, or someone says they’ve paid.",
+    off: "Your phone tells you the moment a request comes in, or someone pays.",
     failed: "That didn’t work. Check you’re online and try again.",
     iphone: "On iPhone, add this page to your home screen first: tap Share, then Add to Home Screen. Open Mimi’s orders from there and turn this on.",
     blocked: "Notifications are blocked for this site. Allow them in this browser’s settings, then come back here.",

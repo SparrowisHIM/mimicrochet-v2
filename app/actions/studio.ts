@@ -3,7 +3,7 @@
 import { pingOne, removePushSubscription, savePushSubscription } from "@/lib/server/push";
 import { clientIp, overLimit } from "@/lib/server/rate-limit";
 import { endSession, isStudio, passwordMatches, startSession, studioReady } from "@/lib/server/session";
-import { confirmPayment, markDelivered, markReady, setPrice } from "@/lib/server/studio";
+import { confirmPayment, markBalancePaid, markDelivered, markOnItsWay, markReady, setPrice } from "@/lib/server/studio";
 
 // What Mimi's studio can ask the server to do. Sign-in is the only action open to anyone (and is
 // limited); every other one checks the studio session first and answers only true or false.
@@ -41,6 +41,14 @@ export async function studioConfirmPayment(code: unknown, full: unknown) {
   return asMimi(async () => typeof code === "string" && confirmPayment(code, full === true));
 }
 
+export async function studioMarkBalancePaid(code: unknown) {
+  return asMimi(async () => typeof code === "string" && markBalancePaid(code));
+}
+
+export async function studioMarkOnItsWay(code: unknown) {
+  return asMimi(async () => typeof code === "string" && markOnItsWay(code));
+}
+
 export async function studioMarkReady(code: unknown) {
   return asMimi(async () => typeof code === "string" && markReady(code));
 }
@@ -58,7 +66,7 @@ export async function studioSubscribe(sub: unknown, device: unknown, first?: unk
     const kind = device === "iPhone" || device === "Android" ? device : "Computer";
     const saved = { endpoint, p256dh: p256dh.slice(0, 200), auth: auth.slice(0, 100) };
     await savePushSubscription({ ...saved, device: kind });
-    if (first === true) await pingOne(saved, { title: "Notifications are on", body: "You’ll get one here for each new order, and when someone says they’ve paid.", url: "/studio" });
+    if (first === true) await pingOne(saved, { title: "Notifications are on", body: "You’ll get one here for each new order, and the moment someone pays.", url: "/studio" });
     return true;
   });
 }

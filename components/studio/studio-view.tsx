@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
-import { signOut, studioConfirmPayment, studioMarkDelivered, studioMarkReady, studioSetPrice } from "@/app/actions/studio";
+import { signOut, studioConfirmPayment, studioMarkBalancePaid, studioMarkDelivered, studioMarkOnItsWay, studioMarkReady, studioSetPrice } from "@/app/actions/studio";
 import { VoicePlayer } from "@/components/custom-order/voice-note";
 import { ChevronIcon, WhatsAppIcon } from "@/components/icons";
 import { PingCard } from "@/components/studio/ping-card";
@@ -21,7 +21,7 @@ import type { Order } from "@/lib/orders";
 import type { StudioOrder } from "@/lib/server/studio";
 import { checkPhoto } from "@/lib/upload-safety";
 import { formatNaira } from "@/lib/site";
-import { stages } from "@/lib/stages";
+import { shopStages, stages } from "@/lib/stages";
 
 // Mimi's studio: her real orders from the server (app/studio/page.tsx), and every change she makes saved
 // there, so the customer's page shows it at once. Signed in only (the server checks every action).
@@ -66,11 +66,17 @@ const stageName = ["New", "Price agreed", "In progress", "Ready", "Delivered"];
 const dueClass = { normal: "text-stone-500", soon: "font-semibold text-amber-700", late: "font-semibold text-red-700" };
 const waTo = (phone: string, text: string) => `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
 
+/** Ready, paid by deposit, and the 40% still to come (they pay it on their page). */
+const balanceDue = (o: Order) => o.kind !== "shop" && o.stage === 3 && Boolean(o.depositPaid) && !o.paidInFull && !o.balancePaid;
+/** The stage chip: shop orders have their own steps (Paid, On its way). */
+const stageLabel = (o: Order) => (o.kind === "shop" ? shopStages[o.stage] : stageName[o.stage]);
+
 function nextStep(o: Row) {
+  if (o.kind === "shop") return o.stage === 0 ? "Pack the order" : "Mark as delivered";
   if (o.stage === 0) return o.price ? "Agree the price" : o.piece.source === "photo" ? "Reply on WhatsApp" : "Agree the price";
-  if (o.stage === 1) return o.depositPaid ? "Start making" : o.paymentSent ? "Check the payment" : "Waiting for payment";
+  if (o.stage === 1) return o.depositPaid ? "Start making" : "Waiting for payment";
   if (o.stage === 2) return o.dueTone === "late" ? `Tell ${o.name} about the delay` : "Send a progress photo";
-  if (o.stage === 3) return "Book delivery";
+  if (o.stage === 3) return balanceDue(o) ? "Waiting for the balance" : "Book delivery";
   return "Done";
 }
 
@@ -215,13 +221,51 @@ function PostUpdate({ o, onDone }: { o: Row; onDone: () => void }) {
 
 /* ------------------------------- order panel ------------------------------- */
 
+/** Cash, or a transfer straight to Mimi: she says what came in, and only once it's in her bank or her hand. */
+function PaidAnotherWay({ o }: { o: Row }) {
+  const [open, setOpen] = useState(false);
+  const [full, setFull] = useState<boolean | null>(null);
+  const save = useSave();
+  const price = o.price ?? 0;
+  const deposit = depositOf(price);
+  const balance = balanceDue(o);
+  if (!open)
+    return (
+      <div className="flex justify-center">
+        <button type="button" className={linkClass} onClick={() => setOpen(true)}>
+          They paid me another way
+        </button>
+      </div>
+    );
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-[14px] leading-[1.5] text-stone-600">
+        {balance ? `Only if the ${formatNaira(price - deposit)} balance is in your bank or your hand.` : "What came in? Only mark it once it’s in your bank or your hand."}
+      </p>
+      {!balance && (
+        <div className="flex flex-wrap gap-2" role="group" aria-label="What they paid">
+          <Chip on={full === false} onClick={() => setFull(false)}>Deposit · {formatNaira(deposit)}</Chip>
+          <Chip on={full === true} onClick={() => setFull(true)}>Full price · {formatNaira(price)}</Chip>
+        </div>
+      )}
+      <Button
+        className="w-full"
+        disabled={(!balance && full === null) || save.busy}
+        onClick={() => save.run(() => (balance ? studioMarkBalancePaid(o.code) : studioConfirmPayment(o.code, full === true)))}
+      >
+        {balance ? "Mark the balance as paid" : "Mark as paid"}
+      </Button>
+      <SaveError show={save.failed} />
+    </div>
+  );
+}
+
 /** What Mimi sees when she opens an order: where it stands, the one thing to do next, what was asked for, and the money. */
 function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; onUpdate: () => void }) {
   const deposit = o.price ? depositOf(o.price) : 0;
   const late = o.dueTone === "late";
   const message = (text: string) => waTo(o.phone, text);
   const save = useSave();
-  const confirm = (full: boolean) => save.run(() => studioConfirmPayment(o.code, full));
   const markReady = () => save.run(() => studioMarkReady(o.code));
 
   const next =
@@ -233,29 +277,9 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
         }
       : o.stage === 1 && !o.depositPaid
         ? {
-            title: o.paymentSent ? `${o.name} says they’ve paid` : `Waiting for ${o.name}’s payment`,
-            text: o.paymentSent
-              ? `Check your bank app for ${formatNaira(o.paymentSent === "full" ? (o.price ?? 0) : deposit)} (${o.paymentSent === "full" ? "the full price" : "the 60% deposit"}). Once it’s there, confirm it and their page moves to “In progress”.`
-              : `When ${formatNaira(deposit)} (the 60% deposit) or ${formatNaira(o.price ?? 0)} (the full price) shows in your bank app, confirm it here and their page moves to “In progress”.`,
-            action: (
-              <div className="flex flex-col gap-2.5">
-                {o.paymentSent === "full" ? (
-                  <Button className="w-full" onClick={() => confirm(true)} disabled={save.busy}>Payment received</Button>
-                ) : (
-                  <Button className="w-full" onClick={() => confirm(false)} disabled={save.busy}>Deposit received</Button>
-                )}
-                <div className="flex flex-wrap justify-center gap-x-6 gap-y-1">
-                  <button type="button" className={linkClass} onClick={() => confirm(o.paymentSent !== "full")} disabled={save.busy}>
-                    {o.paymentSent === "full" ? "It was the deposit" : "They paid in full"}
-                  </button>
-                  {o.paymentSent && (
-                    <a href={message(`Hi ${o.name}! I haven’t seen your payment for ${o.id} yet. Could you check?`)} target="_blank" rel="noreferrer" className={linkClass}>
-                      Not there yet?
-                    </a>
-                  )}
-                </div>
-              </div>
-            ),
+            title: `Waiting for ${o.name}’s payment`,
+            text: `${o.name} pays on their order page with Paystack. It shows here, and pings your phone, the moment it’s paid.`,
+            action: <PaidAnotherWay o={o} />,
           }
         : o.stage <= 2
           ? {
@@ -268,12 +292,18 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
                 </div>
               ),
             }
-          : {
+          : balanceDue(o)
+            ? {
+                title: `Waiting for ${o.name}’s balance`,
+                text: `${o.name} pays the ${formatNaira((o.price ?? 0) - deposit)} balance on their order page with Paystack. It shows here, and pings your phone, the moment it’s paid.`,
+                action: <PaidAnotherWay o={o} />,
+              }
+            : {
               title: `Book ${o.name}’s delivery`,
               text: "It’s ready. Pass their number to a rider, then mark it delivered.",
               action: <Button className="w-full" onClick={() => save.run(() => studioMarkDelivered(o.code))} disabled={save.busy}>Mark as delivered</Button>,
             };
-  const urgent = late || (o.stage === 1 && !o.depositPaid && Boolean(o.paymentSent)) || o.dueTone === "soon";
+  const urgent = late || o.dueTone === "soon";
 
   // How they want it to fit, their height and measurements, in one line for Mimi.
   const m = o.measurements;
@@ -361,7 +391,10 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
             ) : (
               <>
                 <div className="flex justify-between"><span className="text-stone-500">Deposit (60%)</span><span>{formatNaira(deposit)} {o.depositPaid ? "· received" : "· not yet"}</span></div>
-                <div className="flex justify-between border-t border-stone-100 pt-2"><span className="text-stone-500">Balance (40%), due when ready</span><span className="font-semibold">{formatNaira(o.price - deposit)}</span></div>
+                <div className="flex justify-between border-t border-stone-100 pt-2">
+                  <span className="text-stone-500">{o.balancePaid ? "Balance (40%)" : "Balance (40%), due when ready"}</span>
+                  <span className="font-semibold">{formatNaira(o.price - deposit)}{o.balancePaid ? " · received" : ""}</span>
+                </div>
               </>
             )}
             {o.readyBy && <div className="flex justify-between"><span className="text-stone-500">Ready by</span><span>{o.readyBy}</span></div>}
@@ -393,6 +426,90 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
   );
 }
 
+/** A shop order: paid on Paystack, so Mimi packs it, sends it with a rider, and marks it delivered. */
+function ShopDetail({ o }: { o: Row }) {
+  const save = useSave();
+  const items = o.items ?? [];
+  const next =
+    o.stage === 0
+      ? {
+          title: `Pack ${o.name}’s order`,
+          text: `Paid ${formatNaira(o.price ?? 0)} on Paystack. Pack it, then pass ${o.name}’s number to a rider.`,
+          action: <Button className="w-full" onClick={() => save.run(() => studioMarkOnItsWay(o.code))} disabled={save.busy}>It’s on its way</Button>,
+        }
+      : {
+          title: `${o.name}’s order is on its way`,
+          text: "Mark it delivered once the rider has dropped it off.",
+          action: <Button className="w-full" onClick={() => save.run(() => studioMarkDelivered(o.code))} disabled={save.busy}>Mark as delivered</Button>,
+        };
+  return (
+    <div className="flex flex-col gap-4">
+      <section className="flex items-center justify-between gap-3 rounded-[22px] bg-white p-4 text-[14px]">
+        <span className="text-stone-500">{o.name} sees “{shopStages[o.stage]}”</span>
+        <Link href={`/t/${o.code}`} className={`${linkClass} shrink-0 whitespace-nowrap`}>View their page</Link>
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-[22px] border border-amber-200 bg-amber-50 p-5">
+        <span className="self-start rounded-full bg-white px-2.5 py-0.5 text-[12px] font-semibold text-amber-800">Suggested</span>
+        <h3 className="font-serif text-[24px] leading-[1.15] text-balance">{next.title}</h3>
+        <p className="text-[15px] leading-[1.5] text-stone-600">{next.text}</p>
+        <div className="pt-1">{next.action}</div>
+        <SaveError show={save.failed} />
+      </section>
+
+      <a href={waTo(o.phone, `Hi ${o.name}! About your order ${o.id}…`)} target="_blank" rel="noreferrer" className={`${linkClass} self-center`}>
+        <WhatsAppIcon size={16} /> Message {o.name}
+      </a>
+
+      <section className="flex flex-col gap-4 rounded-[22px] bg-white p-4">
+        <h3 className="text-[15px] font-semibold">What they bought</h3>
+        <ul className="flex flex-col gap-3">
+          {items.map((i) => (
+            <li key={i.slug} className="flex items-center gap-3">
+              <span className="relative h-[58px] w-11 shrink-0 overflow-hidden rounded-[8px] bg-orange-100">
+                <SafeImage src={i.image} alt="" sizes="44px" />
+              </span>
+              <span className="flex flex-col">
+                <span className="text-[15px] font-semibold">{i.name}</span>
+                <span className="text-[14px] text-stone-500">{i.size && /^(XS|S|M|L|XL)$/.test(i.size) ? `Size ${i.size}` : (i.size ?? "One size")} · {formatNaira(i.price)}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+        <dl className="flex flex-col gap-2 border-t border-stone-100 pt-3 text-[15px]">
+          <div className="flex justify-between gap-4"><dt className="text-stone-500">Delivery</dt><dd className="text-right">{o.area}, {o.state}</dd></div>
+          {o.notes && <div className="flex justify-between gap-4"><dt className="text-stone-500">Rider note</dt><dd className="text-right">{o.notes}</dd></div>}
+        </dl>
+      </section>
+
+      <section className="flex flex-col gap-2 rounded-[22px] bg-white p-4 text-[15px]">
+        <h3 className="pb-1 text-[15px] font-semibold">Money</h3>
+        <div className="flex justify-between"><span className="text-stone-500">Paid on Paystack</span><span>{formatNaira(o.price ?? 0)}</span></div>
+        <div className="flex justify-between"><span className="text-stone-500">Delivery</span><span>Paid to the rider</span></div>
+      </section>
+
+      <section className="flex flex-col gap-1">
+        <h3 className="text-[15px] font-semibold">Updates they can see · {o.updates.length}</h3>
+        <ol className="flex flex-col">
+          {o.updates.map((u, i) => (
+            <li key={i} className="relative flex gap-3 pt-3">
+              <span className="flex flex-col items-center">
+                <span className={`mt-1 size-3 rounded-full ${i === o.updates.length - 1 ? "bg-amber-700 shadow-[0_0_0_4px_#fde68a]" : "bg-stone-900"}`} />
+                {i < o.updates.length - 1 && <span className="mt-1 w-px flex-1 bg-stone-900" />}
+              </span>
+              <span className="flex flex-col pb-1">
+                <span className="text-[15px] font-semibold">{shopStages[u.stage]}</span>
+                <span className="text-[13px] text-stone-500">{u.at}</span>
+                <span className="text-[14px] text-stone-600">{u.note}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </div>
+  );
+}
+
 function OrderPanel({ o, onClose }: { o: Row; onClose: () => void }) {
   const [mode, setMode] = useState<"detail" | "price" | "update">("detail");
   const title = mode === "price" ? `Set ${o.name}’s price` : mode === "update" ? "Post an update" : `${o.name} · ${o.id}`;
@@ -410,6 +527,8 @@ function OrderPanel({ o, onClose }: { o: Row; onClose: () => void }) {
             <SetPrice o={o} onDone={() => setMode("detail")} />
           ) : mode === "update" ? (
             <PostUpdate o={o} onDone={() => setMode("detail")} />
+          ) : o.kind === "shop" ? (
+            <ShopDetail o={o} />
           ) : (
             <OrderDetail o={o} onPrice={() => setMode("price")} onUpdate={() => setMode("update")} />
           )}
@@ -424,7 +543,7 @@ function OrderPanel({ o, onClose }: { o: Row; onClose: () => void }) {
 export function StudioView({ orders, publicKey }: { orders: Row[]; publicKey: string }) {
   const router = useRouter();
   const hello = useGreeting();
-  const [filter, setFilter] = useState<number | "all" | "late">("all");
+  const [filter, setFilter] = useState<number | "all" | "late" | "shop">("all");
   const [open, setOpen] = useState<string | null>(null);
   const rows = orders;
 
@@ -436,11 +555,12 @@ export function StudioView({ orders, publicKey }: { orders: Row[]; publicKey: st
     };
   }, []);
 
-  const tasks = rows.filter((r) => r.stage <= 3 && (r.stage === 0 || r.dueTone !== "normal" || (r.stage === 1 && !r.depositPaid && r.paymentSent))).slice(0, 4);
-  const shown = rows.filter((r) => (filter === "all" ? true : filter === "late" ? r.dueTone === "late" : r.stage === filter));
+  const tasks = rows.filter((r) => (r.kind === "shop" ? r.stage === 0 : r.stage <= 3 && (r.stage === 0 || r.dueTone !== "normal"))).slice(0, 4);
+  const shown = rows.filter((r) => (filter === "all" ? true : filter === "late" ? r.dueTone === "late" : filter === "shop" ? r.kind === "shop" : r.kind !== "shop" && r.stage === filter));
+  const shopCount = rows.filter((r) => r.kind === "shop").length;
   const late = rows.filter((r) => r.dueTone === "late").length;
-  const fresh = rows.filter((r) => r.stage === 0).length;
-  const toCollect = rows.reduce((s, r) => s + (r.price && r.depositPaid && !r.paidInFull ? r.price - depositOf(r.price) : 0), 0);
+  const fresh = rows.filter((r) => r.kind !== "shop" && r.stage === 0).length;
+  const toCollect = rows.reduce((s, r) => s + (r.kind !== "shop" && r.price && r.depositPaid && !r.paidInFull && !r.balancePaid ? r.price - depositOf(r.price) : 0), 0);
   const current = rows.find((r) => r.id === open);
 
   const leave = async () => {
@@ -455,7 +575,7 @@ export function StudioView({ orders, publicKey }: { orders: Row[]; publicKey: st
         <p className="text-[16px] text-stone-600 lg:text-[18px]">
           {rows.length === 0
             ? "No orders yet."
-            : `${fresh === 1 ? "1 new request" : `${fresh} new requests`}${late ? `, and ${late === 1 ? "one order is" : `${late} orders are`} running late.` : "."}`}
+            : `${fresh === 0 ? "No new requests" : fresh === 1 ? "1 new request" : `${fresh} new requests`}${late ? `, and ${late === 1 ? "one order is" : `${late} orders are`} running late.` : "."}`}
         </p>
       </div>
 
@@ -509,9 +629,10 @@ export function StudioView({ orders, publicKey }: { orders: Row[]; publicKey: st
           <div className="no-scrollbar -mx-5 mt-7 flex gap-2 overflow-x-auto px-5 lg:mx-0 lg:px-0">
             <Chip on={filter === "all"} onClick={() => setFilter("all")}>All · {rows.length}</Chip>
             {[0, 1, 2, 3].map((st) => (
-              <Chip key={st} on={filter === st} onClick={() => setFilter(st)}>{stageName[st]} · {rows.filter((r) => r.stage === st).length}</Chip>
+              <Chip key={st} on={filter === st} onClick={() => setFilter(st)}>{stageName[st]} · {rows.filter((r) => r.kind !== "shop" && r.stage === st).length}</Chip>
             ))}
             <Chip on={filter === "late"} onClick={() => setFilter("late")}>Late · {late}</Chip>
+            {shopCount > 0 && <Chip on={filter === "shop"} onClick={() => setFilter("shop")}>Shop orders · {shopCount}</Chip>}
           </div>
 
           {/* Phone: rows */}
@@ -551,9 +672,9 @@ export function StudioView({ orders, publicKey }: { orders: Row[]; publicKey: st
                         {pieceName(o)}{o.size ? ` · ${o.size}` : ""}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5"><span className={`rounded-full px-2.5 py-1 text-[12px] font-semibold ${stageTone[o.stage]}`}>{stageName[o.stage]}</span></td>
+                    <td className="px-5 py-3.5"><span className={`rounded-full px-2.5 py-1 text-[12px] font-semibold ${o.kind === "shop" ? "bg-emerald-100 text-emerald-800" : stageTone[o.stage]}`}>{stageLabel(o)}</span></td>
                     <td className={`px-5 py-3.5 ${dueClass[o.dueTone]}`}>{o.due}</td>
-                    <td className="px-5 py-3.5 text-stone-500">{o.stage === 0 ? "—" : o.depositPaid ? (o.paidInFull ? "In full" : "Deposit") : o.paymentSent ? "To check" : "Waiting"}</td>
+                    <td className="px-5 py-3.5 text-stone-500">{o.kind === "shop" ? "Paid" : o.stage === 0 ? "—" : o.depositPaid ? (o.paidInFull || o.balancePaid ? "In full" : "Deposit") : "Waiting"}</td>
                     <td className="px-5 py-3.5">
                       <button type="button" className="cursor-pointer font-semibold underline-offset-4 hover:underline">{nextStep(o)}</button>
                     </td>

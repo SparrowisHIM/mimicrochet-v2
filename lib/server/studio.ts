@@ -29,13 +29,15 @@ function ago(at: Date) {
 /** Open orders (not yet delivered) that the customer has sent, newest first. */
 export async function ordersForStudio(): Promise<StudioOrder[]> {
   const rows = await db()`
-    select number, code, kind, stage, sent, details, name, phone, state, area, address, price, ready_by, ready_on::text as ready_on, deposit_paid, paid_in_full, payment_sent, created_at,
+    select number, code, kind, stage, sent, details, name, phone, state, area, address, price, ready_by, ready_on::text as ready_on, deposit_paid, paid_in_full, balance_paid, payment_sent, created_at,
       coalesce((select json_agg(json_build_object('stage', u.stage, 'note', u.note, 'photo', u.photo, 'at', u.created_at) order by u.created_at, u.id)
                 from order_updates u where u.order_id = orders.id), '[]') as updates,
       coalesce((select json_agg(json_build_object('kind', f.kind, 'position', f.position) order by f.position)
                 from order_files f where f.order_id = orders.id and f.kind in ('photo', 'voice')), '[]') as files
     from orders
-    where stage < 4 and (kind = 'shop' or sent)
+    -- Custom orders once sent, until delivered (stage 4). Shop orders exist only once paid: Paid (0),
+    -- On its way (2), Delivered (3).
+    where (kind = 'custom' and sent and stage < 4) or (kind = 'shop' and stage < 3)
     order by created_at desc
     limit 200`;
   const today = lagosDay(new Date());
@@ -69,6 +71,7 @@ export async function ordersForStudio(): Promise<StudioOrder[]> {
       readyBy: o.ready_by ?? undefined,
       depositPaid: o.deposit_paid,
       paidInFull: o.paid_in_full,
+      balancePaid: o.balance_paid,
       paymentSent: o.payment_sent ?? undefined,
       updates: (o.updates as { stage: number; note: string; photo: string | null; at: string }[]).map((u) => ({ stage: u.stage, note: u.note, at: ago(new Date(u.at)), ...(u.photo ? { photo: u.photo } : {}) })),
       due: o.stage === 0 || !o.ready_by ? ago(created) : o.ready_by,
@@ -83,7 +86,7 @@ export async function ordersForStudio(): Promise<StudioOrder[]> {
 
 const one = async (code: string) => {
   if (!isOrderCode(code)) return null;
-  const [o] = await db()`select id, stage, price, deposit_paid from orders where code = ${code}`;
+  const [o] = await db()`select id, stage, price, deposit_paid from orders where code = ${code} and kind = 'custom'`;
   return (o as { id: string; stage: number; price: number | null; deposit_paid: boolean } | undefined) ?? null;
 };
 
@@ -127,12 +130,37 @@ export async function addUpdate(code: string, note: string, ready: boolean, phot
   return true;
 }
 
+/** The balance came some other way (cash, a transfer straight to Mimi): she marks it paid. */
+export async function markBalancePaid(code: string) {
+  const o = await one(code);
+  if (!o || o.stage !== 3 || !o.deposit_paid) return false;
+  const [r] = await db()`
+    with o as (update orders set balance_paid = true, updated_at = now() where id = ${o.id} and not paid_in_full and not balance_paid returning id)
+    insert into order_updates (order_id, stage, note) select id, 3, 'Balance paid. Mimi is booking your rider.' from o returning id`;
+  return Boolean(r);
+}
+
+/** Shop orders: packed and with the rider. */
+export async function markOnItsWay(code: string) {
+  if (!isOrderCode(code)) return false;
+  const [r] = await db()`
+    with o as (update orders set stage = 2, updated_at = now() where code = ${code} and kind = 'shop' and stage = 0 returning id)
+    insert into order_updates (order_id, stage, note) select id, 2, 'It’s on its way. The rider will call you.' from o returning id`;
+  return Boolean(r);
+}
+
 export async function markReady(code: string) {
   return addUpdate(code, "All done! Photos on WhatsApp.", true);
 }
 
 /** Delivered: the order leaves Mimi's list, and the 2-month clock on the customer's files starts. */
 export async function markDelivered(code: string) {
+  if (!isOrderCode(code)) return false;
+  // A shop order is delivered from "On its way" (2), and ends at 3 (its last step).
+  const [shop] = await db()`
+    with o as (update orders set stage = 3, delivered_at = now(), updated_at = now() where code = ${code} and kind = 'shop' and stage = 2 returning id)
+    insert into order_updates (order_id, stage, note) select id, 3, 'Delivered. Enjoy wearing it!' from o returning id`;
+  if (shop) return true;
   const o = await one(code);
   if (!o || o.stage !== 3) return false;
   await db().transaction((sql) => [
