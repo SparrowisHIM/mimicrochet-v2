@@ -66,7 +66,7 @@ export function IdeasSection() {
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ duration: i >= from ? 0.45 : 0.3, ease: [0.22, 1, 0.36, 1], delay: i >= from && !reduce ? Math.min(i - from, 14) * 0.035 : 0 }}
             >
-              <Link href={`/custom-order?idea=${idea.slug}`} className="group flex flex-col gap-2.5">
+              <Link href={`/custom-order?idea=${idea.slug}`} className="group flex h-full flex-col gap-2.5">
                 <span className="relative block aspect-[3/4] overflow-hidden rounded-[18px] bg-orange-100">
                   <Image
                     src={idea.image}
@@ -76,11 +76,12 @@ export function IdeasSection() {
                     className="object-cover transition-transform duration-700 ease-[var(--ease-out-soft)] group-hover:scale-[1.03]"
                   />
                 </span>
-                <span className="flex flex-col gap-0.5">
-                  <span className="text-[15px] leading-snug font-medium">{idea.name}</span>
+                <span className="flex flex-1 flex-col gap-0.5">
+                  <span className="line-clamp-2 min-h-[2.75em] text-[15px] leading-snug font-medium lg:min-h-0">{idea.name}</span>
                   <span className="text-[13px] text-stone-500">
                     {idea.priceFrom ? `From ₦${idea.priceFrom.toLocaleString("en-NG")}` : "Price on request"}
                   </span>
+                  <span className="card-cta mt-auto pt-2.5 pb-px text-[14px] leading-[1.3] font-semibold text-stone-900">Have it made</span>
                 </span>
               </Link>
             </motion.li>
