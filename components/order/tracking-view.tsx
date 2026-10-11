@@ -361,7 +361,8 @@ export function TrackingView({ code, saved, justPaid = false }: { code: string; 
   // The example order isn't anyone's: its button starts a conversation instead of asking about MIMI-2406.
   const ask = whatsappLink(order.sample ? "Hi Mimi! I saw the example order on your site and I’d like to order something too." : `Hi Mimi! It’s about my order ${order.id}.`);
 
-  const latestCard = (
+  // Every order gets a first update when it's saved; the guard only keeps a hand-made row from breaking the page.
+  const latestCard = latest && (
     <div ref={latestRef} className={`relative scroll-mt-20 transition-[transform,box-shadow] duration-500 ${raised ? "z-40" : ""} ${lifted ? "scale-[1.03] shadow-[0_30px_80px_-20px_rgb(28_25_23/0.35)]" : ""} rounded-[22px]`}>
       <SpotlightOutline show={lifted} />
       <Card className="flex flex-col gap-4">
