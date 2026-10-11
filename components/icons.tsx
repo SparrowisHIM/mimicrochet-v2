@@ -135,3 +135,15 @@ export function BellIcon(props: IconProps) {
     </svg>
   );
 }
+
+/** A photo with a line through it: shown where a customer or progress photo can't be found any more. */
+export function PhotoOffIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M6.5 4.25h9.25a2 2 0 0 1 2 2v9.25M15.5 17.75H6.25a2 2 0 0 1-2-2V6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="m4.5 14.5 3.6-3.6a1.2 1.2 0 0 1 1.7 0l4.2 4.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="13.75" cy="8.25" r="1.25" fill="currentColor" />
+      <path d="m3.25 3.25 15.5 15.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}

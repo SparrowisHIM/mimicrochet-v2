@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -12,6 +11,7 @@ import { Confetti } from "@/components/ui/confetti";
 import { StageIcon } from "@/components/order/stage-icons";
 import { Button, buttonClass, linkClass } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
+import { SafeImage } from "@/components/ui/safe-image";
 import { depositOf, findOrder, updateOrder, useOrders, type Order } from "@/lib/orders";
 import { formatNaira, paymentsLive, whatsappLink } from "@/lib/site";
 import { stages } from "@/lib/stages";
@@ -371,7 +371,7 @@ export function TrackingView({ code, saved, justPaid = false }: { code: string; 
         </div>
         {latest.photo && (
           <div className="relative aspect-[4/5] overflow-hidden rounded-[18px] bg-orange-100">
-            <Image src={latest.photo} alt="Mimi’s latest progress photo" fill sizes="(min-width: 1024px) 600px, 90vw" className="object-cover" preload unoptimized={latest.photo.startsWith("/api/")} />
+            <SafeImage src={latest.photo} alt="Mimi’s latest progress photo" sizes="(min-width: 1024px) 600px, 90vw" preload note />
           </div>
         )}
         <div className="flex gap-3">
@@ -466,8 +466,7 @@ export function TrackingView({ code, saved, justPaid = false }: { code: string; 
     <Card className="flex flex-col gap-4">
       {order.piece.image && (
         <span className="relative block aspect-[4/5] overflow-hidden rounded-[18px] bg-orange-100">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={order.piece.image} alt={order.piece.name} className="size-full object-cover" />
+          <SafeImage src={order.piece.image} alt={order.piece.name} sizes="(min-width: 1024px) 400px, 90vw" note />
         </span>
       )}
       <h2 className="font-serif text-[26px] leading-[1.15] text-balance">Wearing it? Send Mimi a photo</h2>
@@ -491,8 +490,7 @@ export function TrackingView({ code, saved, justPaid = false }: { code: string; 
       <div className="flex items-center gap-3">
         {order.piece.image && (
           <span className="relative h-[75px] w-14 shrink-0 overflow-hidden rounded-[8px] bg-orange-100">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={order.piece.image} alt="" className="size-full object-cover" />
+            <SafeImage src={order.piece.image} alt="" sizes="56px" />
           </span>
         )}
         <span className="flex flex-col">

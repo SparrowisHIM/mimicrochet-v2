@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -15,6 +14,7 @@ import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
 import { Toggle } from "@/components/ui/toggle";
 import { Stepper } from "@/components/order/tracking-view";
+import { SafeImage } from "@/components/ui/safe-image";
 import { fitWords } from "@/lib/fit";
 import { depositOf } from "@/lib/order-code";
 import type { Order } from "@/lib/orders";
@@ -29,7 +29,6 @@ import { stages } from "@/lib/stages";
 type Row = StudioOrder;
 
 /** Customer files and progress photos come from this site's own server: no image resizing service. */
-const unoptimized = (src: string) => src.startsWith("data:") || src.startsWith("/api/");
 
 /** Runs one of Mimi's changes, then shows the page as it now stands. */
 function useSave() {
@@ -315,8 +314,7 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
         <div className="flex items-center gap-3">
           {o.piece.image && (
             <span className="relative h-[75px] w-14 shrink-0 overflow-hidden rounded-[8px] bg-orange-100">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={o.piece.image} alt="" className="size-full object-cover" />
+              <SafeImage src={o.piece.image} alt="" sizes="56px" />
             </span>
           )}
           <span className="flex flex-col">
@@ -335,8 +333,7 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
           <div className="flex gap-2">
             {o.photos.slice(0, 4).map((src, i) => (
               <span key={i} className="relative h-20 w-[60px] overflow-hidden rounded-[8px]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt={`Their photo ${i + 1}`} className="size-full object-cover" />
+                <SafeImage src={src} alt={`Their photo ${i + 1}`} sizes="60px" />
               </span>
             ))}
           </div>
@@ -523,7 +520,7 @@ export function StudioView({ orders, publicKey }: { orders: Row[]; publicKey: st
               <li key={o.id}>
                 <button type="button" onClick={() => setOpen(o.id)} className="flex w-full cursor-pointer items-center gap-3 rounded-[22px] bg-white p-3 text-left transition-colors duration-150 hover:bg-orange-100/60">
                   <span className="relative h-[58px] w-11 shrink-0 overflow-hidden rounded-[8px] bg-orange-100">
-                    {o.piece.image && <Image src={o.piece.image} alt="" fill sizes="44px" className="object-cover" unoptimized={unoptimized(o.piece.image)} />}
+                    {o.piece.image && <SafeImage src={o.piece.image} alt="" sizes="44px" />}
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="text-[15px] font-semibold">{o.name}</span>
@@ -549,7 +546,7 @@ export function StudioView({ orders, publicKey }: { orders: Row[]; publicKey: st
                     <td className="px-5 py-3.5">
                       <span className="flex items-center gap-3">
                         <span className="relative h-[42px] w-8 shrink-0 overflow-hidden rounded-[8px] bg-orange-100">
-                          {o.piece.image && <Image src={o.piece.image} alt="" fill sizes="32px" className="object-cover" unoptimized={unoptimized(o.piece.image)} />}
+                          {o.piece.image && <SafeImage src={o.piece.image} alt="" sizes="32px" />}
                         </span>
                         {pieceName(o)}{o.size ? ` · ${o.size}` : ""}
                       </span>
