@@ -335,7 +335,8 @@ export function TrackingView({ code, justPaid = false }: { code: string; justPai
   const balance = order.price && deposit ? order.price - deposit : undefined;
   const awaitingDeposit = order.stage === 1 && !order.depositPaid && order.price;
   const settled = order.paidInFull || order.stage >= 4;
-  const ask = whatsappLink(`Hi Mimi! It’s about my order ${order.id}.`);
+  // The example order isn't anyone's: its button starts a conversation instead of asking about MIMI-2406.
+  const ask = whatsappLink(order.sample ? "Hi Mimi! I saw the example order on your site and I’d like to order something too." : `Hi Mimi! It’s about my order ${order.id}.`);
 
   const latestCard = (
     <div ref={latestRef} className={`relative scroll-mt-20 transition-[transform,box-shadow] duration-500 ${raised ? "z-40" : ""} ${lifted ? "scale-[1.03] shadow-[0_30px_80px_-20px_rgb(28_25_23/0.35)]" : ""} rounded-[22px]`}>
