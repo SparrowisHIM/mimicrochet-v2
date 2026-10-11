@@ -33,6 +33,7 @@ export const navLinks = [
   { href: "/custom-order", label: "Custom orders" },
   { href: "/track", label: "Track an order" },
   { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
 ] as const;
 
 export const footerLinks = {
