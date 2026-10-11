@@ -45,6 +45,7 @@ export const footerLinks = {
   studio: [
     { href: "/about", label: "About" },
     { href: "/contact", label: "Contact" },
+    { href: "/privacy", label: "Privacy" },
   ],
   social: [
     { href: site.socials.instagram, label: "Instagram" },

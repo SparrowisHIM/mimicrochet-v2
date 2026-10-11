@@ -7,7 +7,7 @@ import { siteUrl } from "@/lib/site-url";
 // orders) are left out; they also carry noindex. No dates: the pieces have none yet, and a date that
 // changes on every build tells Google nothing.
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = ["/", "/shop", "/custom-order", "/about", "/contact", "/track"].map((path) => ({ url: `${siteUrl}${path}` }));
+  const pages = ["/", "/shop", "/custom-order", "/about", "/contact", "/track", "/privacy"].map((path) => ({ url: `${siteUrl}${path}` }));
   const pieces = products.map((p) => ({
     url: `${siteUrl}/shop/${p.slug}`,
     images: p.images.map((src) => `${siteUrl}${src}`),
