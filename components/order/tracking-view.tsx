@@ -503,10 +503,24 @@ function usePaymentWatch(code: string, payment: Payment) {
   return status;
 }
 
-export function TrackingView({ code, saved, justPaid = false, payment = null }: { code: string; saved?: Order | null; justPaid?: boolean; payment?: Payment }) {
+export function TrackingView({
+  code,
+  saved,
+  justPaid = false,
+  payment = null,
+  unreachable = false,
+}: {
+  code: string;
+  saved?: Order | null;
+  justPaid?: boolean;
+  payment?: Payment;
+  /** The server couldn't be reached (a weak connection, a hiccup): not the same as an order that doesn't exist. */
+  unreachable?: boolean;
+}) {
   const paymentNow = usePaymentWatch(code, payment);
   // Orders on the server: coming back to the page shows what changed meanwhile (Mimi set it ready, say).
-  useFreshOnReturn(Boolean(saved));
+  useFreshOnReturn(Boolean(saved) || unreachable);
+  const router = useRouter();
   const orders = useOrders();
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const local = findOrder(orders, code);
@@ -538,6 +552,19 @@ export function TrackingView({ code, saved, justPaid = false, payment = null }: 
             Back to checkout
           </Link>
         )}
+      </div>
+    );
+  if (!order && unreachable)
+    return (
+      <div className="container-page flex min-h-[60vh] flex-col items-start justify-center gap-4 py-16">
+        <h1 className="font-serif text-[36px] leading-tight lg:text-[48px]">We couldn’t load your order</h1>
+        <p className="max-w-[520px] text-[17px] text-stone-600">The connection dropped for a moment. Your order is safe: try again in a few seconds.</p>
+        <div className="flex flex-wrap items-center gap-x-7 gap-y-2">
+          <Button onClick={() => router.refresh()}>Try again</Button>
+          <a href={whatsappLink(`Hi Mimi! I can’t open my order page (${code}).`)} target="_blank" rel="noreferrer" className={linkClass}>
+            <WhatsAppIcon size={18} /> Ask Mimi
+          </a>
+        </div>
       </div>
     );
   if (!order)
@@ -747,10 +774,10 @@ export function TrackingView({ code, saved, justPaid = false, payment = null }: 
           <div className={`relative rounded-[22px] transition-transform duration-500 ${raised ? "z-40" : ""}`}>
             <Card className="flex flex-col gap-5">
               <Stepper stage={order.stage} lifted={lifted} />
-              {order.readyBy && (
+              {(order.readyBy || order.deliveredOn) && (
                 <div className="flex justify-between border-t border-stone-100 pt-4 text-[15px]">
                   <span className="text-stone-500">{order.stage >= 4 ? "Delivered" : "Expected ready"}</span>
-                  <span className="font-semibold">{order.readyBy}</span>
+                  <span className="font-semibold">{order.stage >= 4 ? (order.deliveredOn ?? order.readyBy) : order.readyBy}</span>
                 </div>
               )}
             </Card>

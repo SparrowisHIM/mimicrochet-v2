@@ -21,9 +21,11 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
     });
   // The server's copy opens on any phone. If the database can't be reached, the page falls back to
   // the copy on this phone rather than failing.
-  const saved = await orderForTracking(code).catch((e) => {
-    console.error("orderForTracking", e);
-    return null;
-  });
-  return <TrackingView code={code} saved={saved} justPaid={paid === "1" || settled === "paid"} payment={settled} />;
+  const { saved, unreachable } = await orderForTracking(code)
+    .then((saved) => ({ saved, unreachable: false }))
+    .catch((e) => {
+      console.error("orderForTracking", e);
+      return { saved: null, unreachable: true };
+    });
+  return <TrackingView code={code} saved={saved} justPaid={paid === "1" || settled === "paid"} payment={settled} unreachable={unreachable} />;
 }
