@@ -8,6 +8,7 @@ import { RulerIcon, WhatsAppIcon } from "@/components/icons";
 import { SaveButton } from "@/components/product/save-button";
 import { Button, ButtonLink, buttonClass, linkClass } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
+import { stockFor } from "@/app/actions/orders";
 import { addToBag, bagUi } from "@/lib/bag";
 import { bagStore } from "@/lib/local-store";
 import { priceLabel, tagLabel, type Product } from "@/lib/products";
@@ -70,8 +71,19 @@ export function ProductView({ product }: { product: Product }) {
   const strip = useRef<HTMLDivElement>(null);
   const inBag = bagStore.useList().includes(product.slug);
 
+  // One-of-one pieces: has it sold, or is someone on Paystack paying for it right now?
+  const [stock, setStock] = useState<"sold" | "held" | null>(null);
+  useEffect(() => {
+    if (product.kind !== "ready") return;
+    let live = true;
+    stockFor([product.slug]).then((r) => live && setStock(r.sold.includes(product.slug) ? "sold" : r.held.includes(product.slug) ? "held" : null));
+    return () => {
+      live = false;
+    };
+  }, [product.kind, product.slug]);
+  const sold = stock === "sold";
   const otherSize = Boolean(stockSize && size && size !== stockSize);
-  const buyable = product.checkout === "bag" && !otherSize;
+  const buyable = product.checkout === "bag" && !otherSize && !sold;
   const requestHref = `/custom-order?piece=${product.slug}${size ? `&size=${size}` : ""}`;
   const ask = whatsappLink(`Hi Mimi! I’m looking at the ${product.name} (${priceLabel(product)}). ${product.kind === "ready" ? "Is it still available?" : "Can you make it for me?"}`);
 
@@ -218,13 +230,19 @@ export function ProductView({ product }: { product: Product }) {
                 {product.kind === "made" && <Making product={product} />}
                 {stockSize && (
                   <AnimatePresence mode="wait" initial={false}>
-                    <motion.div key={otherSize ? "other" : "stock"} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }} className="flex flex-col gap-1.5">
+                    <motion.div key={sold ? "sold" : otherSize ? "other" : stock ?? "stock"} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }} className="flex flex-col gap-1.5">
                       <p className="flex items-center gap-2.5 text-[15px] font-medium">
-                        <span className={`size-2 rounded-full ${otherSize ? "bg-amber-600" : "bg-emerald-600"}`} />
-                        {otherSize ? `${size} is made for you, in about 3 weeks` : stockLine(stockSize)}
+                        <span className={`size-2 rounded-full ${sold ? "bg-stone-400" : otherSize || stock === "held" ? "bg-amber-600" : "bg-emerald-600"}`} />
+                        {sold ? "Sold" : otherSize ? `${size} is made for you, in about 3 weeks` : stock === "held" ? "Someone is paying for this right now" : stockLine(stockSize)}
                       </p>
                       <p className="text-[14px] text-stone-500">
-                        {otherSize ? `Only ${stockSize} is in stock right now. Mimi confirms the price on WhatsApp before she starts.` : "Other sizes are made for you, in about 3 weeks."}
+                        {sold
+                          ? "Mimi can make it again in your size, in about 3 weeks."
+                          : otherSize
+                            ? `Only ${stockSize} is in stock right now. Mimi confirms the price on WhatsApp before she starts.`
+                            : stock === "held"
+                              ? "If they don’t finish, it’s yours to buy in 15 minutes."
+                              : "Other sizes are made for you, in about 3 weeks."}
                       </p>
                     </motion.div>
                   </AnimatePresence>

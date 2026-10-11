@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { useState, useSyncExternalStore } from "react";
 import { Button, ButtonChip, ButtonLink } from "@/components/ui/button";
@@ -11,10 +10,10 @@ import { bagStore } from "@/lib/local-store";
 import { Field, inputClass, NameInput, PhoneInput, useNudge } from "@/components/form/fields";
 import { AreaPicker, StatePicker } from "@/components/form/place-picker";
 import { isLgaOf, isNigerianState } from "@/lib/nigeria";
-import { newOrderIds, saveOrder, type Order } from "@/lib/orders";
-import type { Product } from "@/lib/products";
-import { formatNaira, paymentsLive } from "@/lib/site";
-import { fullPhone, hasWords, isEmail, isName, phoneDigits, phoneProblem } from "@/lib/validate";
+import { payForBag } from "@/app/actions/orders";
+import { getProduct } from "@/lib/products";
+import { formatNaira } from "@/lib/site";
+import { hasWords, isEmail, isName, phoneProblem } from "@/lib/validate";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 function Num({ n }: { n: number }) {
@@ -22,11 +21,8 @@ function Num({ n }: { n: number }) {
 }
 
 export function CheckoutView() {
-  const router = useRouter();
   const bagItems = useBagItems();
-  // Once paid, the bag is emptied but the page keeps showing what was bought until the tracking page opens.
-  const [held, setHeld] = useState<Product[] | null>(null);
-  const items = held ?? bagItems;
+  const items = bagItems;
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const total = bagTotal(items);
   const [f, setF] = useState({ name: "", phone: "", email: "", state: "", area: "", town: "", address: "", note: "" });
@@ -35,6 +31,8 @@ export function CheckoutView() {
   const [nameNudge, nudgeName] = useNudge();
   const [phoneNudge, nudgePhone] = useNudge();
   const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
+  const [gone, setGone] = useState<{ slug: string; sold: boolean }[]>([]);
   const [showItems, setShowItems] = useState(false);
   const put = (patch: Partial<typeof f>) => setF((c) => ({ ...c, ...patch }));
   const blur = (k: string) => () => setTouched((t) => ({ ...t, [k]: true }));
@@ -64,33 +62,18 @@ export function CheckoutView() {
       return;
     }
     setPaying(true);
-    await new Promise((r) => setTimeout(r, 1300));
-    const { id, code } = newOrderIds();
-    const order: Order = {
-      kind: "shop",
-      id,
-      code,
-      createdAt: new Date().toISOString(),
-      items: items.map((p) => ({ slug: p.slug, name: p.name, image: p.images[0], price: p.price!, size: p.size ?? p.leadTime })),
-      piece: { name: items.map((i) => i.name).join(" and "), image: items[0]?.images[0], source: "product" },
-      photos: [],
-      colours: "photo",
-      when: "No rush",
-      name: f.name.trim(),
-      phone: fullPhone(phoneDigits(f.phone)),
-      email: f.email.trim(),
-      state: f.state,
-      area: `${f.address.trim()}, ${f.town ? `${f.town}, ` : ""}${f.area}`,
-      notes: f.note.trim() || undefined,
-      stage: 0,
-      price: total,
-      updates: [{ stage: 0, note: paymentsLive ? "Paid. Mimi is packing your order." : "Test order: nothing was charged and Mimi hasn’t been told.", at: "Today" }],
-    };
-    saveOrder(order);
-    setHeld(items);
-    bagStore.clear();
-    // The receipt lives on the order's tracking page, so a reload or a saved link still shows it.
-    router.replace(`/t/${code}?paid=1`);
+    setPayError(null);
+    // The server prices the bag itself, holds one-of-one pieces for 15 minutes, and answers with Paystack's page.
+    const r = await payForBag({ items: items.map((p) => p.slug), ...f }).catch(() => ({ ok: false as const, error: "Couldn’t reach Paystack. Check your connection and try again.", unavailable: undefined }));
+    // Stays on "Opening Paystack…" while the browser goes there.
+    if (r.ok) return window.location.assign(r.url);
+    if (r.unavailable?.length) {
+      // A piece that sold while it sat in the bag comes out of it; one someone is paying for right now stays.
+      for (const u of r.unavailable) if (u.sold) bagStore.remove(u.slug);
+      setGone(r.unavailable);
+      setPayError(null);
+    } else setPayError(r.error);
+    setPaying(false);
   };
 
   if (!hydrated) return <div className="min-h-[70vh]" />;
@@ -143,7 +126,7 @@ export function CheckoutView() {
         </div>
         <div className="hidden lg:block">{list}</div>
         <div className="hidden lg:block">{totals}</div>
-        <p className="hidden rounded-[14px] bg-amber-100 px-4 py-3 text-[14px] text-amber-800 lg:block">Mimi packs your order within 2 days. You’ll get a tracking link right after paying.</p>
+        <p className="hidden rounded-[14px] bg-amber-100 px-4 py-3 text-[14px] text-amber-800 lg:block">Mimi packs your order within 2 days. Paystack takes the payment, then brings you back to your order.</p>
 
         <div className="rounded-[22px] bg-white p-4 lg:hidden">
           <button type="button" onClick={() => setShowItems((v) => !v)} className="group flex w-full items-center gap-3 text-left" aria-expanded={showItems}>
@@ -221,9 +204,17 @@ export function CheckoutView() {
             <p className="text-[13px] text-stone-500">Card, bank transfer or USSD. Mimi never sees your card details.</p>
           </div>
           <div className="lg:hidden">{totals}</div>
-          <p className="rounded-[14px] border border-dashed border-stone-300 px-3.5 py-2.5 text-[13px] text-stone-600">
-            Test mode: payments aren’t switched on yet, so nothing is charged.
-          </p>
+          {gone.length > 0 && (
+            <div role="alert" className="flex flex-col gap-1.5 rounded-[14px] bg-amber-100 px-4 py-3 text-[14px] leading-[1.5] text-amber-900">
+              {gone.map((g) => (
+                <p key={g.slug}>
+                  {g.sold
+                    ? `${getProduct(g.slug)?.name ?? "A piece"} just sold, so it’s been taken out of your bag. Mimi can make you one like it.`
+                    : `Someone is paying for the ${getProduct(g.slug)?.name ?? "piece"} right now. If they don’t finish, it’s yours to buy in 15 minutes.`}
+                </p>
+              ))}
+            </div>
+          )}
           {/* Not `disabled` while paying: that would fade it to grey. pay() already ignores repeat taps. */}
           <Button type="submit" aria-disabled={paying} arrow={false} className="w-full">
             {paying ? (
@@ -238,6 +229,8 @@ export function CheckoutView() {
             )}
           </Button>
           {tried > 0 && !ok && <p className="text-[14px] text-red-700" role="alert">Fill in the fields marked in red to continue.</p>}
+          {payError && <p className="text-[14px] font-medium text-red-700" role="alert">{payError}</p>}
+          <p className="text-[13px] text-stone-500">Mimi packs your order within 2 days. Paystack takes the payment, then brings you back to your order.</p>
           <p className="text-[13px] text-stone-500">By paying, you agree to Mimi’s returns policy: if your piece arrives damaged or isn’t what you ordered, she’ll make it right.</p>
         </fieldset>
       </motion.form>

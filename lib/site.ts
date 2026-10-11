@@ -18,9 +18,9 @@ export const site = {
   },
 } as const;
 
-/** Online payments aren't switched on yet: the shop checkout runs as a test, charges nothing and Mimi isn't told,
- *  so the order page says so and offers to send the order to her on WhatsApp. Paystack (stage 6) turns this on. */
-export const paymentsLive = false;
+/** Online payments are on here: the shop checkout and custom orders pay on Paystack (lib/server/payments.ts).
+ *  (The friends' copy on Vercel has no backend, so there it's false and checkout runs as an honest test.) */
+export const paymentsLive = true;
 
 /** wa.me link with a prefilled message (wa.link short links drop ?text=). */
 export function whatsappLink(message?: string) {

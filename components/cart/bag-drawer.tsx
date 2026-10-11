@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useState } from "react";
+import { stockFor } from "@/app/actions/orders";
 import { ButtonChip, ButtonLink } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { bagTotal, bagUi, useBagItems } from "@/lib/bag";
@@ -14,6 +16,17 @@ export function BagDrawer() {
   const items = useBagItems();
   const total = bagTotal(items);
   const added = bagUi.lastAdded();
+  // Each time the bag opens, check its one-of-one pieces: one that sold since it was added says so.
+  const [sold, setSold] = useState<string[]>([]);
+  const readySlugs = items.filter((p) => p.kind === "ready").map((p) => p.slug).join(",");
+  useEffect(() => {
+    if (!open || !readySlugs) return;
+    let live = true;
+    stockFor(readySlugs.split(",")).then((r) => live && setSold(r.sold));
+    return () => {
+      live = false;
+    };
+  }, [open, readySlugs]);
 
   return (
     <Sheet
@@ -73,7 +86,11 @@ export function BagDrawer() {
                   <div className="relative flex min-w-0 flex-1 flex-col">
                     {fresh && <span className="text-[12px] font-semibold text-emerald-800">Added to your bag</span>}
                     <span className="text-[15px] leading-snug font-medium">{p.name}</span>
-                    <span className="text-[13px] text-stone-500">{p.size ? `${p.size === "One size" ? "One size" : `Size ${p.size}`} · the only one` : p.leadTime ?? "Made for you"}</span>
+                    {sold.includes(p.slug) ? (
+                      <span className="text-[13px] font-medium text-amber-800">Just sold to someone else. Remove it, or ask Mimi to make you one.</span>
+                    ) : (
+                      <span className="text-[13px] text-stone-500">{p.size ? `${p.size === "One size" ? "One size" : `Size ${p.size}`} · the only one` : p.leadTime ?? "Made for you"}</span>
+                    )}
                     <button type="button" onClick={() => bagStore.remove(p.slug)} className="mt-auto self-start pt-1 text-[13px] text-stone-600 underline underline-offset-2 hover:text-stone-900">
                       Remove
                     </button>
