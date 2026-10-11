@@ -29,7 +29,7 @@ function ago(at: Date) {
 /** Open orders (not yet delivered) that the customer has sent, newest first. */
 export async function ordersForStudio(): Promise<StudioOrder[]> {
   const rows = await db()`
-    select number, code, kind, stage, sent, details, name, phone, state, area, address, price, ready_by, ready_on::text as ready_on, deposit_paid, paid_in_full, balance_paid, payment_sent, created_at,
+    select number, code, kind, stage, sent, details, name, phone, state, area, address, price, ready_by, ready_on::text as ready_on, deposit_paid, paid_in_full, balance_paid, sent_to_rider_at is not null as sent_to_rider, payment_sent, created_at,
       coalesce((select json_agg(json_build_object('stage', u.stage, 'note', u.note, 'photo', u.photo, 'at', u.created_at) order by u.created_at, u.id)
                 from order_updates u where u.order_id = orders.id), '[]') as updates,
       coalesce((select json_agg(json_build_object('kind', f.kind, 'position', f.position) order by f.position)
@@ -72,6 +72,7 @@ export async function ordersForStudio(): Promise<StudioOrder[]> {
       depositPaid: o.deposit_paid,
       paidInFull: o.paid_in_full,
       balancePaid: o.balance_paid,
+      sentToRider: o.sent_to_rider,
       paymentSent: o.payment_sent ?? undefined,
       updates: (o.updates as { stage: number; note: string; photo: string | null; at: string }[]).map((u) => ({ stage: u.stage, note: u.note, at: ago(new Date(u.at)), ...(u.photo ? { photo: u.photo } : {}) })),
       due: o.stage === 0 || !o.ready_by ? ago(created) : o.ready_by,
@@ -140,12 +141,21 @@ export async function markBalancePaid(code: string) {
   return Boolean(r);
 }
 
-/** Shop orders: packed and with the rider. */
-export async function markOnItsWay(code: string) {
+/**
+ * Paid, and handed to a rider (Mimi sends the customer the rider's number on WhatsApp from the same tap). A custom
+ * order stays at Ready (3) until it's received; a shop order moves to On its way (2).
+ */
+export async function markSentToRider(code: string) {
   if (!isOrderCode(code)) return false;
+  const note = "Sent to the rider. I’ve sent you their number on WhatsApp.";
   const [r] = await db()`
-    with o as (update orders set stage = 2, updated_at = now() where code = ${code} and kind = 'shop' and stage = 0 returning id)
-    insert into order_updates (order_id, stage, note) select id, 2, 'It’s on its way. The rider will call you.' from o returning id`;
+    with o as (
+      update orders set stage = case when kind = 'shop' then 2 else stage end, sent_to_rider_at = now(), updated_at = now()
+      where code = ${code} and sent_to_rider_at is null
+        and ((kind = 'shop' and stage = 0) or (kind = 'custom' and stage = 3 and deposit_paid and (paid_in_full or balance_paid)))
+      returning id, stage
+    )
+    insert into order_updates (order_id, stage, note) select id, stage, ${note} from o returning id`;
   return Boolean(r);
 }
 
@@ -153,21 +163,24 @@ export async function markReady(code: string) {
   return addUpdate(code, "All done! Photos on WhatsApp.", true);
 }
 
-/** Delivered: the order leaves Mimi's list, and the 2-month clock on the customer's files starts. */
+/**
+ * Delivered: the customer tapped "I've received it", or told Mimi and she marks it. Only once it has gone to the
+ * rider. The order leaves Mimi's list, and the 2-month clock on the customer's files starts.
+ */
+export async function deliver(code: string, note: string) {
+  if (!isOrderCode(code)) return null;
+  const [r] = await db()`
+    with o as (
+      update orders set stage = case when kind = 'shop' then 3 else 4 end, delivered_at = now(), updated_at = now()
+      where code = ${code} and sent_to_rider_at is not null and ((kind = 'shop' and stage = 2) or (kind = 'custom' and stage = 3))
+      returning id, stage, number, name
+    ), u as (insert into order_updates (order_id, stage, note) select id, stage, ${note} from o)
+    select number, name from o`;
+  return (r as { number: string; name: string } | undefined) ?? null;
+}
+
 export async function markDelivered(code: string) {
-  if (!isOrderCode(code)) return false;
-  // A shop order is delivered from "On its way" (2), and ends at 3 (its last step).
-  const [shop] = await db()`
-    with o as (update orders set stage = 3, delivered_at = now(), updated_at = now() where code = ${code} and kind = 'shop' and stage = 2 returning id)
-    insert into order_updates (order_id, stage, note) select id, 3, 'Delivered. Enjoy wearing it!' from o returning id`;
-  if (shop) return true;
-  const o = await one(code);
-  if (!o || o.stage !== 3) return false;
-  await db().transaction((sql) => [
-    sql`update orders set stage = 4, delivered_at = now(), updated_at = now() where id = ${o.id}`,
-    sql`insert into order_updates (order_id, stage, note) values (${o.id}, 4, 'Delivered. Enjoy wearing it!')`,
-  ]);
-  return true;
+  return Boolean(await deliver(code, "Delivered. Enjoy wearing it!"));
 }
 
 /** The next free slot for one of Mimi's progress photos on this order. */

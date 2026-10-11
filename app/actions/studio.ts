@@ -3,7 +3,7 @@
 import { pingOne, removePushSubscription, savePushSubscription } from "@/lib/server/push";
 import { clientIp, overLimit } from "@/lib/server/rate-limit";
 import { endSession, isStudio, passwordMatches, startSession, studioReady } from "@/lib/server/session";
-import { confirmPayment, markBalancePaid, markDelivered, markOnItsWay, markReady, setPrice } from "@/lib/server/studio";
+import { confirmPayment, markBalancePaid, markDelivered, markReady, markSentToRider, setPrice } from "@/lib/server/studio";
 
 // What Mimi's studio can ask the server to do. Sign-in is the only action open to anyone (and is
 // limited); every other one checks the studio session first and answers only true or false.
@@ -45,8 +45,8 @@ export async function studioMarkBalancePaid(code: unknown) {
   return asMimi(async () => typeof code === "string" && markBalancePaid(code));
 }
 
-export async function studioMarkOnItsWay(code: unknown) {
-  return asMimi(async () => typeof code === "string" && markOnItsWay(code));
+export async function studioMarkSentToRider(code: unknown) {
+  return asMimi(async () => typeof code === "string" && markSentToRider(code));
 }
 
 export async function studioMarkReady(code: unknown) {

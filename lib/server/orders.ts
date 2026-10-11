@@ -52,7 +52,7 @@ export async function orderForTracking(code: string): Promise<Order | null> {
   if (!isOrderCode(code)) return null;
   // One round trip: the order with its updates, oldest first.
   const [o] = await db()`
-    select number, code, kind, stage, sent, details, name, state, area, price, ready_by, deposit_paid, paid_in_full, balance_paid, email is not null as has_email, payment_sent, created_at,
+    select number, code, kind, stage, sent, details, name, state, area, price, ready_by, deposit_paid, paid_in_full, balance_paid, sent_to_rider_at is not null as sent_to_rider, email is not null as has_email, payment_sent, delivered_at, created_at,
       coalesce((select json_agg(json_build_object('stage', u.stage, 'note', u.note, 'photo', u.photo, 'at', u.created_at) order by u.created_at, u.id)
                 from order_updates u where u.order_id = orders.id), '[]') as updates,
       coalesce((select json_agg(f.position order by f.position) from order_files f where f.order_id = orders.id and f.kind = 'photo'), '[]') as photos
@@ -94,7 +94,10 @@ export async function orderForTracking(code: string): Promise<Order | null> {
     depositPaid: o.deposit_paid,
     paidInFull: o.paid_in_full,
     balancePaid: o.balance_paid,
+    sentToRider: o.sent_to_rider,
     hasEmail: o.has_email,
+    // The day it actually arrived (the ready-by date was only the plan).
+    deliveredOn: o.delivered_at ? new Date(o.delivered_at).toLocaleDateString("en-GB", { timeZone: "Africa/Lagos", weekday: "short", day: "numeric", month: "short" }) : undefined,
     paymentSent: o.payment_sent ?? undefined,
     ...(d.items ? { items: d.items } : {}),
     updates: updates.map((u) => ({ stage: u.stage, note: u.note, at: dayLabel(new Date(u.at)), ...(u.photo ? { photo: u.photo } : {}) })),

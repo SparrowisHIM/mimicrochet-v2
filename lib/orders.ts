@@ -48,6 +48,10 @@ export type Order = {
   paidInFull?: boolean;
   /** The 40% balance is paid (a deposit order, once it's ready). */
   balancePaid?: boolean;
+  /** Paid and handed to a rider; Mimi sent the customer the rider's number on WhatsApp. */
+  sentToRider?: boolean;
+  /** "Sun 11 Oct": the day it arrived. */
+  deliveredOn?: string;
   /** The server already has an email for Paystack's receipt, so the balance needs no email field. */
   hasEmail?: boolean;
   /** The customer tapped "I've paid" on their page, and which amount they sent. Mimi still confirms it. */

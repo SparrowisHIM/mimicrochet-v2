@@ -3,6 +3,7 @@
 import { parseCustomOrder } from "@/lib/server/order-input";
 import { codeForOrder, createCustomOrder, markSent } from "@/lib/server/orders";
 import { pieceStatus, settlePayment, startOrderPayment, startShopCheckout } from "@/lib/server/payments";
+import { deliver } from "@/lib/server/studio";
 import { notifyMimi } from "@/lib/server/push";
 
 // What the order pages can ask the server to do. Each one checks its own input (anyone can post
@@ -84,5 +85,18 @@ export async function checkPayment(reference: unknown) {
   } catch (e) {
     console.error("checkPayment", e);
     return "pending" as const;
+  }
+}
+
+/** "I've received it" on the customer's page: the order is delivered, and Mimi's phone hears about it. */
+export async function confirmReceived(code: unknown) {
+  if (typeof code !== "string") return false;
+  try {
+    const o = await deliver(code, "Received. Enjoy wearing it!");
+    if (o) await notifyMimi({ title: `${o.name} got their order`, body: `${o.number} arrived. They tapped “I’ve received it”.`, url: "/studio", tag: o.number });
+    return Boolean(o);
+  } catch (e) {
+    console.error("confirmReceived", e);
+    return false;
   }
 }

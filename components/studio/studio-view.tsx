@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
-import { signOut, studioConfirmPayment, studioMarkBalancePaid, studioMarkDelivered, studioMarkOnItsWay, studioMarkReady, studioSetPrice } from "@/app/actions/studio";
+import { signOut, studioConfirmPayment, studioMarkBalancePaid, studioMarkDelivered, studioMarkSentToRider, studioMarkReady, studioSetPrice } from "@/app/actions/studio";
 import { VoicePlayer } from "@/components/custom-order/voice-note";
 import { ChevronIcon, WhatsAppIcon } from "@/components/icons";
 import { PingCard } from "@/components/studio/ping-card";
@@ -82,11 +82,11 @@ const balanceDue = (o: Order) => o.kind !== "shop" && o.stage === 3 && Boolean(o
 const stageLabel = (o: Order) => (o.kind === "shop" ? shopStages[o.stage] : stageName[o.stage]);
 
 function nextStep(o: Row) {
-  if (o.kind === "shop") return o.stage === 0 ? "Pack the order" : "Mark as delivered";
+  if (o.kind === "shop") return o.stage === 0 ? "Pack the order" : "Waiting for them to get it";
   if (o.stage === 0) return o.price ? "Agree the price" : o.piece.source === "photo" ? "Reply on WhatsApp" : "Agree the price";
   if (o.stage === 1) return o.depositPaid ? "Start making" : "Waiting for payment";
   if (o.stage === 2) return o.dueTone === "late" ? `Tell ${o.name} about the delay` : "Send a progress photo";
-  if (o.stage === 3) return balanceDue(o) ? "Waiting for the balance" : "Book delivery";
+  if (o.stage === 3) return balanceDue(o) ? "Waiting for the balance" : o.sentToRider ? "Waiting for them to get it" : "Book the rider";
   return "Done";
 }
 
@@ -231,6 +231,42 @@ function PostUpdate({ o, onDone }: { o: Row; onDone: () => void }) {
 
 /* ------------------------------- order panel ------------------------------- */
 
+/** Paid: Mimi books a rider, then one tap opens WhatsApp to the customer (she adds the rider's name and number)
+ *  and moves their page to "It's on its way". The rider's details live in WhatsApp, not on the site. */
+function SentToRider({ o }: { o: Row }) {
+  const save = useSave();
+  const send = () => {
+    // WhatsApp opens from the tap itself (browsers only let a tap open a window), then the change saves.
+    window.open(
+      waTo(o.phone, `Hi ${o.name}! Your order ${o.id} is with the rider now. They’ll call you when they’re close, and you pay them for delivery when it arrives. Rider’s name and number: `),
+      "_blank",
+      "noopener",
+    );
+    save.run(() => studioMarkSentToRider(o.code));
+  };
+  return (
+    <div className="flex flex-col gap-2">
+      <Button className="w-full" onClick={send} disabled={save.busy}>
+        Sent to the rider
+      </Button>
+      <SaveError show={save.failed} />
+    </div>
+  );
+}
+
+/** With the rider: the customer taps "I've received it", or tells Mimi on WhatsApp and she marks it here. */
+function TheyveGotIt({ o }: { o: Row }) {
+  const save = useSave();
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <button type="button" className={linkClass} onClick={() => save.run(() => studioMarkDelivered(o.code))} disabled={save.busy}>
+        They’ve got it
+      </button>
+      <SaveError show={save.failed} />
+    </div>
+  );
+}
+
 /** Cash, or a transfer straight to Mimi: she says what came in, and only once it's in her bank or her hand. */
 function PaidAnotherWay({ o }: { o: Row }) {
   const [open, setOpen] = useState(false);
@@ -308,11 +344,17 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
                 text: `${o.name} pays the ${formatNaira((o.price ?? 0) - deposit)} balance on their order page with Paystack. It shows here, and pings your phone, the moment it’s paid.`,
                 action: <PaidAnotherWay o={o} />,
               }
-            : {
-              title: `Book ${o.name}’s delivery`,
-              text: "It’s ready. Pass their number to a rider, then mark it delivered.",
-              action: <Button className="w-full" onClick={() => save.run(() => studioMarkDelivered(o.code))} disabled={save.busy}>Mark as delivered</Button>,
-            };
+            : !o.sentToRider
+              ? {
+                  title: `Book ${o.name}’s rider`,
+                  text: `Paid in full. Book a rider, then tap below: WhatsApp opens so you can send ${o.name} the rider’s number.`,
+                  action: <SentToRider o={o} />,
+                }
+              : {
+                  title: `Waiting for ${o.name} to get it`,
+                  text: `It’s with the rider. ${o.name} taps “I’ve received it” on their page when it arrives. If they tell you on WhatsApp instead, mark it here.`,
+                  action: <TheyveGotIt o={o} />,
+                };
   const urgent = late || o.dueTone === "soon";
 
   // How they want it to fit, their height and measurements, in one line for Mimi.
@@ -332,7 +374,7 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
       <section className="flex flex-col gap-4 rounded-[22px] bg-white p-4">
         <Stepper stage={o.stage} />
         <div className="flex items-center justify-between gap-3 border-t border-stone-100 pt-3 text-[14px]">
-          <span className="text-stone-500">{o.name} sees “{stages[o.stage].label}”</span>
+          <span className="text-stone-500">{o.name} sees “{o.stage === 3 && o.sentToRider ? "On its way" : stages[o.stage].label}”</span>
           <TheirPage code={o.code} />
         </div>
       </section>
@@ -444,13 +486,13 @@ function ShopDetail({ o }: { o: Row }) {
     o.stage === 0
       ? {
           title: `Pack ${o.name}’s order`,
-          text: `Paid ${formatNaira(o.price ?? 0)} on Paystack. Pack it, then pass ${o.name}’s number to a rider.`,
-          action: <Button className="w-full" onClick={() => save.run(() => studioMarkOnItsWay(o.code))} disabled={save.busy}>It’s on its way</Button>,
+          text: `Paid ${formatNaira(o.price ?? 0)} on Paystack. Pack it and book a rider, then tap below: WhatsApp opens so you can send ${o.name} the rider’s number.`,
+          action: <SentToRider o={o} />,
         }
       : {
-          title: `${o.name}’s order is on its way`,
-          text: "Mark it delivered once the rider has dropped it off.",
-          action: <Button className="w-full" onClick={() => save.run(() => studioMarkDelivered(o.code))} disabled={save.busy}>Mark as delivered</Button>,
+          title: `Waiting for ${o.name} to get it`,
+          text: `It’s with the rider. ${o.name} taps “I’ve received it” on their page when it arrives. If they tell you on WhatsApp instead, mark it here.`,
+          action: <TheyveGotIt o={o} />,
         };
   return (
     <div className="flex flex-col gap-4">
@@ -567,7 +609,10 @@ export function StudioView({ orders, publicKey }: { orders: Row[]; publicKey: st
     };
   }, []);
 
-  const tasks = rows.filter((r) => (r.kind === "shop" ? r.stage === 0 : r.stage <= 3 && (r.stage === 0 || r.dueTone !== "normal"))).slice(0, 4);
+  // What needs Mimi: new requests, late or due orders, paid shop orders to pack, paid ready pieces to send.
+  const tasks = rows
+    .filter((r) => (r.kind === "shop" ? r.stage === 0 : r.stage === 0 || r.dueTone !== "normal" || (r.stage === 3 && !balanceDue(r) && !r.sentToRider)))
+    .slice(0, 4);
   const shown = rows.filter((r) => (filter === "all" ? true : filter === "late" ? r.dueTone === "late" : filter === "shop" ? r.kind === "shop" : r.kind !== "shop" && r.stage === filter));
   const shopCount = rows.filter((r) => r.kind === "shop").length;
   const late = rows.filter((r) => r.dueTone === "late").length;

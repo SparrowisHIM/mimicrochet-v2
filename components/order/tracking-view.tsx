@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from "react";
-import { checkPayment, payForOrder } from "@/app/actions/orders";
+import { checkPayment, confirmReceived, payForOrder } from "@/app/actions/orders";
 import { WhatsAppIcon } from "@/components/icons";
 import { ShopOrderCard } from "@/components/cart/shop-order-card";
 import { Confetti } from "@/components/ui/confetti";
@@ -43,6 +43,7 @@ function headline(o: Order, justPaid: boolean) {
   if (o.stage === 1 && !o.depositPaid) return { title: "Your price is ready", lead: "Mimi starts as soon as your payment arrives: the deposit or the full price." };
   if (o.stage === 1) return { title: o.paidInFull ? "Paid in full" : "Deposit received", lead: "Mimi is picking your yarn and starting soon." };
   if (o.stage === 2) return { title: `Your ${w} ${isAre} being made`, lead: `Mimi started on it. She’ll update this page when it’s ready to send.` };
+  if (o.stage === 3 && o.sentToRider) return { title: "It’s on its way", lead: "It’s with the rider. Mimi has sent you their number on WhatsApp." };
   if (o.stage === 3 && balanceDue(o)) return { title: "It’s ready", lead: "Pay the balance and Mimi books your rider." };
   if (o.stage === 3) return { title: `Your ${w} ${isAre} ready`, lead: "Mimi is passing your number to a rider. You pay the rider when it arrives." };
   return { title: "It’s home. Wear it loud.", lead: "Thank you for ordering from Mimi." };
@@ -310,6 +311,33 @@ function PaidCard({ order, price }: { order: Order; price: number }) {
   );
 }
 
+/** With the rider: one tap tells Mimi it arrived. (She can mark it too, when they tell her on WhatsApp.) */
+function ReceivedCard({ order, foot }: { order: Order; foot: string }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const got = async () => {
+    if (busy) return;
+    setBusy(true);
+    setFailed(false);
+    const ok = await confirmReceived(order.code).catch(() => false);
+    if (ok) return router.refresh();
+    setFailed(true);
+    setBusy(false);
+  };
+  return (
+    <Card className="flex flex-col gap-3">
+      <span className="text-[16px] font-semibold">Has it arrived?</span>
+      <p className="text-[15px] leading-[1.5] text-stone-600">Tap below once it’s in your hands, so Mimi knows it got to you.</p>
+      <Button onClick={got} aria-disabled={busy} className="w-full">
+        I’ve received it
+      </Button>
+      {failed && <p role="alert" className="text-[14px] font-medium text-red-700">That didn’t go through. Try again, or tell Mimi on WhatsApp.</p>}
+      <p className="text-[13px] text-stone-500">{foot}</p>
+    </Card>
+  );
+}
+
 /** Came back from Paystack but the payment isn't through yet (a bank transfer can take a minute), or it failed. */
 function PaymentNotice({ payment }: { payment: "pending" | "failed" }) {
   return (
@@ -384,12 +412,19 @@ function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) 
               <>
                 Mimi is packing your order and will pass your number to a rider. Your order number is <span className="whitespace-nowrap">{order.id}</span>, and your receipt is below.
               </>
+            ) : order.stage === 2 ? (
+              "It’s with the rider. Mimi has sent you their number on WhatsApp. Pay them for delivery when it arrives."
+            ) : order.stage >= 3 ? (
+              "Thank you for ordering from Mimi."
             ) : (
-              "Mimi passes your number to a rider. You pay the rider for delivery when it arrives."
+              "Mimi is packing it, then passes your number to a rider. You pay the rider for delivery when it arrives."
             )}
           </p>
         </div>
         <ShopOrderCard order={order} test={test} />
+        {!test && order.stage === 2 && (
+          <ReceivedCard order={order} foot={`Paid on Paystack: ${formatNaira(order.price ?? 0)}. Pay the rider for delivery when it arrives.`} />
+        )}
         {test && (
           <a href={sendForReal} target="_blank" rel="noreferrer" className={buttonClass("primary", "md", "w-full")}>
             <WhatsAppIcon size={18} /> Send my order to Mimi
@@ -609,6 +644,8 @@ export function TrackingView({ code, saved, justPaid = false, payment = null }: 
       <PayCard order={order} price={order.price} />
     ) : balanceDue(order) ? (
       <BalanceCard order={order} price={order.price} />
+    ) : order.stage === 3 && order.sentToRider ? (
+      <ReceivedCard order={order} foot={`Paid in full: ${formatNaira(order.price)}. Pay the rider for delivery when it arrives.`} />
     ) : justPaid && order.stage >= 2 && order.stage <= 3 ? (
       <PaidCard order={order} price={order.price} />
     ) : (
