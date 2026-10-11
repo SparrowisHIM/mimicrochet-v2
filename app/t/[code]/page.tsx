@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { TrackingView } from "@/components/order/tracking-view";
 import { orderForTracking } from "@/lib/server/orders";
+import { settlePayment, type Settled } from "@/lib/server/payments";
 
 export const metadata: Metadata = {
   title: "Your order",
@@ -9,13 +10,20 @@ export const metadata: Metadata = {
 
 export default async function TrackingPage({ params, searchParams }: PageProps<"/t/[code]">) {
   const { code } = await params;
-  // Checkout lands here with ?paid=1 so the page opens on the paid moment once.
-  const { paid } = await searchParams;
+  // Paystack sends the customer back here with ?reference=…: check the payment with Paystack first (the
+  // webhook may already have), so the page they land on already shows it paid.
+  const { paid, reference } = await searchParams;
+  let settled: Settled | null = null;
+  if (typeof reference === "string")
+    settled = await settlePayment(reference).catch((e) => {
+      console.error("settlePayment", e);
+      return "pending" as const;
+    });
   // The server's copy opens on any phone. If the database can't be reached, the page falls back to
   // the copy on this phone rather than failing.
   const saved = await orderForTracking(code).catch((e) => {
     console.error("orderForTracking", e);
     return null;
   });
-  return <TrackingView code={code} saved={saved} justPaid={paid === "1"} />;
+  return <TrackingView code={code} saved={saved} justPaid={paid === "1" || settled === "paid"} payment={settled} />;
 }

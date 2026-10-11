@@ -52,7 +52,7 @@ export async function orderForTracking(code: string): Promise<Order | null> {
   if (!isOrderCode(code)) return null;
   // One round trip: the order with its updates, oldest first.
   const [o] = await db()`
-    select number, code, kind, stage, sent, details, name, state, area, price, ready_by, deposit_paid, paid_in_full, payment_sent, created_at,
+    select number, code, kind, stage, sent, details, name, state, area, price, ready_by, deposit_paid, paid_in_full, balance_paid, email is not null as has_email, payment_sent, created_at,
       coalesce((select json_agg(json_build_object('stage', u.stage, 'note', u.note, 'photo', u.photo, 'at', u.created_at) order by u.created_at, u.id)
                 from order_updates u where u.order_id = orders.id), '[]') as updates,
       coalesce((select json_agg(f.position order by f.position) from order_files f where f.order_id = orders.id and f.kind = 'photo'), '[]') as photos
@@ -61,7 +61,7 @@ export async function orderForTracking(code: string): Promise<Order | null> {
   const updates = o.updates as { stage: number; note: string; photo: string | null; at: string }[];
   // The customer's photos, served only through their own order's link (see orderFile below).
   const photos = (o.photos as number[]).map((n) => `/api/orders/${code}/files/photo/${n}`);
-  const d = o.details as Omit<CleanCustomOrder, "name" | "phone" | "state" | "area">;
+  const d = o.details as Omit<CleanCustomOrder, "name" | "phone" | "state" | "area"> & { items?: Order["items"] };
   return {
     onServer: true,
     kind: o.kind,
@@ -93,7 +93,10 @@ export async function orderForTracking(code: string): Promise<Order | null> {
     readyBy: o.ready_by ?? undefined,
     depositPaid: o.deposit_paid,
     paidInFull: o.paid_in_full,
+    balancePaid: o.balance_paid,
+    hasEmail: o.has_email,
     paymentSent: o.payment_sent ?? undefined,
+    ...(d.items ? { items: d.items } : {}),
     updates: updates.map((u) => ({ stage: u.stage, note: u.note, at: dayLabel(new Date(u.at)), ...(u.photo ? { photo: u.photo } : {}) })),
   };
 }
@@ -121,16 +124,6 @@ export async function markSent(code: string) {
     )
     select number, name, piece from o`;
   return (o as { number: string; name: string; piece: string } | undefined) ?? null;
-}
-
-/** The customer says they've paid the deposit or the full price. Mimi still confirms it. */
-export async function reportPayment(code: string, which: "deposit" | "full") {
-  if (!isOrderCode(code)) return null;
-  const [o] = await db()`
-    update orders set payment_sent = ${which}, updated_at = now()
-    where code = ${code} and stage = 1 and price is not null and not deposit_paid and payment_sent is distinct from ${which}
-    returning number, name, price`;
-  return (o as { number: string; name: string; price: number } | undefined) ?? null;
 }
 
 /* -------------------------------- files --------------------------------- */

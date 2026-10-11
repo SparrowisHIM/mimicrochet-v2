@@ -4,15 +4,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from "react";
-import { confirmPaymentSent } from "@/app/actions/orders";
+import { checkPayment, payForOrder } from "@/app/actions/orders";
 import { WhatsAppIcon } from "@/components/icons";
 import { ShopOrderCard } from "@/components/cart/shop-order-card";
 import { Confetti } from "@/components/ui/confetti";
 import { StageIcon } from "@/components/order/stage-icons";
-import { Button, buttonClass, linkClass } from "@/components/ui/button";
+import { Button, ButtonChip, buttonClass, linkClass } from "@/components/ui/button";
+import { Field, inputClass } from "@/components/form/fields";
 import { Chip } from "@/components/ui/chip";
 import { SafeImage } from "@/components/ui/safe-image";
-import { depositOf, findOrder, updateOrder, useOrders, type Order } from "@/lib/orders";
+import { depositOf, findOrder, useOrders, type Order } from "@/lib/orders";
+import { bagStore } from "@/lib/local-store";
+import { isEmail } from "@/lib/validate";
 import { formatNaira, paymentsLive, whatsappLink } from "@/lib/site";
 import { stages } from "@/lib/stages";
 
@@ -29,18 +32,23 @@ function pieceWord(name: string) {
   return "piece";
 }
 
-function headline(o: Order) {
+function headline(o: Order, justPaid: boolean) {
   const w = pieceWord(o.piece.name);
   const isAre = w === "earrings" ? "are" : "is";
   if (o.stage === 0 && o.sent === false) return { title: "Not sent to Mimi yet", lead: "Send your request on WhatsApp so Mimi gets it. This page follows every step after that." };
   if (o.stage === 0) return { title: "Mimi has your idea", lead: "She’ll message you on WhatsApp to agree the price and the date." };
-  if (o.stage === 1 && !o.depositPaid && o.paymentSent) return { title: "Payment sent", lead: "Mimi is checking her bank. This page moves on as soon as she confirms it." };
+  if (justPaid && o.stage === 2) return { title: o.paidInFull ? "Paid in full" : "Deposit paid", lead: "Paid on Paystack. Mimi is starting, and your receipt is in your email." };
+  if (justPaid && o.stage === 3 && o.balancePaid) return { title: "Balance paid", lead: "Paid on Paystack. Mimi is booking your rider, and your receipt is in your email." };
   if (o.stage === 1 && !o.depositPaid) return { title: "Your price is ready", lead: "Mimi starts as soon as your payment arrives: the deposit or the full price." };
   if (o.stage === 1) return { title: o.paidInFull ? "Paid in full" : "Deposit received", lead: "Mimi is picking your yarn and starting soon." };
   if (o.stage === 2) return { title: `Your ${w} ${isAre} being made`, lead: `Mimi started on it. She’ll update this page when it’s ready to send.` };
+  if (o.stage === 3 && balanceDue(o)) return { title: "It’s ready", lead: "Pay the balance and Mimi books your rider." };
   if (o.stage === 3) return { title: `Your ${w} ${isAre} ready`, lead: "Mimi is passing your number to a rider. You pay the rider when it arrives." };
   return { title: "It’s home. Wear it loud.", lead: "Thank you for ordering from Mimi." };
 }
+
+/** Ready, paid by deposit, and the 40% is still to come. */
+const balanceDue = (o: Order) => o.stage === 3 && Boolean(o.depositPaid) && !o.paidInFull && !o.balancePaid && Boolean(o.price);
 
 /* ------------- the signature moment: spotlight what changed since the last visit ------------- */
 
@@ -147,23 +155,74 @@ export function Stepper({ stage, lifted = false }: { stage: number; lifted?: boo
   );
 }
 
-/** The price is agreed: pay the 60% deposit (40% when it's ready) or the whole price now, by bank transfer. */
+/** Sends the customer to Paystack for this order. The server works out the amount and answers with Paystack's page. */
+function usePaystack(order: Order) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const go = async (purpose: "deposit" | "full" | "balance", email: string | null) => {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    const r = await payForOrder(order.code, purpose, email).catch(() => ({ ok: false as const, error: "Couldn’t reach Paystack. Check your connection and try again." }));
+    // Stays busy while the browser opens Paystack.
+    if (r.ok) return window.location.assign(r.url);
+    setError(r.error);
+    setBusy(false);
+  };
+  return { busy, error, go };
+}
+
+function PayButton({ busy, amount, disabled }: { busy: boolean; amount: number; disabled?: boolean }) {
+  return (
+    // Not `disabled` while busy: that would fade it. A second tap is ignored by usePaystack.
+    <Button type="submit" arrow={false} aria-disabled={busy || disabled} className="w-full">
+      {busy ? (
+        <>
+          <motion.span className="size-4 rounded-full border-2 border-orange-50/40 border-t-orange-50" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }} />
+          Opening Paystack…
+        </>
+      ) : (
+        <>
+          Pay <ButtonChip>{formatNaira(amount)}</ButtonChip>
+        </>
+      )}
+    </Button>
+  );
+}
+
+/** The receipt email, asked once (the balance reuses it). */
+function EmailField({ value, onChange, invalid }: { value: string; onChange: (v: string) => void; invalid: boolean }) {
+  return (
+    <Field label="Email for your receipt" htmlFor="pay-email" error={invalid ? "Add your email, like amara@gmail.com." : null}>
+      <input
+        id="pay-email"
+        type="email"
+        inputMode="email"
+        autoComplete="email"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="e.g. amara@gmail.com"
+        aria-invalid={invalid}
+        className={inputClass}
+      />
+    </Field>
+  );
+}
+
+/** The price is agreed: pay the 60% deposit (40% when it's ready) or the whole price now, on Paystack. */
 function PayCard({ order, price }: { order: Order; price: number }) {
-  const router = useRouter();
   const reduce = useReducedMotion();
   const [full, setFull] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [email, setEmail] = useState("");
+  const [tried, setTried] = useState(false);
+  const pay = usePaystack(order);
   const deposit = depositOf(price);
   const now = full ? price : deposit;
-  const paid = async () => {
-    const which = full ? "full" : "deposit";
-    updateOrder(order.id, { paymentSent: which });
-    if (!order.onServer) return;
-    // The server holds the order: tell it, then show the page as it now stands.
-    setSaving(true);
-    await confirmPaymentSent(order.code, which).catch(() => false);
-    router.refresh();
-    setSaving(false);
+  const emailBad = !isEmail(email);
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setTried(true);
+    if (!emailBad && !order.sample) pay.go(full ? "full" : "deposit", email.trim());
   };
   return (
     <Card className="flex flex-col gap-4 border border-amber-200 bg-amber-50">
@@ -188,14 +247,76 @@ function PayCard({ order, price }: { order: Order; price: number }) {
           </AnimatePresence>
         </span>
       </div>
-      <p className="text-[15px] leading-[1.5] text-stone-700">Pay by bank transfer to the account Mimi sent with your price on WhatsApp, then tap below. She checks her bank and starts.</p>
-      <Button onClick={paid} disabled={order.sample || saving}>
-        {full ? "I’ve paid in full" : "I’ve paid the deposit"}
-      </Button>
+      <p className="text-[15px] leading-[1.5] text-stone-700">Pay on Paystack with a card, bank transfer or USSD. Mimi starts as soon as it’s paid.</p>
+      <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+        <EmailField value={email} onChange={setEmail} invalid={tried && emailBad} />
+        <PayButton busy={pay.busy} amount={now} disabled={order.sample} />
+      </form>
+      {pay.error && <p role="alert" className="text-[14px] font-medium text-red-700">{pay.error}</p>}
       <p className="text-[13px] text-amber-800">
         {full ? "Nothing more to pay when it’s ready." : `Balance when it’s ready (40%): ${formatNaira(price - deposit)}.`} Delivery is paid to the rider on arrival.
       </p>
     </Card>
+  );
+}
+
+/** Ready: pay the 40% balance on Paystack, and Mimi books the rider. */
+function BalanceCard({ order, price }: { order: Order; price: number }) {
+  const [email, setEmail] = useState("");
+  const [tried, setTried] = useState(false);
+  const pay = usePaystack(order);
+  const deposit = depositOf(price);
+  const balance = price - deposit;
+  // Paid the deposit on Paystack: the server has their email. Paid Mimi another way: ask for it.
+  const needEmail = !order.hasEmail;
+  const emailBad = needEmail && !isEmail(email);
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setTried(true);
+    if (!emailBad) pay.go("balance", needEmail ? email.trim() : null);
+  };
+  return (
+    <Card className="flex flex-col gap-4 border border-amber-200 bg-amber-50">
+      <div className="flex flex-col gap-1">
+        <span className="text-[14px] font-semibold text-amber-800">Balance to pay now (40%)</span>
+        <span className="text-[34px] leading-none font-semibold tracking-[-0.01em]">{formatNaira(balance)}</span>
+      </div>
+      <p className="text-[15px] leading-[1.5] text-stone-700">Card, bank transfer or USSD, on Paystack.</p>
+      <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+        {needEmail && <EmailField value={email} onChange={setEmail} invalid={tried && emailBad} />}
+        <PayButton busy={pay.busy} amount={balance} />
+      </form>
+      {pay.error && <p role="alert" className="text-[14px] font-medium text-red-700">{pay.error}</p>}
+      <p className="text-[13px] text-amber-800">Deposit paid: {formatNaira(deposit)}. Delivery is paid to the rider on arrival.</p>
+    </Card>
+  );
+}
+
+/** Back from Paystack: what was just paid, in green. */
+function PaidCard({ order, price }: { order: Order; price: number }) {
+  const deposit = depositOf(price);
+  const [label, amount, note] = order.balancePaid
+    ? ["Balance paid (40%)", price - deposit, "That’s everything paid."]
+    : order.paidInFull
+      ? ["Paid in full", price, "Nothing more to pay when it’s ready."]
+      : ["Deposit paid (60%)", deposit, `Balance when it’s ready (40%): ${formatNaira(price - deposit)}.`];
+  return (
+    <Card className="flex flex-col gap-3 border border-emerald-200 bg-emerald-50">
+      <span className="text-[14px] font-semibold text-emerald-800">{label}</span>
+      <span className="text-[34px] leading-none font-semibold tracking-[-0.01em]">{formatNaira(amount as number)}</span>
+      <p className="text-[13px] text-emerald-800">{note} Delivery is paid to the rider on arrival.</p>
+    </Card>
+  );
+}
+
+/** Came back from Paystack but the payment isn't through yet (a bank transfer can take a minute), or it failed. */
+function PaymentNotice({ payment }: { payment: "pending" | "failed" }) {
+  return (
+    <p role="status" className={`rounded-[14px] px-4 py-3 text-[14px] leading-[1.5] ${payment === "failed" ? "bg-red-50 text-red-800" : "bg-amber-100 text-amber-900"}`}>
+      {payment === "failed"
+        ? "That payment didn’t go through, so nothing was taken. You can try again."
+        : "Paystack is still confirming your payment. This page updates on its own as soon as it’s through."}
+    </p>
   );
 }
 
@@ -232,8 +353,11 @@ function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) 
   };
   // The paid moment plays once: drop ?paid=1 so a reload opens on the order as it stands.
   useEffect(() => {
-    if (justPaid) window.history.replaceState(null, "", `/t/${order.code}`);
-  }, [justPaid, order.code]);
+    if (!justPaid) return;
+    window.history.replaceState(null, "", `/t/${order.code}`);
+    // Paid: what was bought leaves the bag (anything added since stays).
+    for (const i of order.items ?? []) bagStore.remove(i.slug);
+  }, [justPaid, order.code, order.items]);
 
   return (
     <div className="container-page flex justify-center pt-8 pb-24 lg:pt-14">
@@ -315,7 +439,36 @@ function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) 
 }
 
 /** `saved` is the server's copy of the order, when it has one; otherwise the order is looked up on this phone. */
-export function TrackingView({ code, saved, justPaid = false }: { code: string; saved?: Order | null; justPaid?: boolean }) {
+type Payment = "paid" | "pending" | "failed" | "unknown" | null;
+
+/**
+ * Back from Paystack: drop ?reference= so a reload opens the order as it stands. If Paystack was still
+ * confirming (a bank transfer can take a minute), ask again every 5 seconds for a minute, then show the page as paid.
+ */
+function usePaymentWatch(code: string, payment: Payment) {
+  const router = useRouter();
+  const [status, setStatus] = useState<Payment>(payment);
+  useEffect(() => {
+    const reference = new URLSearchParams(window.location.search).get("reference");
+    if (reference) window.history.replaceState(null, "", `/t/${code}`);
+    if (!reference || payment !== "pending") return;
+    let tries = 0;
+    const t = setInterval(async () => {
+      tries += 1;
+      const now = await checkPayment(reference).catch(() => "pending" as const);
+      if (now !== "pending" || tries >= 12) {
+        clearInterval(t);
+        setStatus(now);
+        if (now === "paid") router.replace(`/t/${code}?paid=1`);
+      }
+    }, 5000);
+    return () => clearInterval(t);
+  }, [code, payment, router]);
+  return status;
+}
+
+export function TrackingView({ code, saved, justPaid = false, payment = null }: { code: string; saved?: Order | null; justPaid?: boolean; payment?: Payment }) {
+  const paymentNow = usePaymentWatch(code, payment);
   const orders = useOrders();
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const local = findOrder(orders, code);
@@ -332,6 +485,23 @@ export function TrackingView({ code, saved, justPaid = false }: { code: string; 
   const [showAll, setShowAll] = useState(false);
 
   if (!hydrated) return <div className="min-h-[70vh]" />;
+  // A shop order only exists once Paystack confirms it: until then, say where the payment stands.
+  if (!order && (paymentNow === "pending" || paymentNow === "failed"))
+    return (
+      <div className="container-page flex min-h-[60vh] flex-col items-start justify-center gap-4 py-16">
+        <h1 className="font-serif text-[36px] leading-tight lg:text-[48px]">{paymentNow === "pending" ? "Confirming your payment" : "That payment didn’t go through"}</h1>
+        <p className="max-w-[520px] text-[17px] text-stone-600">
+          {paymentNow === "pending"
+            ? "Paystack is still confirming it, which can take a minute for a bank transfer. This page opens your order on its own as soon as it’s through."
+            : "Nothing was taken, and your bag is just as you left it."}
+        </p>
+        {paymentNow === "failed" && (
+          <Link href="/checkout" className={buttonClass("primary")}>
+            Back to checkout
+          </Link>
+        )}
+      </div>
+    );
   if (!order)
     return (
       <div className="container-page flex min-h-[60vh] flex-col items-start justify-center gap-4 py-16">
@@ -350,14 +520,15 @@ export function TrackingView({ code, saved, justPaid = false }: { code: string; 
 
   if (order.kind === "shop") return <ShopTracking order={order} justPaid={justPaid} />;
 
-  const h = headline(order);
+  const h = headline(order, justPaid);
   const latest = order.updates[order.updates.length - 1];
   const lifted = phase === "lift";
   const raised = lifted || phase === "settle";
   const deposit = order.price ? depositOf(order.price) : undefined;
   const balance = order.price && deposit ? order.price - deposit : undefined;
   const awaitingDeposit = order.stage === 1 && !order.depositPaid && order.price;
-  const settled = order.paidInFull || order.stage >= 4;
+  const settled = order.paidInFull || order.balancePaid || order.stage >= 4;
+  const notice = !justPaid && (paymentNow === "pending" || paymentNow === "failed") ? paymentNow : null;
   // The example order isn't anyone's: its button starts a conversation instead of asking about MIMI-2406.
   const ask = whatsappLink(order.sample ? "Hi Mimi! I saw the example order on your site and I’d like to order something too." : `Hi Mimi! It’s about my order ${order.id}.`);
 
@@ -432,15 +603,11 @@ export function TrackingView({ code, saved, justPaid = false }: { code: string; 
 
   const money = order.price ? (
     awaitingDeposit ? (
-      order.paymentSent ? (
-        <Card className="flex flex-col gap-3 border border-amber-200 bg-amber-50">
-          <span className="text-[14px] font-semibold text-amber-800">{order.paymentSent === "full" ? "Full payment sent" : "Deposit sent (60%)"}</span>
-          <span className="text-[34px] leading-none font-semibold tracking-[-0.01em]">{formatNaira(order.paymentSent === "full" ? order.price : deposit!)}</span>
-          <p className="text-[15px] leading-[1.5] text-stone-700">Mimi is checking her bank. Once it’s there, this page moves to “In progress”.</p>
-        </Card>
-      ) : (
-        <PayCard order={order} price={order.price} />
-      )
+      <PayCard order={order} price={order.price} />
+    ) : balanceDue(order) ? (
+      <BalanceCard order={order} price={order.price} />
+    ) : justPaid && order.stage >= 2 && order.stage <= 3 ? (
+      <PaidCard order={order} price={order.price} />
     ) : (
       <Card className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
@@ -454,10 +621,10 @@ export function TrackingView({ code, saved, justPaid = false }: { code: string; 
           ) : (
             <div className="flex justify-between"><dt className="text-stone-500">Deposit paid (60%)</dt><dd>−{formatNaira(deposit!)}</dd></div>
           )}
-          {order.stage >= 4 && !order.paidInFull && <div className="flex justify-between"><dt className="text-stone-500">Balance paid (40%)</dt><dd>−{formatNaira(balance!)}</dd></div>}
+          {(order.balancePaid || order.stage >= 4) && !order.paidInFull && <div className="flex justify-between"><dt className="text-stone-500">Balance paid (40%)</dt><dd>−{formatNaira(balance!)}</dd></div>}
           <div className="flex justify-between font-semibold"><dt>{settled ? "Left to pay" : "Balance (40%)"}</dt><dd>{formatNaira(settled ? 0 : balance!)}</dd></div>
         </dl>
-        <p className="text-[13px] text-stone-500">{settled ? "Nothing more to pay." : "Mimi confirms how to pay on WhatsApp."} Delivery is paid to the rider on arrival.</p>
+        <p className="text-[13px] text-stone-500">{settled ? "Nothing more to pay." : "You pay it here, on Paystack, when it’s ready."} Delivery is paid to the rider on arrival.</p>
       </Card>
     )
   ) : null;
@@ -553,6 +720,7 @@ export function TrackingView({ code, saved, justPaid = false }: { code: string; 
           {timeline}
         </div>
         <div className="flex flex-col gap-4 lg:sticky lg:top-28 lg:w-[400px]">
+          {notice && <PaymentNotice payment={notice} />}
           {money}
           {details}
           {contact}

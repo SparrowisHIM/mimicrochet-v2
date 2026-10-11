@@ -1,10 +1,9 @@
 "use server";
 
 import { parseCustomOrder } from "@/lib/server/order-input";
-import { codeForOrder, createCustomOrder, markSent, reportPayment } from "@/lib/server/orders";
+import { codeForOrder, createCustomOrder, markSent } from "@/lib/server/orders";
+import { pieceStatus, settlePayment, startOrderPayment, startShopCheckout } from "@/lib/server/payments";
 import { notifyMimi } from "@/lib/server/push";
-import { depositOf } from "@/lib/order-code";
-import { formatNaira } from "@/lib/site";
 
 // What the order pages can ask the server to do. Each one checks its own input (anyone can post
 // here directly) and answers with only what the page needs.
@@ -43,17 +42,47 @@ export async function confirmSent(code: unknown) {
   }
 }
 
-export async function confirmPaymentSent(code: unknown, which: unknown) {
-  if (typeof code !== "string" || (which !== "deposit" && which !== "full")) return false;
+/* --------------------------------- Paystack --------------------------------- */
+
+/** "Pay" on a custom order's page: the deposit, the full price or the balance. Answers with Paystack's page. */
+export async function payForOrder(code: unknown, purpose: unknown, email: unknown) {
+  if (typeof code !== "string" || (purpose !== "deposit" && purpose !== "full" && purpose !== "balance")) return { ok: false as const, error: "Something went wrong. Reload the page." };
   try {
-    const o = await reportPayment(code, which);
-    if (o) {
-      const amount = formatNaira(which === "full" ? o.price : depositOf(o.price));
-      await notifyMimi({ title: `${o.name} says they’ve paid`, body: `${amount} (${which === "full" ? "the full price" : "the deposit"}) for ${o.number}. Check your bank app.`, url: "/studio", tag: o.number });
-    }
-    return Boolean(o);
+    return await startOrderPayment(code, purpose, typeof email === "string" ? email : null);
   } catch (e) {
-    console.error("confirmPaymentSent", e);
-    return false;
+    console.error("payForOrder", e);
+    return { ok: false as const, error: "Couldn’t start the payment. Try again in a moment." };
+  }
+}
+
+/** "Pay" at checkout: the pieces in the bag and where to deliver them. Answers with Paystack's page. */
+export async function payForBag(input: unknown) {
+  try {
+    return await startShopCheckout(input);
+  } catch (e) {
+    console.error("payForBag", e);
+    return { ok: false as const, error: "Couldn’t start the payment. Try again in a moment." };
+  }
+}
+
+/** Which one-of-one pieces have sold or are being paid for, so pages can say so. */
+export async function stockFor(slugs: unknown) {
+  if (!Array.isArray(slugs)) return { sold: [], held: [] };
+  try {
+    return await pieceStatus(slugs.filter((s): s is string => typeof s === "string"));
+  } catch (e) {
+    console.error("stockFor", e);
+    return { sold: [], held: [] };
+  }
+}
+
+/** Back from Paystack while it was still confirming: ask again (the page polls this for a minute). */
+export async function checkPayment(reference: unknown) {
+  if (typeof reference !== "string") return "unknown" as const;
+  try {
+    return await settlePayment(reference);
+  } catch (e) {
+    console.error("checkPayment", e);
+    return "pending" as const;
   }
 }

@@ -46,6 +46,10 @@ export type Order = {
   depositPaid?: boolean;
   /** Paid the whole price up front instead of the 60% deposit, so nothing is left when it's ready. */
   paidInFull?: boolean;
+  /** The 40% balance is paid (a deposit order, once it's ready). */
+  balancePaid?: boolean;
+  /** The server already has an email for Paystack's receipt, so the balance needs no email field. */
+  hasEmail?: boolean;
   /** The customer tapped "I've paid" on their page, and which amount they sent. Mimi still confirms it. */
   paymentSent?: "deposit" | "full";
   sample?: boolean;
