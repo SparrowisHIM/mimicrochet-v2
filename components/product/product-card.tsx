@@ -18,7 +18,7 @@ export function ProductCard({
   const action = product.checkout === "bag" ? "Buy now" : "Have it made";
 
   return (
-    <article className="group relative flex h-full flex-col gap-3 lg:gap-3.5">
+    <article className="group relative flex h-full flex-col gap-2.5 lg:gap-3.5">
       <div className="relative">
         <Link
           href={`/shop/${product.slug}`}

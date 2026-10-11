@@ -63,10 +63,15 @@ const KEY = "mimi:orders";
 const listeners = new Set<() => void>();
 let cache: Order[] | null = null;
 
+// The example order's dates move with today (sent 9 days ago, ready in 5), so it never says "ready Fri 16 Oct"
+// after that day has passed. Only client pages show these dates.
+const fromToday = (days: number) => new Date(Date.now() + days * 86_400_000);
+const dayMonth = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+
 export const demoOrder: Order = {
   id: "MIMI-2406",
   code: "k7x2p9",
-  createdAt: "2026-10-02",
+  createdAt: fromToday(-9).toISOString().slice(0, 10),
   piece: { name: "Ruby Dress", image: "/images/products/red-fringe-beach-set-1.jpg", slug: "red-fringe-beach-set", source: "product", price: 40000 },
   photos: ["/images/story/hero-ruby.jpg"],
   size: "L",
@@ -78,12 +83,12 @@ export const demoOrder: Order = {
   area: "GRA Phase 2, Port Harcourt",
   stage: 2,
   price: 45000,
-  readyBy: "Fri 16 Oct",
+  readyBy: fromToday(5).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }),
   depositPaid: true,
   sample: true,
   updates: [
-    { stage: 0, note: "Request sent with your size and colours.", at: "2 Oct" },
-    { stage: 1, note: "Price agreed with Mimi on WhatsApp.", at: "3 Oct" },
+    { stage: 0, note: "Request sent with your size and colours.", at: dayMonth(fromToday(-9)) },
+    { stage: 1, note: "Price agreed with Mimi on WhatsApp.", at: dayMonth(fromToday(-8)) },
     { stage: 2, note: "The top is done. Starting the skirt now.", at: "Today", photo: "/images/story/ruby-taking-shape.jpg" },
   ],
 };

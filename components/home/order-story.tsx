@@ -82,7 +82,8 @@ const IMAGE_MS = 3000;
 const VIDEO_STALL_MS = 15000;
 // What Mimi's latest note says at each stage, on the same card customers see on their tracking page.
 const notes = story.map((s, i) =>
-  i === 1 ? `Price agreed: ${formatNaira(demoOrder.price ?? 0)}, ready by ${demoOrder.readyBy}. Deposit paid, so the yarn is picked.` : s.caption,
+  // No calendar date here: Home is built ahead of time, so a date would go stale. The example order's own page has one.
+  i === 1 ? `Price agreed: ${formatNaira(demoOrder.price ?? 0)}, ready in about 3 weeks. Deposit paid, so the yarn is picked.` : s.caption,
 );
 
 /* --------------------------------- the photo stack --------------------------------- */

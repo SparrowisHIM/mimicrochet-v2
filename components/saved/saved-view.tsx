@@ -78,7 +78,7 @@ export function SavedView() {
               <HeartIcon filled />
             </span>
             <p className="font-serif text-[28px] leading-tight">Nothing saved yet</p>
-            <p className="max-w-[440px] text-[16px] text-stone-600">Tap the heart on any piece to keep it here. Every piece is one of one, so if one sells, Mimi can still make it for you.</p>
+            <p className="max-w-[440px] text-[16px] text-stone-600">Tap the heart on any piece to keep it here. If a ready piece sells, Mimi can still make it for you.</p>
             <ButtonLink href="/shop">Browse the shop</ButtonLink>
           </div>
         </div>

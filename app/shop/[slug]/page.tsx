@@ -29,7 +29,7 @@ export default async function ProductPage({ params }: PageProps<"/shop/[slug]">)
       <ProductView key={product.slug} product={product} />
       <section className="bg-white py-14 lg:py-24">
         <div className="container-page flex flex-col gap-7 lg:gap-10">
-          <h2 className="font-serif text-[28px] leading-[1.1] tracking-[-0.01em] lg:text-[40px]">More one-of-ones</h2>
+          <h2 className="font-serif text-[28px] leading-[1.1] tracking-[-0.01em] lg:text-[40px]">{product.category === "Earrings" ? "More earrings" : "More one-of-ones"}</h2>
           <ul className="grid grid-cols-2 gap-x-3 gap-y-7 lg:grid-cols-4 lg:gap-6">
             {related.map((p) => (
               <li key={p.slug}>

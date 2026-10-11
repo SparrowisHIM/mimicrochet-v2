@@ -13,7 +13,6 @@ import { bagStore } from "@/lib/local-store";
 import { priceLabel, tagLabel, type Product } from "@/lib/products";
 import { hasSizes, sizeChart, sizeLabels, stockLine } from "@/lib/sizes";
 import { whatsappLink } from "@/lib/site";
-import { stages } from "@/lib/stages";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -39,27 +38,22 @@ function Accordion({ title, children, defaultOpen = false }: { title: string; ch
   );
 }
 
-function MadeForYou({ product }: { product: Product }) {
-  const quick = Boolean(product.leadTime);
+/** Made-for-you pieces get one quiet line in place of the stock line: how long Mimi takes, and that she
+    confirms the price first. Earrings (a lead time, bought straight away) say how soon they arrive instead. */
+function makingLines(product: Product) {
+  if (product.leadTime) return ["Made in about 3 days", "Mimi makes your pair when you order. It’s at your door within a week."];
+  return ["Made for you in about 3 weeks", `Mimi confirms the ${product.price === null ? "" : "final "}price on WhatsApp before she starts.`];
+}
+
+function Making({ product, className = "" }: { product: Product; className?: string }) {
+  const [line, note] = makingLines(product);
   return (
-    <div className="flex flex-col gap-3 rounded-[22px] border border-orange-200 bg-white px-[22px] py-5">
-      <div className="flex items-center justify-between">
-        <span className="text-[16px] font-semibold">How Mimi makes it</span>
-        <span className="text-[14px] font-semibold text-amber-800">{quick ? "About 3 days" : "About 3 weeks"}</span>
-      </div>
-      <p className="text-[15px] leading-[1.5] text-stone-600">
-        {quick
-          ? "Mimi makes this pair when you order. It’s at your door within a week. You pay now and get a tracking link."
-          : product.price === null
-            ? "Tell Mimi your size and colours. She confirms the price and the date with you on WhatsApp before she starts, and you follow every step with your own tracking link."
-            : "You choose the size and colours. Mimi confirms the final price with you on WhatsApp before she starts, and you can follow every step with your own tracking link."}
+    <div className={`flex flex-col gap-1.5 ${className}`}>
+      <p className="flex items-center gap-2.5 text-[15px] font-medium">
+        <span className="size-2 rounded-full bg-amber-600" />
+        {line}
       </p>
-      <div className="flex gap-1.5" aria-hidden>
-        {stages.map((s, i) => (
-          <span key={s.key} className={`h-1 flex-1 rounded-full ${i === 0 ? "bg-amber-800" : "bg-stone-100"}`} />
-        ))}
-      </div>
-      <p className="text-[13px] font-medium text-stone-500">{stages.map((s) => s.label).join("  →  ")}</p>
+      <p className="text-[14px] text-stone-500">{note}</p>
     </div>
   );
 }
@@ -79,7 +73,7 @@ export function ProductView({ product }: { product: Product }) {
   const otherSize = Boolean(stockSize && size && size !== stockSize);
   const buyable = product.checkout === "bag" && !otherSize;
   const requestHref = `/custom-order?piece=${product.slug}${size ? `&size=${size}` : ""}`;
-  const ask = whatsappLink(`Hi Mimi! I’m looking at the ${product.name} (${priceLabel(product)}). Is it still available?`);
+  const ask = whatsappLink(`Hi Mimi! I’m looking at the ${product.name} (${priceLabel(product)}). ${product.kind === "ready" ? "Is it still available?" : "Can you make it for me?"}`);
 
   useEffect(() => {
     const el = actionsRef.current;
@@ -188,8 +182,6 @@ export function ProductView({ product }: { product: Product }) {
               <p className="text-[16px] leading-[1.55] text-stone-600 lg:text-[17px]">{product.description}</p>
             </motion.div>
 
-            {product.kind === "made" && <MadeForYou product={product} />}
-
             {sized && (
               <div className="flex flex-col gap-3.5 border-t border-stone-200 pt-7">
                 <div className="flex items-center justify-between">
@@ -223,6 +215,7 @@ export function ProductView({ product }: { product: Product }) {
                     );
                   })}
                 </div>
+                {product.kind === "made" && <Making product={product} />}
                 {stockSize && (
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.div key={otherSize ? "other" : "stock"} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }} className="flex flex-col gap-1.5">
@@ -238,6 +231,8 @@ export function ProductView({ product }: { product: Product }) {
                 )}
               </div>
             )}
+
+            {!sized && product.kind === "made" && <Making product={product} className="border-t border-stone-200 pt-7" />}
 
             {!sized && product.kind === "ready" && (
               <p className="flex items-center gap-2.5 border-t border-stone-200 pt-7 text-[15px] font-medium">
@@ -258,7 +253,7 @@ export function ProductView({ product }: { product: Product }) {
               <li>Delivery anywhere in Nigeria. You pay the rider on arrival.</li>
               <li>
                 {product.kind === "ready" ? "Want it in another colour? " : "Have something else in mind? "}
-                <Link href="/custom-order" className="text-stone-900 underline underline-offset-4">
+                <Link href={product.kind === "ready" ? `/custom-order?piece=${product.slug}` : "/custom-order"} className="text-stone-900 underline underline-offset-4">
                   Start a custom order
                 </Link>
               </li>

@@ -18,6 +18,10 @@ export const site = {
   },
 } as const;
 
+/** Online payments aren't switched on yet: the shop checkout runs as a test, charges nothing and Mimi isn't told,
+ *  so the order page says so and offers to send the order to her on WhatsApp. Paystack (stage 6) turns this on. */
+export const paymentsLive = false;
+
 /** wa.me link with a prefilled message (wa.link short links drop ?text=). */
 export function whatsappLink(message?: string) {
   const base = `https://wa.me/${site.whatsappNumber}`;
@@ -29,6 +33,7 @@ export const navLinks = [
   { href: "/custom-order", label: "Custom orders" },
   { href: "/track", label: "Track an order" },
   { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
 ] as const;
 
 export const footerLinks = {

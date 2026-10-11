@@ -42,12 +42,12 @@ function HaveItMade() {
           <span className="max-lg:hidden">Love it, but not your size?</span>
         </p>
         <p className="text-[13px] leading-[1.45] text-stone-300 lg:text-[16px] lg:leading-[1.5]">
-          <span className="lg:hidden">Mimi can make it for you.</span>
-          <span className="max-lg:hidden">Mimi can make any piece in your size, or something new from your photo.</span>
+          <span className="lg:hidden">Open any piece and pick your size. Mimi makes it for you.</span>
+          <span className="max-lg:hidden">Open any piece and pick your size, and Mimi makes it for you. Or start from your own photo.</span>
         </p>
       </div>
       <Link href="/custom-order" className={buttonClass("light", "sm", "w-full lg:h-[50px] lg:text-[15px]")}>
-        <span className="lg:hidden">Start an order</span>
+        <span className="lg:hidden">Your own idea</span>
         <span className="max-lg:hidden">Start a custom order</span>
       </Link>
     </div>

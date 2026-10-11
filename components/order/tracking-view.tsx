@@ -13,7 +13,7 @@ import { StageIcon } from "@/components/order/stage-icons";
 import { Button, buttonClass, linkClass } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { depositOf, findOrder, updateOrder, useOrders, type Order } from "@/lib/orders";
-import { formatNaira, whatsappLink } from "@/lib/site";
+import { formatNaira, paymentsLive, whatsappLink } from "@/lib/site";
 import { stages } from "@/lib/stages";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -207,6 +207,17 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 
 function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) {
   const reduce = useReducedMotion();
+  // Until payments are live every shop checkout is a test: say so, and let them send the order to Mimi for real.
+  const test = !paymentsLive;
+  const sendForReal = whatsappLink(
+    [
+      "Hi Mimi! I’d like to buy:",
+      ...(order.items ?? []).map((i) => `• ${i.name}${i.size && /^(XS|S|M|L|XL)$/.test(i.size) ? ` (size ${i.size})` : ""}, ${formatNaira(i.price)}`),
+      `Total ${formatNaira(order.price ?? 0)}, plus delivery paid to the rider.`,
+      `Name: ${order.name}`,
+      `Deliver to: ${order.area}, ${order.state}`,
+    ].join("\n"),
+  );
   const host = useSyncExternalStore(() => () => {}, () => window.location.host, () => "");
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
@@ -228,7 +239,7 @@ function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) 
     <div className="container-page flex justify-center pt-8 pb-24 lg:pt-14">
       <div className="flex w-full max-w-[560px] flex-col gap-5">
         <div className="flex flex-col items-center gap-3 text-center">
-          {justPaid ? (
+          {justPaid && !test ? (
             <motion.span className="relative mb-1 grid size-14 place-items-center rounded-full bg-emerald-100 text-emerald-800" initial={reduce ? false : { scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 420, damping: 18 }}>
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <motion.path d="M5 12.5 10 17.5 19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" initial={reduce ? false : { pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.5, delay: 0.15 }} />
@@ -239,10 +250,12 @@ function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) 
             <span className="rounded-full border border-stone-200 bg-white px-3.5 py-1.5 text-[13px] font-medium">Order {order.id}</span>
           )}
           <h1 className="font-serif text-[36px] leading-[1.05] lg:text-[52px]">
-            {justPaid ? "Paid! It’s all yours." : ["Paid. Mimi is packing it.", "Packing your order", "It’s on its way", "It’s home. Wear it loud."][order.stage]}
+            {test ? "This was a test order" : justPaid ? "Paid! It’s all yours." : ["Paid. Mimi is packing it.", "Packing your order", "It’s on its way", "It’s home. Wear it loud."][order.stage]}
           </h1>
           <p className="max-w-[460px] text-[16px] leading-[1.5] text-stone-600">
-            {justPaid ? (
+            {test ? (
+              "Payments aren’t switched on yet, so nothing was charged and Mimi hasn’t been told. To buy it for real, send your order to Mimi on WhatsApp."
+            ) : justPaid ? (
               <>
                 Mimi is packing your order and will pass your number to a rider. Your order number is <span className="whitespace-nowrap">{order.id}</span>, and your receipt is below.
               </>
@@ -251,8 +264,13 @@ function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) 
             )}
           </p>
         </div>
-        <ShopOrderCard order={order} />
-        {justPaid && (
+        <ShopOrderCard order={order} test={test} />
+        {test && (
+          <a href={sendForReal} target="_blank" rel="noreferrer" className={buttonClass("primary", "md", "w-full")}>
+            <WhatsAppIcon size={18} /> Send my order to Mimi
+          </a>
+        )}
+        {justPaid && !test && (
           <div className="flex flex-col gap-2 rounded-[22px] border border-stone-200 bg-white p-5">
             <span className="text-[15px] font-semibold">Your tracking link</span>
             <div className="flex items-center justify-between gap-3">
@@ -275,14 +293,16 @@ function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) 
           ))}
           <div className="flex justify-between"><span className="text-stone-600">Delivery</span><span>Paid to the rider</span></div>
           {order.price !== undefined && (
-            <div className="flex justify-between border-t border-stone-100 pt-2 font-semibold"><span>Paid with Paystack</span><span>{formatNaira(order.price)}</span></div>
+            <div className="flex justify-between border-t border-stone-100 pt-2 font-semibold"><span>{test ? "Total, nothing charged" : "Paid with Paystack"}</span><span>{formatNaira(order.price)}</span></div>
           )}
         </div>
+        {!test && (
         <a href={whatsappLink(`Hi Mimi! It’s about my order ${order.id}.`)} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-[22px] bg-white p-4 hover:bg-orange-100/60">
           <span className="grid size-10 place-items-center rounded-full bg-orange-100 font-serif text-[17px] text-amber-800">M</span>
           <span className="flex flex-1 flex-col"><span className="text-[15px] font-semibold">Mimi</span><span className="text-[13px] text-stone-500">Usually replies the same day</span></span>
           <WhatsAppIcon size={20} />
         </a>
+        )}
         {justPaid && (
           <Link href="/shop" className={`${linkClass} self-center`}>
             Back to the shop
@@ -338,7 +358,8 @@ export function TrackingView({ code, saved, justPaid = false }: { code: string; 
   const balance = order.price && deposit ? order.price - deposit : undefined;
   const awaitingDeposit = order.stage === 1 && !order.depositPaid && order.price;
   const settled = order.paidInFull || order.stage >= 4;
-  const ask = whatsappLink(`Hi Mimi! It’s about my order ${order.id}.`);
+  // The example order isn't anyone's: its button starts a conversation instead of asking about MIMI-2406.
+  const ask = whatsappLink(order.sample ? "Hi Mimi! I saw the example order on your site and I’d like to order something too." : `Hi Mimi! It’s about my order ${order.id}.`);
 
   const latestCard = (
     <div ref={latestRef} className={`relative scroll-mt-20 transition-[transform,box-shadow] duration-500 ${raised ? "z-40" : ""} ${lifted ? "scale-[1.03] shadow-[0_30px_80px_-20px_rgb(28_25_23/0.35)]" : ""} rounded-[22px]`}>

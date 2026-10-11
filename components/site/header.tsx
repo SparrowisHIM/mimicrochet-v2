@@ -153,7 +153,7 @@ export function Header() {
             className="absolute inset-x-0 top-full h-[calc(100dvh-62px)] border-t border-stone-200/70 bg-orange-50 px-5 pt-6 lg:hidden"
           >
             <ul className="flex flex-col">
-              {[...navLinks, { href: "/saved", label: "Saved pieces" }, { href: "/contact", label: "Contact" }].map((link, i) => (
+              {[...navLinks.filter((l) => l.href !== "/contact"), { href: "/saved", label: "Saved pieces" }, { href: "/contact", label: "Contact" }].map((link, i) => (
                 <motion.li
                   key={link.href}
                   initial={{ opacity: 0, y: 12 }}

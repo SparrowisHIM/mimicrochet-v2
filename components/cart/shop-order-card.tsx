@@ -5,18 +5,22 @@ import { CardStack } from "@/components/ui/card-stack";
 import type { Order } from "@/lib/orders";
 import { shopStages } from "@/lib/stages";
 
-export function ShopOrderCard({ order }: { order: Order }) {
+/** `test`: a checkout made while payments are off. It never moves on, so it shows "Test order" and no steps. */
+export function ShopOrderCard({ order, test = false }: { order: Order; test?: boolean }) {
   const items = order.items ?? [];
   return (
     <div className="flex flex-col gap-4 rounded-[22px] border border-stone-200 bg-white p-5 shadow-[0_24px_48px_-12px_rgb(28_25_23/0.14)]">
       <div className="flex items-center justify-between">
         <span className="text-[13px] font-medium text-stone-500">Order {order.id}</span>
-        <span className="rounded-full bg-emerald-100 px-3 py-1.5 text-[13px] leading-none font-semibold text-emerald-800">{shopStages[order.stage]}</span>
+        <span className={`rounded-full px-3 py-1.5 text-[13px] leading-none font-semibold ${test ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>
+          {test ? "Test order" : shopStages[order.stage]}
+        </span>
       </div>
       <div className="flex items-center gap-3">
         <CardStack images={items.map((it) => it.image)} size="md" />
         <span className="text-[15px] leading-snug font-medium">{items.map((i) => i.name + (i.size && i.size !== "One size" ? ` · ${i.size}` : "")).join(" and ")}</span>
       </div>
+      {!test && (
       <div className="flex flex-col gap-2">
         <div className="flex gap-1.5" aria-hidden>
           {shopStages.map((s, i) => (
@@ -33,6 +37,7 @@ export function ShopOrderCard({ order }: { order: Order }) {
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 }
