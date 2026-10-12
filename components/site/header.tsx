@@ -80,7 +80,9 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-orange-50/92 backdrop-blur-md">
       <div className="container-page flex h-[62px] items-center justify-between lg:h-[72px]">
-        <div className="flex items-center lg:w-[280px]">
+        {/* From 1280 the name and the icons each take 280px so the links sit dead centre; on smaller
+            laptops (1024) that would squeeze the links onto two lines, so they just share the space. */}
+        <div className="flex items-center xl:w-[280px]">
           <Link
             href="/"
             onClick={closeMenu}
@@ -91,7 +93,7 @@ export function Header() {
           </Link>
         </div>
 
-        <nav aria-label="Main" className="hidden items-center gap-9 lg:flex">
+        <nav aria-label="Main" className="hidden items-center gap-6 lg:flex xl:gap-9">
           {navLinks.map((link) => {
             const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
             return (
@@ -99,7 +101,7 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 aria-current={active ? "page" : undefined}
-                className="group relative text-[15px] font-medium text-stone-900"
+                className="group relative text-[15px] font-medium whitespace-nowrap text-stone-900"
               >
                 {link.label}
                 <span
@@ -112,7 +114,7 @@ export function Header() {
           })}
         </nav>
 
-        <div className="flex items-center justify-end lg:w-[280px] lg:gap-3">
+        <div className="flex items-center justify-end lg:gap-1 xl:w-[280px] xl:gap-3">
           <Link href="/shop?search=1" onClick={closeMenu} className={iconButton} aria-label="Search the shop">
             <SearchIcon />
           </Link>
