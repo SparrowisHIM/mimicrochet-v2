@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { PhotoOffIcon } from "@/components/icons";
+import { afterFailedLoad, retryUrl } from "@/lib/file-gone";
 
 /** Customer and progress photos come from the order's file store, and a file can go missing: customer photos are
  *  deleted two months after delivery, and an upload can fail. Instead of the browser's broken-image icon the frame
@@ -25,10 +26,14 @@ export function SafeImage({
 }) {
   const ref = useRef<HTMLImageElement>(null);
   const [failed, setFailed] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const tries = useRef(0);
+  // A failed load only counts as "gone" when the server says so; otherwise it tries again (twice).
+  const onFail = () => afterFailedLoad(src, tries, () => setFailed(src), setAttempt);
   // A file that fails before the page is interactive never reaches onError, so look once it's mounted.
   useEffect(() => {
     const img = ref.current;
-    if (img?.complete && img.naturalWidth === 0) setFailed(src);
+    if (img?.complete && img.naturalWidth === 0) afterFailedLoad(src, tries, () => setFailed(src), setAttempt);
   }, [src]);
 
   if (failed === src)
@@ -41,13 +46,13 @@ export function SafeImage({
   return (
     <Image
       ref={ref}
-      src={src}
+      src={retryUrl(src, attempt)}
       alt={alt}
       fill
       sizes={sizes}
       preload={preload}
       unoptimized={/^(\/api\/|data:|blob:)/.test(src)}
-      onError={() => setFailed(src)}
+      onError={() => onFail()}
       className={`object-cover ${className}`}
     />
   );

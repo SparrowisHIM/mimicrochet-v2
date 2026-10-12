@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useMotionTemplate, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { CloseIcon } from "@/components/icons";
+import { afterFailedLoad, retryUrl } from "@/lib/file-gone";
 
 export type Voice = { url: string; seconds: number; file: File; levels?: number[] };
 
@@ -187,7 +188,11 @@ export function VoicePlayer({
   const [count, setCount] = useState(36);
   const [loadedSeconds, setLoadedSeconds] = useState(0);
   // A voice note on the server can go missing (deleted two months after delivery, or an upload that failed).
+  // A failed load only counts as missing when the server says so; otherwise it tries again (twice).
   const [missing, setMissing] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const tries = useRef(0);
+  const onFail = () => afterFailedLoad(url, tries, () => setMissing(url), setAttempt);
   const seconds = knownSeconds ?? loadedSeconds;
   const voice = { seconds: Math.max(1, seconds) };
   const progress = useMotionValue(0);
@@ -202,7 +207,7 @@ export function VoicePlayer({
   // An error before the page is interactive never reaches onError, so check once it's mounted.
   useEffect(() => {
     const a = audio.current;
-    if (a && (a.error || a.networkState === HTMLMediaElement.NETWORK_NO_SOURCE)) setMissing(url);
+    if (a && (a.error || a.networkState === HTMLMediaElement.NETWORK_NO_SOURCE)) afterFailedLoad(url, tries, () => setMissing(url), setAttempt);
   }, [url]);
 
   useEffect(() => {
@@ -259,9 +264,9 @@ export function VoicePlayer({
     <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-full bg-stone-100 py-1 pr-1 pl-1">
       <audio
         ref={audio}
-        src={url}
+        src={retryUrl(url, attempt)}
         preload="metadata"
-        onError={() => setMissing(url)}
+        onError={() => onFail()}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => {
