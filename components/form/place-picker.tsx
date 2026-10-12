@@ -74,12 +74,19 @@ function Combobox({
   const listId = useId();
   const wrap = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const search = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
 
   const list = open ? sections(query) : [];
   const flat = list.flatMap((s) => s.items);
+
+  // With a mouse, the search box is ready to type in. On a phone the list opens without the keyboard:
+  // a keyboard shifts the page on iPhones, and then a swipe scrolls the page instead of the list.
+  useEffect(() => {
+    if (open && window.matchMedia("(pointer: fine)").matches) search.current?.focus();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -160,7 +167,7 @@ function Combobox({
                 <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
               <input
-                autoFocus
+                ref={search}
                 role="combobox"
                 aria-expanded
                 aria-controls={listId}
@@ -187,7 +194,7 @@ function Combobox({
             </div>
 
             {chips && !query && (
-              <div className="no-scrollbar flex gap-2 overflow-x-auto border-b border-stone-100 px-3 py-2.5">
+              <div className="no-scrollbar flex touch-pan-x gap-2 overflow-x-auto overscroll-x-contain border-b border-stone-100 px-3 py-2.5">
                 {chips.map((c, i) => (
                   <motion.button
                     key={c}
@@ -207,7 +214,7 @@ function Combobox({
               </div>
             )}
 
-            <ul id={listId} role="listbox" className="max-h-[min(300px,42svh)] overflow-y-auto overscroll-contain p-2">
+            <ul id={listId} role="listbox" className="max-h-[min(300px,42svh)] touch-pan-y overflow-y-auto overscroll-contain p-2">
               {flat.length === 0 ? (
                 <li className="px-3 py-6 text-center text-[14px] leading-[1.5] text-stone-500">{empty(query)}</li>
               ) : (
