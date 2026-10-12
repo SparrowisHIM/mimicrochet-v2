@@ -108,7 +108,8 @@ const useGreeting = () => useSyncExternalStore(() => () => {}, greeting, () => "
 
 function SetPrice({ o, onDone }: { o: Row; onDone: () => void }) {
   const [price, setPrice] = useState(o.piece.price ? String(o.piece.price + 5000) : "");
-  const [date, setDate] = useState("");
+  // The customer's own date, when they gave one, is the ready date (they've planned the balance for it).
+  const [date, setDate] = useState(o.theirDate ?? "");
   const [today] = useState(() => Date.now());
   const [rush, setRush] = useState(0);
   const [riderPays, setRiderPays] = useState(true);
@@ -128,7 +129,14 @@ function SetPrice({ o, onDone }: { o: Row; onDone: () => void }) {
       </label>
       <div className="flex flex-col gap-2.5">
         <span className="text-[14px] font-semibold">Ready by</span>
-        <DatePicker id="ready-by" value={date || undefined} onChange={setDate} now={today} forMimi />
+        {o.theirDate ? (
+          <div className="flex flex-col gap-1 rounded-[14px] border border-stone-200 bg-stone-50 px-3.5 py-3">
+            <span className="text-[16px] font-semibold">{shortDate(o.theirDate)}</span>
+            <span className="text-[13px] leading-[1.45] text-stone-500">{o.name} asked for this date and has planned the balance for it. If it’s done sooner, mark it ready on the day.</span>
+          </div>
+        ) : (
+          <DatePicker id="ready-by" value={date || undefined} onChange={setDate} now={today} forMimi />
+        )}
       </div>
       <div className="flex flex-col gap-2.5">
         <span className="text-[14px] font-semibold">Rush extra (optional)</span>

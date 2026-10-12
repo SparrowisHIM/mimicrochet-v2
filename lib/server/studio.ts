@@ -9,12 +9,29 @@ import { formatNaira } from "@/lib/site";
 // the tracking page never shows) and the changes only she can make. Every function here is called
 // from app/actions/studio.ts after the sign-in check.
 
-export type StudioOrder = Order & { due: string; dueTone: "normal" | "soon" | "late"; ago: string };
+/** `theirDate`: the day the customer asked for (YYYY-MM-DD) while it's still ahead; the price is set to it. */
+export type StudioOrder = Order & { due: string; dueTone: "normal" | "soon" | "late"; ago: string; theirDate?: string };
 
 const lagosDay = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "Africa/Lagos" }); // YYYY-MM-DD
 const daysBetween = (from: string, to: string) => Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
 /** "Fri 16 Oct", the way the date picker and the tracking page write it. */
 export const readyLabel = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+
+const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * The day the customer asked for (YYYY-MM-DD), or null for "No rush". Orders sent before 12 Oct only kept
+ * the words ("By Fri 20 Nov"), so the year is the first one on or after the day they ordered.
+ */
+export function askedDate(d: { when?: string; whenDate?: string }, ordered: Date) {
+  if (d.whenDate && /^\d{4}-\d{2}-\d{2}$/.test(d.whenDate)) return d.whenDate;
+  const m = /(\d{1,2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/.exec(d.when ?? "");
+  if (!m) return null;
+  const from = lagosDay(ordered);
+  const iso = (year: number) => `${year}-${String(months.indexOf(m[2]) + 1).padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  const year = Number(from.slice(0, 4));
+  return iso(year) >= from ? iso(year) : iso(year + 1);
+}
 
 /** "Just now", "3h ago", "Yesterday" or "3 Oct", in Nigerian time. */
 function ago(at: Date) {
@@ -52,6 +69,7 @@ export async function ordersForStudio(): Promise<StudioOrder[]> {
     const dueTone = left !== null && o.stage < 3 ? (left < 0 ? "late" : left <= 3 ? "soon" : "normal") : "normal";
     const created = new Date(o.created_at);
     const piece = d.piece!;
+    const asked = askedDate(d, created);
     return {
       ...(d as object),
       kind: o.kind,
@@ -77,6 +95,7 @@ export async function ordersForStudio(): Promise<StudioOrder[]> {
       updates: (o.updates as { stage: number; note: string; photo: string | null; at: string }[]).map((u) => ({ stage: u.stage, note: u.note, at: ago(new Date(u.at)), ...(u.photo ? { photo: u.photo } : {}) })),
       due: o.stage === 0 || !o.ready_by ? ago(created) : o.ready_by,
       dueTone,
+      theirDate: asked && daysBetween(today, asked) >= 1 ? asked : undefined,
       // For "Requested 2h ago" / "yesterday" / "3 Oct": relative words in lower case, dates as they are.
       ago: /^\d/.test(ago(created)) ? ago(created) : ago(created).toLowerCase(),
     } as StudioOrder;
@@ -92,11 +111,18 @@ const one = async (code: string) => {
 };
 
 /** Agree the price and the ready-by date. Allowed until a payment has come in. */
+/**
+ * Mimi sets the price. The ready date is the customer's own when they gave one (they've planned the balance
+ * for that day), whatever the page sends; she only picks a date for "No rush" orders, or if theirs has passed.
+ */
 export async function setPrice(code: string, total: number, readyOn: string) {
   const o = await one(code);
   if (!o || o.stage > 1 || o.deposit_paid) return false;
   if (!Number.isInteger(total) || total < 1000 || total > 10_000_000) return false;
   const today = lagosDay(new Date());
+  const [row] = await db()`select details, created_at from orders where id = ${o.id}`;
+  const asked = askedDate(row.details as { when?: string; whenDate?: string }, new Date(row.created_at as string));
+  if (asked && daysBetween(today, asked) >= 1) readyOn = asked;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(readyOn) || daysBetween(today, readyOn) < 1 || daysBetween(today, readyOn) > 366) return false;
   const label = readyLabel(readyOn);
   const note = `${formatNaira(total)}, ready by ${label}. Deposit ${formatNaira(depositOf(total))}, or pay it all now.`;

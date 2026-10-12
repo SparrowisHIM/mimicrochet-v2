@@ -33,6 +33,8 @@ export type Order = {
   colours: "photo" | "different";
   colourNote?: string;
   when: string; // "No rush" or a date label
+  /** The date behind "By …" (YYYY-MM-DD), on orders sent since 12 Oct. */
+  whenDate?: string;
   budget?: string;
   notes?: string;
   name: string;

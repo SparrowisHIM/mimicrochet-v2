@@ -19,6 +19,8 @@ export type CustomOrderInput = {
   colours: "photo" | "different";
   colourNote?: string;
   when: string;
+  /** The date behind "By Fri 20 Nov" (YYYY-MM-DD): Mimi works to it, so the studio can't change it. */
+  whenDate?: string;
   budget?: string;
   notes?: string;
   name: string;

@@ -7,6 +7,7 @@ import { getProduct } from "@/lib/products";
 import { ideas } from "@/lib/ideas";
 import { customers } from "@/lib/customers";
 import { sizeLabels } from "@/lib/sizes";
+import { isRequestDate } from "@/lib/request-date";
 import { isName, isNigerianMobile } from "@/lib/validate";
 
 // The server's own check of a custom order. Anything the form would never send is refused, and text is
@@ -66,6 +67,7 @@ export function parseCustomOrder(raw: unknown): Result {
   if (!colours) return { ok: false, error: "Choose the colours." };
   const when = text(r.when, 40);
   if (!when || !(when === "No rush" || /^By [\p{L}\d ,]+$/u.test(when))) return { ok: false, error: "Choose when you need it." };
+  const whenDate = when !== "No rush" && typeof r.whenDate === "string" && isRequestDate(r.whenDate, Date.now(), 0, 200) ? r.whenDate : undefined;
 
   const description = text(r.description, 1500);
   if (piece.source === "words" && !description && !r.hasVoiceNote) return { ok: false, error: "Tell Mimi about it." };
@@ -94,6 +96,7 @@ export function parseCustomOrder(raw: unknown): Result {
       colours,
       colourNote: colours === "different" ? text(r.colourNote, 80) : undefined,
       when,
+      whenDate,
       budget: typeof r.budget === "string" && (budgetOptions as readonly string[]).includes(r.budget) ? r.budget : undefined,
       notes: text(r.notes, 500),
       name,

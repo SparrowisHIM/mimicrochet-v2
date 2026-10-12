@@ -657,6 +657,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
       colours: d.colours!,
       colourNote: d.colours === "different" ? d.colourNote.trim() : undefined,
       when: d.when === "date" && d.date ? `By ${shortDate(d.date)}` : "No rush",
+      whenDate: d.when === "date" && d.date ? d.date : undefined,
       budget: needsBudget ? d.budget : undefined,
       notes: d.notes.trim() || undefined,
       name: d.name.trim(),
