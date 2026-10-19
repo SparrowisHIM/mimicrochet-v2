@@ -155,7 +155,7 @@ export function SendingMoment({
           <span className="relative">
             <span data-ring className="absolute inset-0 rounded-full border-2 border-amber-300 opacity-0" aria-hidden />
             <span data-mimi-photo className="relative block size-[72px] overflow-hidden rounded-full border-[3px] border-orange-50 bg-orange-100 shadow-[0_12px_30px_-8px_rgb(0_0_0/0.6)]">
-              <Image src="/images/story/mimi-portrait.jpg" alt="" fill sizes="72px" className="object-cover object-top" />
+              <Image src="/images/story/mimi-face.webp" alt="" fill sizes="72px" className="object-cover" />
             </span>
             <span data-badge className="absolute -right-1 -bottom-1 grid size-7 scale-0 place-items-center rounded-full border-2 border-orange-50 bg-emerald-600 text-white">
               <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden>
