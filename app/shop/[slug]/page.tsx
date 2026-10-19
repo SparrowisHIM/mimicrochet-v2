@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: PageProps<"/shop/[slug]">): P
   if (!p) return {};
   return {
     title: p.name,
-    description: `${p.description} ${priceLabel(p)}. Handmade by Mimi in Port Harcourt.`,
+    description: `${p.description} ${priceLabel(p)}. Handmade by Mimi.`,
   };
 }
 

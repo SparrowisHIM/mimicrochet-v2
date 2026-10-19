@@ -75,7 +75,7 @@ export const demoOrder: Order = {
   name: "Amara",
   phone: "+234 801 234 5678",
   state: "Rivers",
-  area: "GRA Phase 2, Port Harcourt",
+  area: "Lekki Phase 1, Lagos",
   stage: 2,
   price: 45000,
   readyBy: fromToday(5).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }),

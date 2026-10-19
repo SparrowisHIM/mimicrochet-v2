@@ -210,11 +210,11 @@ Payments were off in v1, so only empty states existed. Keep: clear empty states 
 ## About & contact
 
 ### v1 audit
-**Keep:** the "Port Harcourt energy" voice and the maker's story; every contact channel in one place.
+**Keep:** the maker's story; every contact channel in one place.
 **Fix:** the artist photo was missing (blank space); five contact ways compete (WhatsApp should lead); a floating AI "Mimi" button on every page.
 
 ### v2 decisions
-- Kept v1's voice: "Port Harcourt energy" and the studio standard quote.
+- Kept the studio standard quote. **No city anywhere (Efe, 19 Oct 2026):** the site never names Port Harcourt; where a location is needed it says Nigeria. The headline is now "Every piece starts in Mimi's hands and ends with you."
 - One portrait instead of three from the same shoot; real making-of stills in "How a piece comes to life" (yarn: video 31; stitching: video 40).
 - Five generic value cards became three facts: one of one, made to your size, anywhere in Nigeria.
 - Contact leads with WhatsApp: four ready questions open WhatsApp already typed. v1's form is gone.
@@ -234,7 +234,7 @@ Payments were off in v1, so only empty states existed. Keep: clear empty states 
 | Moment | What moves | Timing | From v1 |
 |---|---|---|---|
 | Thread rail | A yarn thread on the left edge draws down as you scroll; knots light up per section. Large screens only | follows scroll (spring) | Kept |
-| Headline | Words rise in one by one, then the hand-drawn underline draws under "Port Harcourt" | 0.055s between words, 0.6s line | Kept |
+| Headline | Words rise in one by one, then the hand-drawn underline draws under "Mimi's hands" | 0.055s between words, 0.6s line | Kept |
 | Sections | Each section wipes in from the top | 0.95s | Kept |
 | Photos | The portrait drifts slowly inside its frame; the tan frame stays put | follows scroll | Kept |
 | Marquee | Drifts, speeds up and reverses with scroll, leans with speed | continuous | Changed ("Fit-tested before release" left out until Mimi confirms) |

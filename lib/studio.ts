@@ -72,7 +72,7 @@ export const sampleOrders: (Order & { due: string; dueTone: "normal" | "soon" | 
     name: "Ada",
     phone: "+234 803 000 0004",
     state: "Rivers",
-    area: "Rumuola, Port Harcourt",
+    area: "Wuse 2, Abuja",
     stage: 2,
     price: 60000,
     readyBy: "Mon 28 Sep",

@@ -82,7 +82,7 @@ export function Hero() {
           className="font-serif text-[40px] leading-[1.06] tracking-[-0.02em] sm:text-[56px] lg:text-[76px] lg:leading-[1.04]"
         />
         <motion.p {...fade(0.6)} className="max-w-[600px] text-[17px] leading-[1.55] text-stone-600 lg:text-[20px] lg:leading-[1.5]">
-          Every stitch is by Mimi’s hands in Port Harcourt. Grab a one-of-one piece today, or dream one up and she’ll make it yours.
+          Every stitch is by Mimi’s own hands. Grab a one-of-one piece today, or dream one up and she’ll make it yours.
         </motion.p>
         <motion.div {...fade(0.72)} className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:gap-7">
           <Magnetic strength={0.15}>
@@ -93,7 +93,7 @@ export function Hero() {
           </Link>
         </motion.div>
         <motion.div {...fade(0.84)} className="flex gap-7 pt-3 text-[14px] font-medium text-stone-600 max-sm:hidden">
-          <span>Handmade in Port Harcourt</span>
+          <span>Handmade by Mimi</span>
           <span>Delivery anywhere in Nigeria</span>
         </motion.div>
       </motion.div>
