@@ -4,10 +4,14 @@ const dev = process.env.NODE_ENV === "development";
 // Vercel preview deployments show Vercel's feedback toolbar, which loads from vercel.live.
 const preview = process.env.VERCEL_ENV === "preview";
 const toolbar = preview ? " https://vercel.live" : "";
+// This branch is the front-end-only showcase (no payments, no sign-in), so Efe's portfolio may show it
+// live inside a case study. The full site on feat/backend keeps frame-ancestors 'none'.
+// localhost is for previewing the portfolio while it's being built.
+const portfolioOrigins = "https://efe-ebomwonyi.vercel.app http://localhost:* http://127.0.0.1:*";
 
 /**
  * What the browser may load and run on this site. Everything comes from the site itself: no outside
- * scripts, no embedding the site in someone else's frame, no plugins, and forms can only submit here.
+ * scripts, no embedding the site in anyone's frame but Efe's portfolio, no plugins, and forms can only submit here.
  * 'unsafe-inline' scripts are needed by Next.js without per-request nonces (which would make every
  * page dynamic); the site has no place where visitor text becomes HTML, so there's nothing to inject into.
  * 'unsafe-eval' is for the iPhone photo converter (heic2any), which builds code at runtime. It has to be
@@ -28,7 +32,7 @@ function contentSecurityPolicy() {
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-    "frame-ancestors 'none'",
+    `frame-ancestors 'self' ${portfolioOrigins}`,
     ...(dev ? [] : ["upgrade-insecure-requests"]),
   ].join("; ");
 }
@@ -39,8 +43,7 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   // Other sites only learn that a visitor came from this site, never the page (tracking links stay private).
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  // No one can show the site inside their own page to trick visitors into tapping things.
-  { key: "X-Frame-Options", value: "DENY" },
+  // No X-Frame-Options here: it can't name allowed sites, so frame-ancestors above decides who may embed the site.
   // The microphone is for voice notes on this site only; nothing else is ever asked for.
   { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=(), payment=(), usb=(), browsing-topics=()" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
