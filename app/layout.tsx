@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   openGraph: { siteName: site.shortName },
   twitter: { card: "summary_large_image" },
   title: {
-    default: `${site.shortName} · Handmade crochet from Port Harcourt`,
+    default: `${site.shortName} · Handmade crochet by Mimi`,
     template: `%s · ${site.shortName}`,
   },
   description: site.description,

@@ -39,7 +39,7 @@ const reach = (
 
 /** Each section: a heading, then paragraphs; lines starting with "•" are a list. */
 const sections: { title: string; body: React.ReactNode[] }[] = [
-  { title: "Who looks after your details", body: [<>Mimicrochet is Mimi’s crochet studio in Port Harcourt, Rivers State, Nigeria. Mimi looks after the details you share here. {reach}</>] },
+  { title: "Who looks after your details", body: [<>Mimicrochet is Mimi’s crochet studio in Nigeria. Mimi looks after the details you share here. {reach}</>] },
   {
     title: "What Mimi keeps",
     body: [

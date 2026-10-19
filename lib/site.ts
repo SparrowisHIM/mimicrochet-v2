@@ -6,7 +6,7 @@ export const site = {
    *  sites' tab names (capital first letters), because the all-caps wordmark looks loud in a tab. */
   shortName: "Mimicrochet",
   description:
-    "Handmade crochet from Port Harcourt. Shop one-of-one pieces, order your own, and follow it from the first stitch to your door.",
+    "Handmade crochet by Mimi, delivered anywhere in Nigeria. Shop one-of-one pieces, order your own, and follow it from the first stitch to your door.",
   email: "Miracleemenike50@yahoo.com",
   whatsappNumber: "2349157669182",
   socials: {

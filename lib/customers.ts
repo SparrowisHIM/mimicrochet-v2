@@ -37,7 +37,7 @@ export const customers: Customer[] = [
   {
     slug: "emeka",
     name: "Emeka",
-    city: "Port Harcourt",
+    city: "Nigeria",
     quote: "Neat work. It fits just right.",
     wearing: [{ name: "Olive Bloom Shirt", detail: "Ready now", image: "/images/products/olive-bloom-crochet-shirt-1.jpg", href: "/shop/olive-bloom-crochet-shirt" }],
     photos: [

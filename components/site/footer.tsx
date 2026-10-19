@@ -8,7 +8,7 @@ export function Footer() {
         <div className="flex flex-col gap-8 lg:flex-row lg:justify-between lg:gap-0">
           <div className="flex flex-col gap-2.5">
             <p className="font-serif text-[22px] leading-tight lg:text-[28px]">{site.name}</p>
-            <p className="hidden text-[15px] text-stone-600 lg:block">Handmade in Port Harcourt, worn all over Nigeria.</p>
+            <p className="hidden text-[15px] text-stone-600 lg:block">Handmade by Mimi, worn all over Nigeria.</p>
           </div>
 
           <div className="flex flex-col gap-6 lg:flex-row lg:gap-[72px]">
@@ -43,7 +43,7 @@ export function Footer() {
         </div>
         <p className="mt-8 text-[13px] text-stone-500 lg:mt-10">
           © 2026 {site.name}
-          <span className="lg:hidden">. Handmade in Port Harcourt, worn all over Nigeria.</span>
+          <span className="lg:hidden">. Handmade by Mimi, worn all over Nigeria.</span>
         </p>
       </div>
     </footer>

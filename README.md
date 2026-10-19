@@ -1,6 +1,6 @@
 # Mimi Crochet v2
 
-A redesign of [MIMICROCHET.NG](https://www.instagram.com/mimicrochet.ng), a handmade crochet studio in Port Harcourt, Nigeria. Every piece is made by hand by Mimi, and most are one of one.
+A redesign of [MIMICROCHET.NG](https://www.instagram.com/mimicrochet.ng), a handmade crochet studio in Nigeria. Every piece is made by hand by Mimi, and most are one of one.
 
 The first version (5/10) was built straight in code. This version was rebuilt properly: real references, a full Figma design for every page, then code. The two sites live side by side so they can be compared.
 

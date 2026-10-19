@@ -273,7 +273,7 @@ export function ProductView({ product: listed }: { product: Product }) {
             </div>
 
             <ul className="flex flex-col gap-2.5 text-[15px] text-stone-600">
-              <li>Handmade by Mimi in Port Harcourt</li>
+              <li>Handmade by Mimi</li>
               <li>Delivery anywhere in Nigeria. You pay the rider on arrival.</li>
               <li>
                 {product.kind === "ready" ? "Want it in another colour? " : "Have something else in mind? "}

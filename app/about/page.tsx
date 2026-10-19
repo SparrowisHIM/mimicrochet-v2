@@ -10,7 +10,7 @@ import { whatsappLink } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "About",
-  description: "Mimi crochets every piece herself in Port Harcourt, from playful sets to dresses that stop people mid-sentence.",
+  description: "Mimi crochets every piece herself, by hand, from playful sets to dresses that stop people mid-sentence.",
 };
 
 // One dress followed from idea to finished: the Neon Granny Square Dress. 03 and 04 are Mimi's own
@@ -28,9 +28,9 @@ export default function AboutPage() {
       <section className="container-page flex flex-col gap-10 pt-8 pb-16 lg:flex-row lg:items-center lg:gap-20 lg:pt-16 lg:pb-24">
         <div className="flex flex-1 flex-col gap-6">
           <WordReveal
-            before="Crochet made with colour, care and"
-            marked="Port Harcourt"
-            after="energy."
+            before="Every piece starts in"
+            marked="Mimi’s hands"
+            after="and ends with you."
             className="font-serif text-[40px] leading-[1.06] tracking-[-0.02em] text-balance lg:text-[64px]"
           />
           <p className="max-w-[560px] text-[17px] leading-[1.55] text-stone-600 lg:text-[19px]">
@@ -53,7 +53,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <VelocityMarquee items={["Handmade in Port Harcourt", "Colour-led crochet", "One of one", "Made to your size", "Delivered anywhere in Nigeria"]} />
+      <VelocityMarquee items={["Handmade by Mimi", "Colour-led crochet", "One of one", "Made to your size", "Delivered anywhere in Nigeria"]} />
 
       <section className="container-page flex flex-col gap-8 py-16 lg:flex-row lg:justify-between lg:gap-16 lg:py-28">
         <Wipe>
