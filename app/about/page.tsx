@@ -47,7 +47,7 @@ export default function AboutPage() {
           <div className="absolute inset-0 translate-x-4 translate-y-4 rounded-[18px] bg-orange-200" aria-hidden />
           <div className="relative aspect-[4/5] overflow-hidden rounded-[18px] bg-amber-900">
             <Parallax>
-              <Image src="/images/story/mimi-portrait.jpg" alt="Mimi, the maker behind Mimicrochet" fill preload sizes="(min-width: 1024px) 484px, 90vw" className="object-cover object-top" />
+              <Image src="/images/story/mimi-portrait.webp" alt="Mimi, the maker behind Mimicrochet, in a black crochet sweater with purple hearts" fill preload sizes="(min-width: 1024px) 484px, 90vw" className="object-cover object-top" />
             </Parallax>
           </div>
         </div>
