@@ -9,4 +9,10 @@
   NEXT_TELEMETRY_DISABLED = "1"
 
 # On the free plan each production deploy costs 15 credits and test builds (branch deploys) cost none,
-# so the backend is built on branch deploys of feat/backend; production waits for go-live.
+# so work is built and tested on branch deploys of feat/backend, and only pushed to `live` (production,
+# the real shop) when it's ready.
+
+# The real shop is opened through Cloudflare until the domain exists (cloudflare/worker.js), so share
+# cards, the sitemap and Paystack's way back name that address, not Netlify's slow one.
+[context.production.environment]
+  NEXT_PUBLIC_SITE_URL = "https://mimicrochet.sparrowishim.workers.dev"

@@ -1,4 +1,4 @@
-# Cloudflare in front of the Netlify test site (see worker.js). Deploy: npx wrangler deploy (from this folder).
+# Cloudflare in front of the real shop on Netlify (see worker.js). Deploy: npx wrangler deploy (from this folder).
 name = "mimicrochet"
 main = "worker.js"
 compatibility_date = "2026-09-01"

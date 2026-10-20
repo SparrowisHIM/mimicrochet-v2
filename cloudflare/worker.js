@@ -1,11 +1,12 @@
-// Cloudflare in front of the Netlify test site, until the domain exists.
+// Cloudflare in front of the real shop (Netlify production, branch `live`), until the domain exists.
+// The test copy (feat/backend) is opened on Netlify's own branch address.
 //
 // Netlify's free plan serves the site from Frankfurt, and from Nigeria that route is slow (small files
 // taking 15-20 seconds). Cloudflare has servers near Nigeria and a fast network to Netlify, so every
 // request goes through it instead; the site's code and photos are also kept at Cloudflare where it
 // allows, so they arrive in a second. Pages, orders, payments and the studio always come fresh from Netlify.
 
-const ORIGIN = "https://feat-backend--mimicrochetng.netlify.app";
+const ORIGIN = "https://mimicrochetng.netlify.app";
 
 /** How long Cloudflare may keep a file (seconds): Next's code never changes under the same name; photos only with a deploy. */
 function keepFor(path) {
