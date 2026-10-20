@@ -15,6 +15,7 @@ import { newOrderIds, saveOrder, type Order } from "@/lib/orders";
 import type { Product } from "@/lib/products";
 import { formatNaira, paymentsLive } from "@/lib/site";
 import { fullPhone, hasWords, isEmail, isName, phoneDigits, phoneProblem } from "@/lib/validate";
+import { scrollToElement } from "@/lib/scroll";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 function Num({ n }: { n: number }) {
@@ -60,7 +61,7 @@ export function CheckoutView() {
       el?.focus({ preventScroll: true });
       // Scroll once the error messages have opened: their growth above the Pay button makes the
       // browser re-anchor the page, which cancels a smooth scroll started straight away.
-      setTimeout(() => el?.scrollIntoView({ behavior: "smooth", block: "center" }), 240);
+      setTimeout(() => scrollToElement(el, { behavior: "smooth", block: "center" }), 240);
       return;
     }
     setPaying(true);

@@ -13,6 +13,7 @@ import { Chip } from "@/components/ui/chip";
 import { depositOf, findOrder, updateOrder, useOrders, type Order } from "@/lib/orders";
 import { formatNaira, paymentsLive, whatsappLink } from "@/lib/site";
 import { stages } from "@/lib/stages";
+import { scrollToElement } from "@/lib/scroll";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -103,7 +104,7 @@ function useSpotlight(o: Order | undefined, target: RefObject<HTMLDivElement | n
         const el = target.current;
         const r = el?.getBoundingClientRect();
         if (el && r && window.matchMedia("(max-width: 1023px)").matches && (r.top < 72 || r.bottom > window.innerHeight)) {
-          el.scrollIntoView({ behavior: "smooth", block: r.height > window.innerHeight - 96 ? "start" : "center" });
+          scrollToElement(el, { behavior: "smooth", block: r.height > window.innerHeight - 96 ? "start" : "center" });
           timers.push(setTimeout(lift, 650));
         } else lift();
       }, 700),

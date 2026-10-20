@@ -32,6 +32,7 @@ import { getProduct, type Product } from "@/lib/products";
 import { sizeLabels } from "@/lib/sizes";
 import { useMedia } from "@/lib/use-media";
 import { formatPhone, fullPhone, hasWords, isName, phoneDigits, phoneProblem } from "@/lib/validate";
+import { scrollToElement } from "@/lib/scroll";
 
 // Layout follows the Figma frames "v2 · Design · Desktop · 1–3" and the shared "Request summary" component.
 // Step change follows the motion brief (6 Oct): direction only, a 24px nudge with a fade, a no-bounce spring
@@ -510,7 +511,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
     const el = document.getElementById(id);
     if (!el) return;
     // Step 1's options are taller than a phone screen, so land on their top, where the message is.
-    const scroll = () => el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: id === "f-source" ? "start" : "center" });
+    const scroll = () => scrollToElement(el, { behavior: reduce ? "auto" : "smooth", block: id === "f-source" ? "start" : "center" });
     if (afterErrors) setTimeout(scroll, 240);
     else scroll();
     const target =
@@ -526,7 +527,7 @@ export function CustomOrderFlow({ initialPiece, initialSize }: { initialPiece?: 
     setStep(next);
     setTried(0);
     if (then) setTimeout(() => focusField(then), reduce ? 60 : 320);
-    else requestAnimationFrame(() => top.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" }));
+    else requestAnimationFrame(() => scrollToElement(top.current, { behavior: reduce ? "auto" : "smooth", block: "start" }));
   };
 
   /** From the summary: go straight to a line. */

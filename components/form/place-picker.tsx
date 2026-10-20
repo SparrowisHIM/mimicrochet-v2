@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Check } from "@/components/form/fields";
 import { areaAliases, isNigerianState, lgasByState, nigerianStates, popularStates, stateCapitals, type NigerianState } from "@/lib/nigeria";
+import { scrollToElement } from "@/lib/scroll";
 
 // A command-palette style picker (search, quick chips, a keyboard-friendly list, key hints),
 // after the "Type command or search" palette in the sage references. Places can only be
@@ -103,7 +104,7 @@ function Combobox({
     setActive(0);
     setOpen(true);
     // On phones, lift the field so the list has room above the keyboard.
-    if (window.matchMedia("(max-width: 1023px)").matches) trigger.current?.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
+    if (window.matchMedia("(max-width: 1023px)").matches) scrollToElement(trigger.current, { block: "start", behavior: reduce ? "auto" : "smooth" });
   };
   const close = (refocus = true) => {
     setOpen(false);
