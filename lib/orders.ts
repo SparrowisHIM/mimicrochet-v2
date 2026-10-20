@@ -88,9 +88,17 @@ export const demoOrder: Order = {
   ],
 };
 
+// ?fresh=1 forgets this device's changes once, so a demo (Efe's portfolio shows the studio beside a
+// tracking page) starts from the sample orders every visit. This branch has no real orders to lose.
+let freshChecked = false;
+
 function read(): Order[] {
   if (cache) return cache;
   try {
+    if (!freshChecked) {
+      freshChecked = true;
+      if (new URLSearchParams(window.location.search).has("fresh")) window.localStorage.removeItem(KEY);
+    }
     cache = JSON.parse(window.localStorage.getItem(KEY) ?? "[]") as Order[];
   } catch {
     cache = [];
@@ -108,9 +116,21 @@ function write(next: Order[]) {
   listeners.forEach((l) => l());
 }
 
+// Another tab or frame on this site changed the orders (Mimi's page beside a tracking page, say):
+// drop the cached copy so this page shows the change straight away.
+function onStorage(e: StorageEvent) {
+  if (e.key !== KEY && e.key !== null) return;
+  cache = null;
+  listeners.forEach((l) => l());
+}
+
 const subscribe = (l: () => void) => {
+  if (listeners.size === 0) window.addEventListener("storage", onStorage);
   listeners.add(l);
-  return () => listeners.delete(l);
+  return () => {
+    listeners.delete(l);
+    if (listeners.size === 0) window.removeEventListener("storage", onStorage);
+  };
 };
 const empty: Order[] = [];
 
