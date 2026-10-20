@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Parallax, VelocityMarquee, Wipe, WordReveal } from "@/components/about/about-motion";
 import { CraftSteps, type Step } from "@/components/about/craft-steps";
-import { FactCard } from "@/components/about/fact-card";
+import { SwingTags, type SwingTag } from "@/components/about/swing-tags";
 import { WhatsAppIcon } from "@/components/icons";
 import { ButtonLink, linkClass, linkLightClass } from "@/components/ui/button";
 import { whatsappLink } from "@/lib/site";
@@ -20,6 +20,13 @@ const steps: Step[] = [
   { n: "02", title: "Yarn & colour", text: "Black to hold it all together, neon to make it glow.", src: "/images/story/neon-dress-yarn.jpg", alt: "Balls of lime, orange, red, purple, pink, yellow and black yarn beside a blue crochet hook" },
   { n: "03", title: "Stitch by stitch", text: "Every square crocheted by hand, then joined to the next, one by one.", src: "/images/story/neon-squares-joining.jpg", video: "/video/neon-squares-joining.mp4", alt: "Mimi joining neon granny squares with a blue hook" },
   { n: "04", title: "Finished for you", text: "Shaped on the mannequin, every end woven in, ready to wear.", src: "/images/story/neon-dress-finished.jpg", video: "/video/neon-dress-finished.mp4", alt: "The finished Neon Granny Square Dress turning on Mimi’s mannequin", href: "/shop/neon-granny-square-dress" },
+];
+
+// In Mimi's own words, front and back of three swing tags.
+const tags: SwingTag[] = [
+  { title: "It begins with colour", text: "Usually it’s a colour I can’t leave alone. I keep imagining what it could become.", note: "Every piece is a small way of letting you see what I see 🧶", tone: "amber" },
+  { title: "Until it feels right", text: "I take my time choosing what belongs in each piece. I want to be sure of what I’m putting in your hands.", note: "It’s why I make some pieces again, and let others stay the only one.", tone: "orange" },
+  { title: "A place with you", text: "I spend so long with a piece that it starts to feel familiar. Then I send it off to become familiar to you.", note: "I hope it finds its place among the things you reach for most 🧡", tone: "rose" },
 ];
 
 export default function AboutPage() {
@@ -53,7 +60,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <VelocityMarquee items={["Handmade by Mimi", "Colour-led crochet", "One of one", "Made to your size", "Delivered anywhere in Nigeria"]} />
+      <VelocityMarquee items={["Handmade by Mimi", "Colour-led crochet", "Ready now or made for you", "Made to your size", "Delivered anywhere in Nigeria"]} />
 
       <section className="container-page flex flex-col gap-8 py-16 lg:flex-row lg:justify-between lg:gap-16 lg:py-28">
         <Wipe>
@@ -83,11 +90,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="container-page grid gap-4 py-16 lg:grid-cols-3 lg:gap-6 lg:py-24">
-        <FactCard title="One of one" text="Every piece that’s ready now exists once. When it’s gone, it’s gone." />
-        <FactCard title="Made to your size" text="Pick XS to XL, or send your own measurements." />
-        <FactCard title="Anywhere in Nigeria" text="Delivered to your door, in every state." />
-      </section>
+      <SwingTags tags={tags} />
 
       <section className="container-page pb-16 lg:pb-24">
         <Wipe className="flex flex-col gap-6 rounded-[22px] bg-stone-900 px-6 py-10 text-orange-50 lg:flex-row lg:items-center lg:justify-between lg:px-14 lg:py-14">
