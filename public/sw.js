@@ -26,7 +26,9 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = new URL(event.notification.data?.url || "/studio", self.location.origin).href;
+  // Only ever a page on this site.
+  const asked = new URL(event.notification.data?.url || "/studio", self.location.origin);
+  const url = asked.origin === self.location.origin ? asked.href : new URL("/studio", self.location.origin).href;
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
       // Use an open studio window if there is one (and refresh its list), otherwise open one.
