@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { hiddenFromSearch } from "./lib/site-url";
 
 const dev = process.env.NODE_ENV === "development";
 // Vercel preview deployments show Vercel's feedback toolbar, which loads from vercel.live.
@@ -58,6 +59,8 @@ const nextConfig: NextConfig = {
       // Private pages: order tracking links and Mimi's own page stay out of search engines.
       { source: "/t/:code*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
       { source: "/studio", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+      // The Vercel copy stays out of search entirely: the real shop is the one people should find (lib/site-url.ts).
+      ...(hiddenFromSearch ? [{ source: "/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex" }] }] : []),
     ];
   },
 };
