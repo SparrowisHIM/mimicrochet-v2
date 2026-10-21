@@ -76,6 +76,25 @@ function TheirPage({ code }: { code: string }) {
   );
 }
 
+/**
+ * WhatsApp to the customer, and the one way to send them their tracking link: there are no accounts, so a
+ * customer who lost their page gets it back from Mimi in the chat they already use with her.
+ */
+function MessageThem({ o }: { o: Order }) {
+  const sendLink = () =>
+    window.open(waTo(o.phone, `Hi ${o.name}! Here’s your order ${o.id}. You can follow it here, from today to your door: ${window.location.origin}/t/${o.code}`), "_blank", "noopener");
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+      <a href={waTo(o.phone, `Hi ${o.name}! About your order ${o.id}…`)} target="_blank" rel="noreferrer" className={linkClass}>
+        <WhatsAppIcon size={16} /> Message {o.name}
+      </a>
+      <button type="button" onClick={sendLink} className={linkClass}>
+        Send their tracking link
+      </button>
+    </div>
+  );
+}
+
 /** Ready, paid by deposit, and the 40% still to come (they pay it on their page). */
 const balanceDue = (o: Order) => o.kind !== "shop" && o.stage === 3 && Boolean(o.depositPaid) && !o.paidInFull && !o.balancePaid;
 /** The stage chip: shop orders have their own steps (Paid, On its way). */
@@ -318,7 +337,6 @@ function PaidAnotherWay({ o }: { o: Row }) {
 function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; onUpdate: () => void }) {
   const deposit = o.price ? depositOf(o.price) : 0;
   const late = o.dueTone === "late";
-  const message = (text: string) => waTo(o.phone, text);
   const save = useSave();
   const markReady = () => save.run(() => studioMarkReady(o.code));
 
@@ -395,9 +413,7 @@ function OrderDetail({ o, onPrice, onUpdate }: { o: Row; onPrice: () => void; on
         <SaveError show={save.failed} />
       </section>
 
-      <a href={message(`Hi ${o.name}! About your order ${o.id}…`)} target="_blank" rel="noreferrer" className={`${linkClass} self-center`}>
-        <WhatsAppIcon size={16} /> Message {o.name}
-      </a>
+      <MessageThem o={o} />
 
       <section className="flex flex-col gap-4 rounded-[22px] bg-white p-4">
         <h3 className="text-[15px] font-semibold">What they asked for</h3>
@@ -517,9 +533,7 @@ function ShopDetail({ o }: { o: Row }) {
         <SaveError show={save.failed} />
       </section>
 
-      <a href={waTo(o.phone, `Hi ${o.name}! About your order ${o.id}…`)} target="_blank" rel="noreferrer" className={`${linkClass} self-center`}>
-        <WhatsAppIcon size={16} /> Message {o.name}
-      </a>
+      <MessageThem o={o} />
 
       <section className="flex flex-col gap-4 rounded-[22px] bg-white p-4">
         <h3 className="text-[15px] font-semibold">What they bought</h3>

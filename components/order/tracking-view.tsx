@@ -14,7 +14,7 @@ import { Button, ButtonChip, buttonClass, linkClass } from "@/components/ui/butt
 import { Field, inputClass } from "@/components/form/fields";
 import { Chip } from "@/components/ui/chip";
 import { SafeImage } from "@/components/ui/safe-image";
-import { depositOf, findOrder, useOrders, type Order } from "@/lib/orders";
+import { depositOf, findOrder, saveOrder, useOrders, type Order } from "@/lib/orders";
 import { bagStore } from "@/lib/local-store";
 import { useFreshOnReturn } from "@/lib/use-fresh-on-return";
 import { isEmail } from "@/lib/validate";
@@ -371,18 +371,6 @@ function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) 
       `Deliver to: ${order.area}, ${order.state}`,
     ].join("\n"),
   );
-  const host = useSyncExternalStore(() => () => {}, () => window.location.host, () => "");
-  const [copied, setCopied] = useState(false);
-  const [copyFailed, setCopyFailed] = useState(false);
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}/t/${order.code}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      setCopyFailed(true);
-    }
-  };
   // The paid moment plays once: drop ?paid=1 so a reload opens on the order as it stands.
   useEffect(() => {
     if (!justPaid) return;
@@ -390,6 +378,15 @@ function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) 
     // Paid: what was bought leaves the bag (anything added since stays).
     for (const i of order.items ?? []) bagStore.remove(i.slug);
   }, [justPaid, order.code, order.items]);
+  // No accounts: the order is kept in this browser, so Track an order lists it with one tap later. Once
+  // only: keeping it changes this phone's orders, which hands this page a new order object.
+  // (The page always reads the server's copy, so the kept one never shows an old stage.)
+  const kept = useRef(false);
+  useEffect(() => {
+    if (!justPaid || test || kept.current) return;
+    kept.current = true;
+    saveOrder(order);
+  }, [justPaid, test, order]);
 
   return (
     <div className="container-page flex justify-center pt-8 pb-24 lg:pt-14">
@@ -435,18 +432,14 @@ function ShopTracking({ order, justPaid }: { order: Order; justPaid: boolean }) 
           </a>
         )}
         {justPaid && !test && (
-          <div className="flex flex-col gap-2 rounded-[22px] border border-stone-200 bg-white p-5">
-            <span className="text-[15px] font-semibold">Your tracking link</span>
-            <div className="flex items-center justify-between gap-3">
-              <span className="min-w-0 truncate text-[16px] font-medium">
-                {host}/t/{order.code}
-              </span>
-              <Button variant="secondary" size="sm" onClick={copy} className="shrink-0">
-                {copied ? "Copied" : "Copy"}
-              </Button>
-            </div>
-            <span className="text-[14px] text-stone-500" role={copyFailed ? "status" : undefined}>
-              {copyFailed ? "Couldn’t copy. Press and hold the link to copy it." : "You’re on it now. Save it: it shows every step, from today to your door."}
+          <div className="flex flex-col gap-1.5 rounded-[22px] border border-stone-200 bg-white p-5">
+            <span className="text-[15px] font-semibold">This page is your order</span>
+            <span className="text-[14px] leading-[1.5] text-stone-600">
+              Mimi updates it at every step, from today to your door. It’s saved on this phone: find it any time under{" "}
+              <Link href="/track" className="font-medium text-stone-900 underline underline-offset-4">
+                Track an order
+              </Link>
+              .
             </span>
           </div>
         )}
