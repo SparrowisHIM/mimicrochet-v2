@@ -29,8 +29,9 @@ export async function submitCustomOrder(input: unknown) {
 export async function findOrderCode(number: unknown, last4: unknown) {
   if (typeof number !== "string" || typeof last4 !== "string" || number.length > 20) return null;
   try {
-    // Guessing the 4 digits takes up to 10,000 tries, so each order number gets only a few an hour.
-    if (await tooMany("lookup", { perVisitor: [10, 15], perKey: [number.replace(/\D/g, ""), 15, 60], overall: [300, 15] })) return null;
+    // Guessing the 4 digits takes up to 10,000 tries, so each order number gets 5 a day (a customer with a
+    // typo needs one or two), and everyone together 60 an hour: trying every order would take years.
+    if (await tooMany("lookup", { perVisitor: [10, 15], perKey: [number.replace(/\D/g, ""), 5, 1440], overall: [60, 60] })) return null;
     return await codeForOrder(number, last4);
   } catch (e) {
     console.error("findOrderCode", e);
