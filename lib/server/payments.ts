@@ -212,6 +212,13 @@ async function paidOrder(paymentId: string, purpose: OrderPurpose, channel: stri
 }
 
 async function paidShop(paymentId: string, reference: string, channel: string | null) {
+  // A hold lasts 15 minutes. If someone took longer on Paystack (a slow bank transfer) and the piece sold
+  // to someone else meanwhile, both paid: the order still goes through, and Mimi is told to sort it out.
+  const taken = await db()`
+    select s.slug from payments p
+    cross join lateral jsonb_array_elements(p.cart->'details'->'items') i
+    join piece_stock s on s.slug = i->>'slug' and s.sold_at is not null
+    where p.id = ${paymentId} and p.status = 'pending' and i->>'kind' = 'ready'`;
   const [r] = await db()`
     with p as (update payments set status = 'success', paid_at = now(), channel = ${channel} where id = ${paymentId} and status = 'pending' returning cart, order_code, amount, email),
     o as (insert into orders (code, kind, stage, sent, details, name, phone, phone_last4, email, state, area, address, price)
@@ -224,6 +231,10 @@ async function paidShop(paymentId: string, reference: string, channel: string | 
     select o.id, o.number, o.name, o.price, (select cart->'details'->'items' from p) as items from o`;
   if (!r) return;
   await db()`update payments set order_id = ${r.id} where reference = ${reference}`;
-  const names = (r.items as { name: string }[]).map((i) => i.name).join(" and ");
+  const items = r.items as { slug: string; name: string }[];
+  const names = items.map((i) => i.name).join(" and ");
   await notifyMimi({ title: `New order from ${r.name}`, body: `${formatNaira(r.price as number)} paid · ${names}`, url: "/studio", tag: r.number });
+  const twice = items.filter((i) => taken.some((t) => t.slug === i.slug)).map((i) => i.name);
+  if (twice.length)
+    await notifyMimi({ title: `Check ${r.number}: sold twice`, body: `${twice.join(" and ")} had already sold. ${r.name} paid for it too: offer to make one, or refund them.`, url: "/studio", tag: `${r.number}-twice` });
 }
