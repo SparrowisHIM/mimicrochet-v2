@@ -1,4 +1,5 @@
-// The site's own address, for links that leave the site (share cards, the sitemap, robots.txt):
+// The site's own address, for links that leave the site (share cards, the sitemap, robots.txt, and each
+// page's canonical link, which tells search engines to list the page here rather than on a copy):
 // NEXT_PUBLIC_SITE_URL once a domain is set, else the host's own address (Netlify's URL, or Vercel's
 // production address), else local dev.
 export const siteUrl =

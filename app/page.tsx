@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { FreshOffTheHook } from "@/components/home/fresh-off-the-hook";
 import { Hero } from "@/components/home/hero";
 import { MeetMimi } from "@/components/home/meet-mimi";
@@ -6,6 +7,9 @@ import { WornLoved } from "@/components/home/worn-loved";
 import { PieceMarquee } from "@/components/motion/piece-marquee";
 import { customers } from "@/lib/customers";
 import { getProduct, products, type Product } from "@/lib/products";
+
+// Search engines list the shop under this one address (see lib/site-url.ts), never a copy of it.
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 // The Home grid leads with Mimi's best-known pieces, then mixes in what's ready.
 const featured = [

@@ -15,6 +15,7 @@ export async function generateMetadata({ params }: PageProps<"/shop/[slug]">): P
   return {
     title: p.name,
     description: `${p.description} ${priceLabel(p)}. Handmade by Mimi.`,
+    alternates: { canonical: `/shop/${p.slug}` },
   };
 }
 

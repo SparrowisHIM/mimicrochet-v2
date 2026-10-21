@@ -4,6 +4,7 @@ import { TrackForm } from "@/components/order/track-form";
 export const metadata: Metadata = {
   title: "Track an order",
   description: "Follow your custom order from the first stitch to your door.",
+  alternates: { canonical: "/track" },
 };
 
 export default function TrackPage() {

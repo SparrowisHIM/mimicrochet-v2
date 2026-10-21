@@ -6,6 +6,7 @@ import { site, whatsappLink } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Privacy",
   description: "How Mimi uses your details, in plain words: what she keeps, why, who else sees it, and how long.",
+  alternates: { canonical: "/privacy" },
 };
 
 // Nigeria's Data Protection Act 2023 asks a business to say, plainly, what it collects and why, who it

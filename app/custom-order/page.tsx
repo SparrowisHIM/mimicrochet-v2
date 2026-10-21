@@ -9,6 +9,7 @@ import { pieceStatus } from "@/lib/server/payments";
 export const metadata: Metadata = {
   title: "Custom order",
   description: "Send Mimi a photo, one of her pieces or your own idea. She agrees the price on WhatsApp and you follow every step with a tracking link.",
+  alternates: { canonical: "/custom-order" },
 };
 
 export default async function CustomOrderPage({ searchParams }: PageProps<"/custom-order">) {

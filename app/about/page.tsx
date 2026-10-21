@@ -11,6 +11,7 @@ import { whatsappLink } from "@/lib/site";
 export const metadata: Metadata = {
   title: "About",
   description: "Mimi crochets every piece herself, by hand, from playful sets to dresses that stop people mid-sentence.",
+  alternates: { canonical: "/about" },
 };
 
 // One dress followed from idea to finished: the Neon Granny Square Dress. 03 and 04 are Mimi's own

@@ -8,6 +8,7 @@ import { site, whatsappLink } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Contact",
   description: "Talk to Mimi on WhatsApp about a piece, your size, or that idea in your head.",
+  alternates: { canonical: "/contact" },
 };
 
 // Each message stops where only the customer can finish it (which piece, their idea, their order number),
