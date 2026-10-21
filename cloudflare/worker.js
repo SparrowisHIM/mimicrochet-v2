@@ -25,6 +25,9 @@ const worker = {
     headers.set("x-mimi-host", url.host);
     // Netlify sees every request coming from Cloudflare, so its spam limits need the visitor's own address.
     headers.set("x-mimi-client-ip", request.headers.get("cf-connecting-ip") ?? "");
+    // Proof it came through here (a secret only this worker and the site know: `wrangler secret put DOOR_KEY`),
+    // so someone going to Netlify directly can't claim a different address on every try.
+    headers.set("x-mimi-door", env.DOOR_KEY ?? "");
     headers.delete("host");
 
     const ttl = request.method === "GET" ? keepFor(url.pathname) : 0;

@@ -1,4 +1,5 @@
 import "server-only";
+import { timingSafeEqual } from "node:crypto";
 import { headers } from "next/headers";
 import { cloudflareHost } from "@/lib/front-door";
 import { db } from "@/lib/server/db";
@@ -7,14 +8,29 @@ import { db } from "@/lib/server/db";
 // kept in the database so every server instance sees the same count.
 
 /**
- * The visitor's address as Netlify reports it. Through the Cloudflare test link every request reaches
- * Netlify from Cloudflare, so the worker passes the visitor's own address along (x-mimi-client-ip).
- * Someone could fake that header, so every limit also has a cap that doesn't depend on it.
+ * Whether a request really came through the Cloudflare worker: it carries the secret only the worker and
+ * the site know (FRONT_DOOR_KEY here, DOOR_KEY in the worker). Without that secret set, the older check
+ * (the worker's address header, which anyone could copy) still applies.
+ */
+function viaFrontDoor(h: Headers) {
+  if (h.get("x-mimi-host") !== cloudflareHost) return false;
+  const key = process.env.FRONT_DOOR_KEY;
+  if (!key) return true;
+  const want = Buffer.from(key);
+  const got = Buffer.from(h.get("x-mimi-door") ?? "");
+  return want.length === got.length && timingSafeEqual(want, got);
+}
+
+/**
+ * The visitor's address. Through Cloudflare every request reaches Netlify from Cloudflare, so the worker
+ * passes the visitor's own address along (x-mimi-client-ip), trusted only with the worker's secret. Anyone
+ * else is counted by the address Netlify itself sees, which can't be faked. Every limit also has an
+ * overall cap.
  */
 export async function clientIp() {
   const h = await headers();
-  const viaCloudflare = h.get("x-mimi-host") === cloudflareHost ? h.get("x-mimi-client-ip") : null;
-  return viaCloudflare ?? h.get("x-nf-client-connection-ip") ?? h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const viaCloudflare = viaFrontDoor(h) ? h.get("x-mimi-client-ip") : null;
+  return viaCloudflare || h.get("x-nf-client-connection-ip") || h.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 }
 
 /**
