@@ -473,6 +473,9 @@
     place-items: center;
     background: var(--color-orange-50);
     color: var(--color-stone-900);
+    /* The lift's start: without it the clip-path animates from none, which Chrome can't tween, so the cream
+       vanished in one frame instead of lifting away. */
+    clip-path: inset(0 0 0 0);
     animation: intro-lift 0.4s cubic-bezier(0.19, 1, 0.22, 1) 2.1s forwards;
   }
   .intro-logo {
